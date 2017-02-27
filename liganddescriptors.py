@@ -1,22 +1,47 @@
 from pydpi.drug import constitution, topology, connectivity, kappa, bcut, basak, estate, moran, moreaubroto, geary, charge, molproperty, moe, fingerprint
 from pydpi import pydrug
+from molvs import Standardizer
 
-#3D descriptors
-from pychem import pychem, geometric, rdf, morse, whim, cpsa
 
 from copy import deepcopy
-from os import path, getcwd, remove
+from os import path, getcwd, remove, system, listdir
 
+import toolbox
+import pathFolder
 
 class Descriptors:
 
-    def __init__(self, dcompound):
+    def __init__(self, dcompound, writecheck=1):
         self.compound = dcompound
         loader = pydrug.PyDrug()
 
         # if SMILES, load using SMILES code
-        if "SMILES" in dcompound.keys():
-            self.mol = loader.ReadMolFromSmile(self.compound["SMILES"])
+        if not "SMILES" in dcompound.keys():
+            smile = toolbox.babelConvertSDFtoSMILE(dcompound["sdf"])
+            self.compound["SMILES"] = smile
+
+        #standardize smile code
+        s = Standardizer()
+        smilestandadized = s.standardize(self.compound["SMILES"])
+        print smilestandadized, "Standardize SMILES - l25 liganddescriptors"
+        self.compound["SMILES"] = smilestandadized
+
+        if writecheck == 1:
+            #SMILES code
+            pfileSMILES = pathFolder.PR_COMPOUNDS + str(dcompound["DATABASE_ID"]) + ".smi"
+            fileSMILES = open(pfileSMILES, "w")
+            fileSMILES.write(self.compound["SMILES"])
+            fileSMILES.close()
+
+            #SDF input
+            pfileSDF = pathFolder.PR_COMPOUNDS + str(dcompound["DATABASE_ID"]) + ".sdf"
+            fileSDF = open(pfileSDF, "w")
+            fileSDF.write(self.compound["sdf"])
+            fileSDF.close()
+
+
+        # read mol
+        self.mol = loader.ReadMolFromSmile(self.compound["SMILES"])
 
 
 
@@ -106,59 +131,41 @@ class Descriptors:
 
 
     def get_descriptor3D(self):
+        """
+        Compute descriptors 3D from SMILES code and generate the 3D using ligprep
+        :return: dictionary of descriptors in all3D
+        """
 
-        # based on chempy and generation of 3D using mopac7
-        mol3d = pychem.pybel.readstring("smi", self.compound["SMILES"])
-        pychem.GetARCFile(mol3d)
+        # clean temp folder - used to compute 3D descriptors
+        prtemp = pathFolder.cleanFolder()
 
-        # list of descriptor
-        self.l3D = geometric._geometric.keys()
-        self.l3D = self.l3D + cpsa._cpsa.keys()
-        self.l3D = self.l3D + rdf._rdf.keys()
-        self.l3D = self.l3D + morse._morse.keys()
-        self.l3D = self.l3D + whim._whim.keys()
-
-        # test if temp file is generated
-        if not path.exists(getcwd()+'/temp'):
-            self.geo3D = {}
-            self.cpsa = {}
-            self.rdf = {}
-            self.morse = {}
-            self.whim = {}
-
-        else:
-            self.geo3D = geometric.GetGeometric(mol3d)
-            #self.cpsa = cpsa.GetCPSA()
-            self.rdf = rdf.GetRDF(mol3d)
-            self.morse = morse.GetMoRSE(mol3d)
-            self.whim = whim.GetWHIM()
+        #temp SMILES
+        pfilesmile = prtemp + "tem.smi"
+        filesmile = open(pfilesmile, "w")
+        filesmile.write(self.compound["SMILES"])
+        filesmile.close()
 
 
-        #combine all
-        self.all3D = dict()
-        self.all3D.update(self.geo3D)
-        #self.all3D.update(self.cpsa)
-        self.all3D.update(self.rdf)
-        self.all3D.update(self.morse)
-        self.all3D.update(self.whim)
+        print self.compound["SMILES"]
 
-        # remove 3D temp
-        try:remove(getcwd()+'/temp')
-        except: pass
+
+
 
 
     def writeTablesDesc(self, prresult):
 
         # case 1D
         if "all1D" in self.__dict__:
-            if not path.exists(prresult + "drugbank1D.csv"):
-                self.fil1D = open(prresult + "drugbank1D.csv", "w")
+            if not path.exists(prresult + "1D.csv"):
+                self.fil1D = open(prresult + "1D.csv", "w")
                 # header
-                self.fil1D.write("ID\tSMILES\t")
+                #self.fil1D.write("ID\tSMILES\t")
+                self.fil1D.write("SMILES\t")
                 self.fil1D.write("\t".join(self.l1D) + "\n")
             else:
-                self.fil1D = open(prresult + "drugbank1D.csv", "a")
-            self.fil1D.write(self.compound['DRUGBANK_ID'] + "\t" + self.compound['SMILES'])
+                self.fil1D = open(prresult + "1D.csv", "a")
+            self.fil1D.write(self.compound['SMILES'])
+
             for desc1D in self.l1D:
                 try: self.fil1D.write("\t" + str(self.all1D[desc1D]))
                 except: self.fil1D.write("\tNA")
@@ -167,15 +174,16 @@ class Descriptors:
 
         # case 2D
         if "all2D" in self.__dict__:
-            if not path.exists(prresult + "drugbank2D.csv"):
-                self.fil2D = open(prresult + "drugbank2D.csv", "w")
+            if not path.exists(prresult + "2D.csv"):
+                self.fil2D = open(prresult + "2D.csv", "w")
                 # header
-                self.fil2D.write("ID\tSMILES\t")
+                #self.fil2D.write("ID\tSMILES\t")
+                self.fil2D.write("SMILES\t")
                 self.fil2D.write("\t".join(self.l2D) + "\n")
             else:
-                self.fil2D = open(prresult + "drugbank2D.csv", "a")
+                self.fil2D = open(prresult + "2D.csv", "a")
 
-            self.fil2D.write(self.compound['DRUGBANK_ID'] + "\t" + self.compound['SMILES'])
+            self.fil2D.write(self.compound['SMILES'])
             for desc2D in self.l2D:
                 try:
                     self.fil2D.write("\t" + str(self.all2D[desc2D]))
@@ -184,7 +192,7 @@ class Descriptors:
             self.fil2D.write("\n")
             self.fil2D.close()
 
-        # case 3D
+        # case 3D - not work
         if "all3D" in self.__dict__:
             if not path.exists(prresult + "drugbank3D.csv",):
                 self.fil3D = open(prresult + "drugbank3D.csv", "w")

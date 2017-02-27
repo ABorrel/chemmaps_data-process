@@ -12,14 +12,15 @@ class drugbank:
 
         lout = []
 
-        filin = open(self.psdf , "r")
+        filin = open(self.psdf, "r")
         handle_read = filin.read()
-        #print hendle_read
+        #print handle_read
 
-        l_compound = handle_read.split("$$$$")
+        l_compound = handle_read.split("$$$$\r\n")
 
         for compound in l_compound:
             dcompound = {}
+            dcompound["sdf"] = compound + "$$$$"
             llines = compound.split("\n")
             i = 0
             nblines = len(llines)
