@@ -16,7 +16,7 @@ class drugbank:
         handle_read = filin.read()
         #print handle_read
 
-        l_compound = handle_read.split("$$$$\r\n")
+        l_compound = handle_read.split("$$$$\n")
 
         for compound in l_compound:
             dcompound = {}
@@ -33,6 +33,7 @@ class drugbank:
                 i += 1
             lout.append(dcompound)
         self.lc=lout
+        print len(lout)
 
     def clean(self):
         """TO DO"""

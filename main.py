@@ -21,23 +21,29 @@ DB.parseAll()
 
 print len(DB.lc)
 
-pdesc = pathFolder.PR_RESULT + "drugbank.desc"
+pdesc = pathFolder.PR_RESULT + "Desc"
+plog = pathFolder.PR_RESULT + "log.txt"
+log = open(plog, "w")
 
 #clean
-if path.exists(pdesc):
-    remove(pdesc)
+#if path.exists(pdesc):
+#    remove(pdesc)
 
+i = 0
 for compound in DB.lc:
-
-    desc = liganddescriptors.Descriptors(compound)
-    #desc.get_descriptorOD1D()
-    #desc.get_descriptor2D()
-    desc.get_descriptor3D()
+    print i
+    desc = liganddescriptors.Descriptors(compound, log)
+    if desc.log == "ERROR":
+        continue
+    desc.get_descriptorOD1D()
+    desc.get_descriptor2D()
+    #desc.get_descriptor3D(log)
 
     desc.writeTablesDesc(pdesc)
+    i += 1
 
 
-
+log.close()
 
 
 
