@@ -73,7 +73,8 @@ class Descriptors:
             for smilesdel in LSMILESREMOVE:
                 if smilesdel in lelem:
                     lelem.remove(smilesdel)
-            lelem.remove("")
+            try:lelem.remove("")# case of bad smile
+            except:pass
             if len(lelem) == 1:
                 smilesclean = str(lelem[0])
             else:

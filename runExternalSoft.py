@@ -74,3 +74,14 @@ def babelConvertSDFtoSMILE(sdfread, clean_smi=0, rm_smi=1):
 
 
     return smile
+
+
+
+def PCAplot(pfilin1D, pfilin2D, pfilin3D, prout):
+
+    cmdplotPCA = "./PCAMultiple.R " + str(pfilin1D) + " " + str(pfilin2D) + " " + str(pfilin3D) + " " + str(prout)
+
+    print cmdplotPCA
+    system(cmdplotPCA)
+
+    return
