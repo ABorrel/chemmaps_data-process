@@ -1,6 +1,69 @@
 #!/usr/bin/env Rscript
 source ("tool.R")
 source("cardMatrix.R")
+library(fastICA)
+
+generatePCAcoords = function(din){
+  
+  dinScale = scale(din)
+  data.cor=cor(dinScale)
+  data.eigen=eigen(data.cor)
+  lambda = data.eigen$values
+  var_cap = lambda/sum(lambda)*100
+  cp = data.eigen$vectors
+  rownames (cp) = colnames (dinScale)
+  colnames (cp) = colnames (dinScale)
+  data_plot = as.matrix(dinScale)%*%cp
+
+  return(list(data_plot, var_cap))
+  
+  
+}
+
+
+generateIPAcoords = function(din, path_result){
+  
+  a = fastICA(din, 3, alg.typ = "parallel", fun = "logcosh", alpha = 1, method = "R", row.norm = FALSE, maxit = 200, tol = 0.0001, verbose = TRUE)
+  print (a)
+  
+  gifGeneration(paste(path_result, "ICA3D", sep = ""), a$S)
+}
+
+
+PCAcombined3plans = function(d1D, d2D, d3D, pfilout){
+  
+  lcoord1D = generatePCAcoords(d1D)
+  lcoord2D = generatePCAcoords(d2D)
+  lcoord3D = generatePCAcoords(d3D)
+  
+  coordSpace = cbind(lcoord1D[[1]][,1], lcoord2D[[1]][,1])
+  coordSpace = cbind(coordSpace, lcoord3D[[1]][,1])
+  
+  print(paste(lcoord1D[[2]], lcoord2D[[2]], lcoord3D[[2]], sep = "%  "))
+  
+  gifGeneration(paste(pfilout, "PCA3D", sep = ""), coordSpace)
+  
+  
+}
+
+
+
+PCAcombined2plans = function(d1D, d2D, pfilout){
+  
+  lcoord1D = generatePCAcoords(d1D)
+  lcoord3D = generatePCAcoords(d2D)
+  
+  coordSpace = cbind(lcoord1D[[1]][,1], lcoord1D[[1]][,2])
+  coordSpace = cbind(coordSpace, lcoord3D[[1]][,1])
+  
+  print(paste(lcoord1D[[2]][1], lcoord1D[[2]][2], lcoord3D[[2]][1], sep = "%  "))
+  
+  gifGeneration(paste(pfilout, "PCA3D2plan", sep = ""), coordSpace)
+  
+  
+}
+
+
 
 
 PCA3D = function(din, path_result){
@@ -107,7 +170,7 @@ p3D = "/home/aborrel/ChemMap/results/Desc3D.csv"
 prout = "/home/aborrel/ChemMap/results/analysis/PCAs/"
 
 
-valcor = 0.9
+valcor = 0
 
 d1D = openData(p1D, valcor, prout, c(1,2))
 d2D = openData(p2D, valcor, prout, c(1,2))
@@ -142,6 +205,20 @@ d3D_data = d3D_data[,-1]
 d3D_data = d3D_data[,-1] # SMILES
 
 
+# selection using distribution
+print (dim(d1D_data))
+print (dim(d2D_data))
+print (dim(d3D_data))
+
+
+d1D_data = delnohomogeniousdistribution(d1D_data, 75)
+d2D_data = delnohomogeniousdistribution(d2D_data, 75)
+d3D_data = delnohomogeniousdistribution(d3D_data, 80)
+
+print (dim(d1D_data))
+print (dim(d2D_data))
+print (dim(d3D_data))
+
 #fusion dataset
 vcompound = rownames(d1D_data)
 vcompound = intersect(vcompound,rownames(d2D_data))
@@ -149,11 +226,17 @@ vcompound = intersect(vcompound,rownames(d3D_data))
 dglobal = cbind(d2D_data[vcompound,], d1D_data[vcompound,])
 dglobal = cbind(dglobal, d3D_data[vcompound,])
 
-cardMatrixCor(cor(cbind(d1D_data[vcompound,], d2D_data[vcompound,])), paste(prout, "matrixCor1D2D", sep = ""), 6)
-cardMatrixCor(cor(cbind(d2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "matrixCor2D3D", sep = ""), 6)
-cardMatrixCor(cor(cbind(d1D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "matrixCor1D3D", sep = ""), 6)
+#cardMatrixCor(cor(cbind(d1D_data[vcompound,], d2D_data[vcompound,])), paste(prout, "matrixCor1D2D", sep = ""), 6)
+#cardMatrixCor(cor(cbind(d2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "matrixCor2D3D", sep = ""), 6)
+#cardMatrixCor(cor(cbind(d1D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "matrixCor1D3D", sep = ""), 6)
 
-#print(dim(dglobal))
+#plot histogram
+#histDataOne(data1 = d1D_data[vcompound,], paste(prout, "homodishist1D.pdf"))
+#histDataOne(data1 = d2D_data[vcompound,], paste(prout, "homodishist2D.pdf"))
+#histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf"))
+
+print(dim(dglobal))
+#generateIPAcoords(dglobal, prout)
 #print (colnames(dglobal))
 #print (dglobal[1:3,])
 
@@ -163,3 +246,7 @@ cardMatrixCor(cor(cbind(d1D_data[vcompound,], d3D_data[vcompound,])), paste(prou
 #PCAplot(d2D_data[vcompound,], paste(prout, "2DDesc", sep = ""))
 #PCAplot(d3D_data[vcompound,], paste(prout, "3DDesc", sep = ""))
 
+
+#PCA multiple
+#PCAcombined3plans(d1D_data[vcompound,], d2D_data[vcompound,], d3D_data[vcompound,], prout)
+PCAcombined2plans(cbind(d1D_data[vcompound,], d2D_data[vcompound,]), d3D_data[vcompound,], prout)

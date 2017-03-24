@@ -59,7 +59,7 @@ p3D = "/home/aborrel/ChemMap/results/Desc3D.csv"
 prout = "/home/aborrel/ChemMap/results/analysis/MCSs/"
 
 
-valcor = 0.9
+valcor = 0
 
 d1D = openData(p1D, valcor, prout, c(1,2))
 d2D = openData(p2D, valcor, prout, c(1,2))
@@ -93,6 +93,11 @@ rownames(d3D_data) = d3D_data[,1]
 d3D_data = d3D_data[,-1]
 d3D_data = d3D_data[,-1] # SMILES
 
+d1D_data = delnohomogeniousdistribution(d1D_data, 75)
+d2D_data = delnohomogeniousdistribution(d2D_data, 75)
+d3D_data = delnohomogeniousdistribution(d3D_data, 75)
+
+
 
 #fusion dataset
 vcompound = rownames(d1D_data)
@@ -103,8 +108,7 @@ dglobal = cbind(dglobal, d3D_data[vcompound,])
 
 
 MDSMulti(d1D_data[vcompound,], d2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "euc", sep = ""), "euc")
-
-#MDSMulti(d1D_data[vcompound,], d2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "corr", sep = ""), "corr")
+MDSMulti(d1D_data[vcompound,], d2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "corr", sep = ""), "corr")
 
 #print(dim(dglobal))
 #print (colnames(dglobal))

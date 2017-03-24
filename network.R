@@ -8,7 +8,7 @@ networkhtml = function(din, cutoff){
   
   dist1 = as.matrix(dist(scale(din), method = "euclidean", upper = TRUE))
   #print (dist1)
-  print(dim(dist1))
+  #print(dim(dist1))
   #fit1 = cmdscale(as.dist(dist1),eig=TRUE, k=2)
   
   #print(fit1)
@@ -18,8 +18,10 @@ networkhtml = function(din, cutoff){
   edges = NULL
   i = 1
   while (i < nb_node){
+    print (i)
     j = i + 1
     while (j <= nb_node){
+      #print (j)
       dist_temp = dist1[i,j]
       if(dist_temp <= cutoff){
         edges = rbind(edges, c(i,j))
@@ -29,7 +31,7 @@ networkhtml = function(din, cutoff){
     i = i + 1
   }
   
-  print (edges)
+  #print (edges)
   colnames(edges) = c("from", "to")
   edges = as.data.frame(edges)
   
@@ -95,7 +97,7 @@ d3D_data = d3D_data[,-1] # SMILES
 vcompound = rownames(d1D_data)
 vcompound = intersect(vcompound,rownames(d2D_data))
 vcompound = intersect(vcompound,rownames(d3D_data))
-dglobal = cbind(d2D_data[vcompound[1:100],], d1D_data[vcompound[1:100],])
-dglobal = cbind(dglobal, d3D_data[vcompound[1:100],])
+dglobal = cbind(d2D_data[vcompound,], d1D_data[vcompound,])
+dglobal = cbind(dglobal, d3D_data[vcompound,])
 
-networkhtml (dglobal, 15)
+networkhtml (dglobal[1:1000,], 20)

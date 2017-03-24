@@ -449,6 +449,31 @@ is.integer0 <- function(x)
   is.integer(x) && length(x) == 0L
 }
 
+
+delnohomogeniousdistribution = function(din, cutoff = 80){
+
+  countMax = dim(din)[1]*cutoff/100  
+  
+  i = 1
+  imax = dim(din)[2]
+  while(i <= imax){
+    #print (i)
+    #print (din[,i])
+    qt = hist(din[,i], breaks = 10, plot = FALSE)$counts
+      
+    for (qtc in qt){
+      if (qtc >= countMax){
+        din = din[,-i]
+        imax = imax - 1
+        i = i - 1
+        break()
+      }
+    }
+    i = i + 1
+  }
+  return(din)
+}
+
 ###############################
 # divise the dataset in folds #
 ###############################

@@ -14,6 +14,7 @@ class drugbank:
 
         filin = open(self.psdf, "r")
         handle_read = filin.read()
+        filin.close()
         #print handle_read
 
         l_compound = handle_read.split("$$$$\n")
