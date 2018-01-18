@@ -91,12 +91,11 @@ class sdfDB:
                     filout.close()
 
 
-    def drawMolecules(self):
+    def drawMolecules(self, prpng):
 
         if not "prsdf" in dir(self):
             self.splitSDF()
 
-        prpng = self.prout + "cpdpng/"
         pathFolder.createFolder(prpng)
         self.prpng = prpng
 
@@ -114,10 +113,13 @@ class sdfDB:
         if not "lc" in dir(self):
             self.parseAll()
 
-        pfilout = self.prout + nametable
-        pfiloutjs = self.prout + nametable + ".js"
+        pfilout = self.prout + nametable + ".csv"
+        pfiloutjs = self.prout + "JS/" + nametable + ".js"
         filout = open(pfilout, "w")
         filoutjs = open(pfiloutjs, "w")
+
+        # header table
+        filout.write("DRUGBANK_ID" + "\t" + "\t".join(lkin) + "\n")
 
         lwritejs = []
 

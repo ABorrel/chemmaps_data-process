@@ -1,25 +1,22 @@
 import pathFolder
 import loadDB
-#import liganddescriptors
+import liganddescriptors
 import analysis
 
 from os import path, remove
 import math
 
 
-def computeDesc(psdf):
+def computeDesc(psdf, prdesc):
 
     dout = {}
-    dout["1D"] = ""
-    dout["2D"] = ""
+    dout["1D2D"] = ""
     dout["3D"] = ""
 
-    pdesc = pathFolder.PR_RESULT + "Desc"
 
-    if path.exists(pdesc + "3D.csv") and path.exists(pdesc + "2D.csv") and path.exists(pdesc + "1D.csv"):
-        dout["3D"] = pdesc + "3D.csv"
-        dout["2D"] = pdesc + "2D.csv"
-        dout["2D"] = pdesc + "1D.csv"
+    if path.exists(prdesc + "3D.csv") and path.exists(prdesc + "1D2D.csv"):
+        dout["3D"] = prdesc + "3D.csv"
+        dout["1D2D"] = prdesc + "1D2D.csv"
         return dout
 
     # formate database
@@ -30,7 +27,7 @@ def computeDesc(psdf):
     print len(DB.lc)
 
 
-    plog = pathFolder.PR_RESULT + "log.txt"
+    plog = prdesc + "log.txt"
     log = open(plog, "w")
 
     # clean
@@ -45,12 +42,14 @@ def computeDesc(psdf):
         if desc.log == "ERROR":
             continue
 
-        desc.get_descriptorOD1D()
-        desc.get_descriptor2D()
+        desc.get_descriptor1D2D()
         desc.get_descriptor3D(log)
 
-        desc.writeTablesDesc(pdesc)
+        desc.writeTablesDesc(prdesc)
         i += 1
+    log.close()
+
+    return dout
 
 
 def extractCloseCompounds(pfilin, nneighbor, pfilout):
@@ -100,15 +99,47 @@ def extractCloseCompounds(pfilin, nneighbor, pfilout):
 ##   MAIN    ##
 ###############
 
-#drugbank https://www.drugbank.ca/
+#drugbank https://www.drugbank.ca/#
+###################################
 psdf = "/home/aborrel/chemmaps/drugData/structures.sdf"
 pranalysis = "/home/aborrel/chemmaps/drugData/dbanalyse/"
+prforjsupdate = "/home/aborrel/chemmaps/drugData/dbanalyse/JS/"
+pathFolder.createFolder(prforjsupdate)
+
+
+###################################
+# analysis and compute descriptor #
+###################################
+
 pathFolder.createFolder(pranalysis)
 db = loadDB.sdfDB(psdf, pranalysis)
-#db.writeTable()
+db.writeTable()
 db.writeTableSpecific(["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"], "tableChemmaps")
-#db.writeNameforJS(pranalysis + "list.js")
-#db.drawMolecules()
+db.writeNameforJS(prforjsupdate + "listSearch.js")
+
+# draw compound
+prpng = "/home/aborrel/chemmaps/drugData/dbanalyse/cpdpng/"
+pathFolder.createFolder(prpng)
+db.drawMolecules()
+
+
+
+# descriptor computation #
+##########################
+prcoords = "/home/aborrel/chemmaps/drugData/dbanalyse/desc/"
+pathFolder.createFolder()
+
+dpfiledesc = computeDesc(psdf)
+analysis.PCAplot(dpfiledesc["1D2D"], dpfiledesc["3D"])
+
+
+
+#####################
+# update webserver  #
+#####################
+
+
+
 
 
 #pcord3D = pranalysis + "cor3D.csv"
@@ -118,8 +149,7 @@ db.writeTableSpecific(["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIG
 
 
 #formate database and descriptor computation
-#dpfiledesc = computeDesc(psdf)
-#analysis.PCAplot(dpfiledesc["1D"], dpfiledesc["2D"], dpfiledesc["3D"])
+
 
 
 

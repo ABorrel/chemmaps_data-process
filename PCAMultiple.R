@@ -192,14 +192,12 @@ model3D = function(d1D, d2D, dcol, pfilout){
 ################
 
 args <- commandArgs(TRUE)
-p1D = args[1]
-p2D = args[2]
+p1D2D = args[2]
 p3D = args[3]
 prout = args[4]
 
 
-p1D = "/home/aborrel/ChemMap/results/Desc1D.csv"
-p2D = "/home/aborrel/ChemMap/results/Desc2D.csv"
+p1D2D = "/home/aborrel/ChemMap/results/Desc2D.csv"
 p3D = "/home/aborrel/ChemMap/results/Desc3D.csv"
 pprop = "/home/aborrel/ChemMap/structures.csv"
 prout = "/home/aborrel/ChemMap/results/analysis/PCAs/"
@@ -208,8 +206,8 @@ prout = "/home/aborrel/ChemMap/results/analysis/PCAs/"
 outlier = c("DB00793", "DB00516", "DB06690", "DB09157", "DB03627", "DB01751", "DB03853" ,"DB04711")
 
 valcor = 0.9
-d1D = openData(p1D, valcor, prout, c(1,2))
-d2D = openData(p2D, valcor, prout, c(1,2))
+d1D = openData(p1D2D, valcor, prout, c(1,2))
+d2D = openData(p3D, valcor, prout, c(1,2))
 
 
 d1D_data = d1D[[1]]
@@ -217,12 +215,13 @@ rownames(d1D_data) = d1D_data[,1]
 d1D_data = d1D_data[,-1]
 d1D_data = d1D_data[,-1] # SMILES
 
-d2D_data = d2D[[1]]
-rownames(d2D_data) = d2D_data[,1]
-d2D_data = d2D_data[,-1]
-d2D_data = d2D_data[,-1] # SMILES
+#d2D_data = d2D[[1]]
+#rownames(d2D_data) = d2D_data[,1]
+#d2D_data = d2D_data[,-1]
+#d2D_data = d2D_data[,-1] # SMILES
 
 
+##############################################
 #3D need to remove empty cols and rows
 d3 = read.csv(p3D, sep = "\t", header = TRUE)
 # remove compound not computed

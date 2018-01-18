@@ -1,12 +1,6 @@
 from os import listdir, remove, makedirs, path
 from shutil import rmtree
 
-#PR_REF = "/home/aborrel/ChemMap/"
-#PR_RESULT = "/home/aborrel/ChemMap/results/"
-#PR_TEMP3D = "/home/aborrel/ChemMap/results/temp3D/"
-#PR_COMPOUNDS = "/home/aborrel/ChemMap/results/compounds/"
-#PR_ANALYSIS = "/home/aborrel/ChemMap/results/analysis/"
-
 
 
 

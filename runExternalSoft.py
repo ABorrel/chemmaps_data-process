@@ -38,7 +38,7 @@ def runPadel(prin=""):
     if prin == "":
         return "ERROR - Padel Input"
     else:
-        cmd = "java -jar " + PADEL + " -maxruntime 100 -3d -dir " + str(prin) + " -file " + prin + "tem.desc"
+        cmd = "java -jar " + PADEL + " -maxruntime 10000 -3d -dir " + str(prin) + " -file " + prin + "tem.desc"
         print cmd
         system(cmd)
 

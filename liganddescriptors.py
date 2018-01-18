@@ -23,14 +23,16 @@ LSMILESREMOVE=["[C-]#N", "[Al+3]", "[Gd+3]", "[Pt+2]", "[Au+3]", "[Bi+3]", "[Al]
                "O=O", "Cl[Ra]Cl", "[Mn+2]", "N#[N+][O-]", "II", "[Ga+3]", "[Mo+10]", "[Zn]", "[Fe]", "[Si+4]", "[Al]"]
 
 class Descriptors:
-    def __init__(self, dcompound, logfile, writecheck=1):
+
+    def __init__(self, dcompound, logfile, prout, writecheck=1):
         self.compound = dcompound
+        self.prout = prout
         loader = pydrug.PyDrug()
 
         # if SMILES, load using SMILES code
         if not "SMILES" in dcompound.keys():
             try:
-                smile = toolbox.babelConvertSDFtoSMILE(dcompound["sdf"])
+                smile = runExternalSoft.babelConvertSDFtoSMILE(dcompound["sdf"])
                 self.compound["SMILES"] = smile
             except:
                 print "ERROR INPUT SDF - l33"
@@ -119,7 +121,10 @@ class Descriptors:
         # read mol
         self.mol = loader.ReadMolFromSmile(self.compound["SMILES"])
 
-    def get_descriptorOD1D(self):
+    def get_descriptor1D2D(self):
+
+
+        # 0D and 1D
         try:
             self.consti = constitution.GetConstitutional(self.mol)
         except:
@@ -134,18 +139,8 @@ class Descriptors:
         except:
             self.molprop = {}
 
-        # combine all 1D
-        self.all1D = {}
-        self.all1D.update(self.consti)
-        self.all1D.update(self.compo)
-        self.all1D.update(self.molprop)
 
-        # listdesc
-        self.l1D = constitution._constitutional.keys()
-        self.l1D = self.l1D + ["nheavy"]
-        self.l1D = self.l1D + molproperty.MolecularProperty.keys()
-
-    def get_descriptor2D(self):
+        # 2D
         try:
             self.topo = topology.GetTopology(self.mol)
         except:
@@ -191,32 +186,42 @@ class Descriptors:
         except:
             self.MOE = {}
 
-        # list 2D -> modified in main library !!!!
-        self.l2D = topology._Topology.keys()
-        self.l2D = self.l2D + connectivity._connectivity.keys()
-        self.l2D = self.l2D + kappa._kapa.keys()
-        self.l2D = self.l2D + bcut._bcut
-        self.l2D = self.l2D + basak._basak.keys()
-        self.l2D = self.l2D + estate._estate.keys()
-        self.l2D = self.l2D + moreaubroto._moreaubroto.keys()
-        self.l2D = self.l2D + moran._moran.keys()
-        self.l2D = self.l2D + geary._geary.keys()
-        self.l2D = self.l2D + charge._Charge.keys()
-        self.l2D = self.l2D + moe._moe.keys()
+        # combine all 1D2D
+        self.all1D2D = dict()
+        self.all1D2D.update(deepcopy(self.consti))
+        self.all1D2D.update(deepcopy(self.compo))
+        self.all1D2D.update(deepcopy(self.molprop))
+        self.all1D2D.update(deepcopy(self.topo))
+        self.all1D2D.update(deepcopy(self.connect))
+        self.all1D2D.update(deepcopy(self.kap))
+        self.all1D2D.update(deepcopy(self.burden))
+        self.all1D2D.update(deepcopy(self.basakD))
+        self.all1D2D.update(deepcopy(self.est))
+        self.all1D2D.update(deepcopy(self.moreauBurto))
+        self.all1D2D.update(deepcopy(self.autcormoran))
+        self.all1D2D.update(deepcopy(self.gearycor))
+        self.all1D2D.update(deepcopy(self.charges))
+        self.all1D2D.update(deepcopy(self.MOE))
 
-        # combine all 2D
-        self.all2D = dict()
-        self.all2D.update(deepcopy(self.topo))
-        self.all2D.update(deepcopy(self.connect))
-        self.all2D.update(deepcopy(self.kap))
-        self.all2D.update(deepcopy(self.burden))
-        self.all2D.update(deepcopy(self.basakD))
-        self.all2D.update(deepcopy(self.est))
-        self.all2D.update(deepcopy(self.moreauBurto))
-        self.all2D.update(deepcopy(self.autcormoran))
-        self.all2D.update(deepcopy(self.gearycor))
-        self.all2D.update(deepcopy(self.charges))
-        self.all2D.update(deepcopy(self.MOE))
+
+
+        # listdesc
+        self.l1D2D = constitution._constitutional.keys()
+        self.l1D2D = self.l1D2D + ["nheavy"]
+        self.l1D2D = self.l1D2D + molproperty.MolecularProperty.keys()
+        self.l1D2D = self.l1D2D + topology._Topology.keys()
+        self.l1D2D = self.l1D2D + connectivity._connectivity.keys()
+        self.l1D2D = self.l1D2D + kappa._kapa.keys()
+        self.l1D2D = self.l1D2D + bcut._bcut
+        self.l1D2D = self.l1D2D + basak._basak.keys()
+        self.l1D2D = self.l1D2D + estate._estate.keys()
+        self.l1D2D = self.l1D2D + moreaubroto._moreaubroto.keys()
+        self.l1D2D = self.l1D2D + moran._moran.keys()
+        self.l1D2D = self.l1D2D + geary._geary.keys()
+        self.l1D2D = self.l1D2D + charge._Charge.keys()
+        self.l1D2D = self.l1D2D + moe._moe.keys()
+
+
 
     def get_fingerprints(self):
         # fingerprint
@@ -228,6 +233,8 @@ class Descriptors:
         self.fingerMorgan = fingerprint.CalculateMorganFingerprint(self.mol)
         self.fingerTorsion = fingerprint.CalculateTopologicalTorsionFingerprint(self.mol)
 
+
+
     def get_descriptor3D(self, log):
         """
         Compute descriptors 3D from SMILES code and generate the 3D using ligprep
@@ -235,8 +242,8 @@ class Descriptors:
         """
 
         # clean temp folder - used to compute 3D descriptors
-        prtemp = pathFolder.cleanFolder()
-        psdf3Dout = pathFolder.PR_COMPOUNDS + str(self.compound["DATABASE_ID"]) + "_3D.sdf"
+        prtemp = pathFolder.cleanFolder(self.prout + "temp3D/")
+        psdf3Dout = self.prout + "structure_3DLigprep.sdf"
 
         # temp SMILES
         pfilesmile = prtemp + "tem.smi"
@@ -270,43 +277,26 @@ class Descriptors:
 
     def writeTablesDesc(self, prresult):
 
-        # case 1D
-        if "all1D" in self.__dict__:
-            if not path.exists(prresult + "1D.csv"):
-                self.fil1D = open(prresult + "1D.csv", "w")
+        # case 1D2D
+        if "all1D2D" in self.__dict__:
+            if not path.exists(prresult + "1D2D.csv"):
+                self.fil1D2D = open(prresult + "1D2D.csv", "w")
                 # header
-                self.fil1D.write("ID\tSMILES\t")
-                self.fil1D.write("\t".join(self.l1D) + "\n")
+                self.fil1D2D.write("ID\tSMILES\t")
+                self.fil1D2D.write("\t".join(self.l1D2D) + "\n")
             else:
-                self.fil1D = open(prresult + "1D.csv", "a")
-            self.fil1D.write(self.compound['DRUGBANK_ID'] + "\t" +self.compound['SMILES'])
+                self.fil1D2D = open(prresult + "1D2D.csv", "a")
+            self.fil1D2D.write(self.compound['DRUGBANK_ID'] + "\t" + self.compound['SMILES'])
 
-            for desc1D in self.l1D:
+            for desc1D2D in self.l1D2D:
                 try:
-                    self.fil1D.write("\t" + str(self.all1D[desc1D]))
+                    self.fil1D2D.write("\t" + str(self.all1D2D[desc1D2D]))
                 except:
-                    self.fil1D.write("\tNA")
-            self.fil1D.write("\n")
-            self.fil1D.close()
+                    self.fil1D2D.write("\tNA")
+            self.fil1D2D.write("\n")
+            self.fil1D2D.close()
 
-        # case 2D
-        if "all2D" in self.__dict__:
-            if not path.exists(prresult + "2D.csv"):
-                self.fil2D = open(prresult + "2D.csv", "w")
-                # header
-                self.fil2D.write("ID\tSMILES\t")
-                self.fil2D.write("\t".join(self.l2D) + "\n")
-            else:
-                self.fil2D = open(prresult + "2D.csv", "a")
 
-            self.fil2D.write(self.compound['DRUGBANK_ID'] + "\t" + self.compound['SMILES'])
-            for desc2D in self.l2D:
-                try:
-                    self.fil2D.write("\t" + str(self.all2D[desc2D]))
-                except:
-                    self.fil2D.write("\tNA")
-            self.fil2D.write("\n")
-            self.fil2D.close()
 
         # case 3D - not work
         if "all3D" in self.__dict__:
