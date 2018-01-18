@@ -85,3 +85,21 @@ def PCAplot(pfilin1D, pfilin2D, pfilin3D, prout):
     system(cmdplotPCA)
 
     return
+
+
+
+def molconvert(pfilin, pfilout= ""):
+    """Convert with black background"""
+    if pfilout == "":
+        pfilout = pfilin[:-3] + "png"
+
+    if path.exists(pfilin[:-3] + "jpeg"):
+        return pfilin[:-3] + "jpeg"
+    cmdconvert = "molconvert \"png:w500,Q100,#00000000\" " + pfilin + " -o " + pfilout
+    system(cmdconvert)
+
+
+
+
+
+
