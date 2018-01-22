@@ -238,15 +238,18 @@ class Descriptors:
 
 
 
-    def get_descriptor3D(self, log):
+    def generate3DFromSMILES(self, log):
         """
         Compute descriptors 3D from SMILES code and generate the 3D using ligprep
         :return: dictionary of descriptors in all3D
         """
 
+        # define folder with selected 3D structure
+        pr3DSDF = pathFolder.createFolder(self.prout + "SDF3D")
+
         # clean temp folder - used to compute 3D descriptors
         prtemp = pathFolder.createFolder(self.prout + "temp3D/", clean = 1)
-        psdf3Dout = self.prout + "structure_3DLigprep.sdf"
+        psdf3Dout = pr3DSDF + self.compound["DATABASE_ID"] + ".sdf"
 
         # temp SMILES
         pfilesmile = prtemp + "tem.smi"
@@ -261,21 +264,18 @@ class Descriptors:
 
             # case error in ligprep
             if not path.exists(psdf3D) or path.getsize(psdf3D) == 0:
-                self.all3D = toolbox.parsePadelOut()
-                self.l3D = self.all3D.keys()
                 log.write(self.compound["DATABASE_ID"] + "\t" + self.compound["SMILES"] + "\t" + psdf3D)
             else:
                 psdf3Dout = toolbox.selectMinimalEnergyLigPrep(psdfin=psdf3D,
                                                                psdfout=psdf3Dout)
                 # take only best energy
-                remove(psdf3D)
-                remove(pfilesmile)
-                copy(psdf3Dout, psdf3D)
-                pdesc = runExternalSoft.runPadel(prtemp)
+                pathFolder.cleanFolder(prtemp)
 
-        # run 3D descriptor using Padel
-        self.all3D = toolbox.parsePadelOut(pdesc)
-        self.l3D = self.all3D.keys()
+
+
+
+
+
 
 
     def writeTablesDesc(self, prresult):
@@ -301,21 +301,22 @@ class Descriptors:
 
 
 
-        # case 3D - not work
-        if "all3D" in self.__dict__:
-            if not path.exists(prresult + "3D.csv", ):
-                self.fil3D = open(prresult + "3D.csv", "w")
-                # header
-                self.fil3D.write("ID\tSMILES\t")
-                self.fil3D.write("\t".join(self.l3D) + "\n")
-            else:
-                self.fil3D = open(prresult + "3D.csv", "a")
+def get_descriptor3D(pr3DSDF, pdesc3D):
 
-            self.fil3D.write(self.compound['DRUGBANK_ID'] + "\t" + self.compound['SMILES'])
-            for desc3D in self.l3D:
-                try:
-                    self.fil3D.write("\t" + str(self.all3D[desc3D]))
-                except:
-                    self.fil3D.write("\tNA")
-            self.fil3D.write("\n")
-            self.fil3D.close()
+
+    pPadel = runExternalSoft.runPadel(pr3DSDF)
+    dpadel = toolbox.parsePadelOut(pPadel)
+
+    filout = open(pdesc3D, "w")
+
+    # write descriptor
+    ldesc = toolbox.parsePadelOut().keys()
+    filout.write("\t".join(ldesc) + "\n")
+    for compound in dpadel.keys():
+        filout.write(compound)
+        for desc in ldesc:
+            filout.write("\t" + str(dpadel[desc]))
+        filout.write("\n")
+    filout.close()
+
+    return pdesc3D

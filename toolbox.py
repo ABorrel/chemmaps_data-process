@@ -1,5 +1,6 @@
 from os import system, path
 from shutil import copy
+from copy import deepcopy
 
 def selectMinimalEnergyLigPrep(psdfin, psdfout):
 
@@ -40,7 +41,7 @@ def parsePadelOut(pfiledesc=""):
     :return:
     """
 
-    dout = {"RDF65s": "NA", "RDF65p": "NA", "RDF65v": "NA", "RDF65u": "NA", "RDF145v": "NA", "RDF65e": "NA",
+    ddesc = {"RDF65s": "NA", "RDF65p": "NA", "RDF65v": "NA", "RDF65u": "NA", "RDF145v": "NA", "RDF65e": "NA",
             "RDF65i": "NA"
         , "RDF65m": "NA", "RDF80v": "NA", "RDF80u": "NA", "RDF80s": "NA", "RDF80p": "NA", "RDF80m": "NA",
             "RDF80i": "NA", "RDF80e"
@@ -146,19 +147,25 @@ def parsePadelOut(pfiledesc=""):
             "Ap": "NA", "As": "NA", "Au": "NA", "Av": "NA"}
 
     if pfiledesc == "":
-        return dout
+        return ddesc
     else:
         filin = open(pfiledesc, "r")
         lline = filin.readlines()
         filin.close()
 
-        # work only case for 2 lines in the padel desc
-        lheaders = lline[0].strip().split(",")
-        lvalues = lline[1].strip().split(",")
+        dout = {}
 
-        i = 1# remove not informative name
-        while i < len(lheaders):
-            dout[lheaders[i]] = lvalues[i]
+        lheaders = lline[0].strip().split(",")
+
+        i = 1
+        while i < len(lline):
+            lvalues = lline[i].strip().split(",")
+            j = 1
+            dtemp = deepcopy(ddesc)
+            while j < len(lheaders):
+                dtemp[lheaders[i]] = lvalues[i]
+                j += 1
+            dout[lvalues[0]] = dtemp
             i += 1
 
         return dout

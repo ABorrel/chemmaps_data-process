@@ -7,7 +7,7 @@ from os import path, remove
 import math
 
 
-def computeDesc(psdf, prdesc, control=0):
+def computeDesc(psdf, prdesc, Desc1D2D=0, Desc3D=1, control=0):
 
     dout = {}
     dout["1D2D"] = ""
@@ -35,21 +35,34 @@ def computeDesc(psdf, prdesc, control=0):
     # if path.exists(pdesc):
     #    remove(pdesc)
 
-    i = 0
-    for compound in DB.lc:
-        print i
+    # Descriptor 1D and 2D
+    if Desc1D2D == 1:
+        i = 0
+        for compound in DB.lc:
+            print i
+            desc = liganddescriptors.Descriptors(compound, log, prdesc)
+            if desc.log == "ERROR":
+                continue
+            desc.get_descriptor1D2D()
 
-        desc = liganddescriptors.Descriptors(compound, log, prdesc)
-        if desc.log == "ERROR":
-            continue
+    # descriptor 3D #
+    #################
 
-        desc.get_descriptor1D2D()
-        desc.get_descriptor3D(log)
+    if Desc3D == 1:
+        i = 0
+        for compound in DB.lc:
+            print i
 
-        desc.writeTablesDesc(prdesc)
-        i += 1
+            desc = liganddescriptors.Descriptors(compound, log, prdesc)
+            prSDF3D = desc.generate3DFromSMILES(log)
+            i += 1
+
+        pdesc3D = prdesc + "3D.csv"
+        pdesc3D = liganddescriptors.get_descriptor3D(prSDF3D, pdesc3D)
+
+        dout["3D"] = pdesc3D
+
     log.close()
-
     return dout
 
 
