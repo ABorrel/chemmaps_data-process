@@ -7,20 +7,21 @@ from os import path, remove
 import math
 
 
-def computeDesc(psdf, prdesc):
+def computeDesc(psdf, prdesc, control=0):
 
     dout = {}
     dout["1D2D"] = ""
     dout["3D"] = ""
 
 
-    if path.exists(prdesc + "3D.csv") and path.exists(prdesc + "1D2D.csv"):
+    if path.exists(prdesc + "3D.csv") and path.exists(prdesc + "1D2D.csv" and control == 1):
         dout["3D"] = prdesc + "3D.csv"
         dout["1D2D"] = prdesc + "1D2D.csv"
         return dout
 
+
     # formate database
-    DB = loadDB.sdfDB(psdf)
+    DB = loadDB.sdfDB(psdf, prdesc)
     DB.parseAll()
     DB.writeTable()
 
@@ -38,7 +39,7 @@ def computeDesc(psdf, prdesc):
     for compound in DB.lc:
         print i
 
-        desc = liganddescriptors.Descriptors(compound, log)
+        desc = liganddescriptors.Descriptors(compound, log, prdesc)
         if desc.log == "ERROR":
             continue
 
@@ -101,9 +102,11 @@ def extractCloseCompounds(pfilin, nneighbor, pfilout):
 
 #drugbank https://www.drugbank.ca/#
 ###################################
-psdf = "/home/aborrel/chemmaps/drugData/structures.sdf"
-pranalysis = "/home/aborrel/chemmaps/drugData/dbanalyse/"
-prforjsupdate = "/home/aborrel/chemmaps/drugData/dbanalyse/JS/"
+psdf = "/home/aborrel/ChemMap/updateDrugBank/structures-20-12-2017.sdf"
+pranalysis = "/home/aborrel/ChemMap/updateDrugBank/dbanalyse/"
+pathFolder.createFolder(pranalysis)
+
+prforjsupdate = "/home/aborrel/ChemMap/updateDrugBank/dbanalyse/JS/"
 pathFolder.createFolder(prforjsupdate)
 
 
@@ -111,26 +114,28 @@ pathFolder.createFolder(prforjsupdate)
 # analysis and compute descriptor #
 ###################################
 
-pathFolder.createFolder(pranalysis)
 db = loadDB.sdfDB(psdf, pranalysis)
 db.writeTable()
 db.writeTableSpecific(["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"], "tableChemmaps")
 db.writeNameforJS(prforjsupdate + "listSearch.js")
 
-# draw compound
-prpng = "/home/aborrel/chemmaps/drugData/dbanalyse/cpdpng/"
-pathFolder.createFolder(prpng)
-db.drawMolecules()
+
+# draw compounds #
+##################
+#prpng = "/home/aborrel/ChemMap/updateDrugBank/dbanalyse/cpdpng/"
+#pathFolder.createFolder(prpng)
+#db.drawMolecules()
 
 
 
 # descriptor computation #
 ##########################
-prcoords = "/home/aborrel/chemmaps/drugData/dbanalyse/desc/"
-pathFolder.createFolder()
+prDesc = "/home/aborrel/ChemMap/updateDrugBank/dbanalyse/Desc/"
+pathFolder.createFolder(prDesc, clean = 1)
 
-dpfiledesc = computeDesc(psdf)
-analysis.PCAplot(dpfiledesc["1D2D"], dpfiledesc["3D"])
+dpfiledesc = computeDesc(psdf, prDesc)
+#analysis.PCAplot(dpfiledesc["1D2D"], dpfiledesc["3D"])
+
 
 
 

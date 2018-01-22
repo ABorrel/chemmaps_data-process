@@ -105,15 +105,18 @@ class Descriptors:
         self.compound["SMILES"] = smilesclean
         self.log = "OK"
 
+        prCpdSmi = pathFolder.createFolder(self.prout + "SMI/")
+        prCpdSDF = pathFolder.createFolder(self.prout + "SDF/")
+
         if writecheck == 1:
             # SMILES code
-            pfileSMILES = pathFolder.PR_COMPOUNDS + str(dcompound["DATABASE_ID"]) + ".smi"
+            pfileSMILES = prCpdSmi + str(dcompound["DATABASE_ID"]) + ".smi"
             fileSMILES = open(pfileSMILES, "w")
             fileSMILES.write(self.compound["SMILES"])
             fileSMILES.close()
 
             # SDF input
-            pfileSDF = pathFolder.PR_COMPOUNDS + str(dcompound["DATABASE_ID"]) + ".sdf"
+            pfileSDF = prCpdSDF + str(dcompound["DATABASE_ID"]) + ".sdf"
             fileSDF = open(pfileSDF, "w")
             fileSDF.write(self.compound["sdf"])
             fileSDF.close()
@@ -242,7 +245,7 @@ class Descriptors:
         """
 
         # clean temp folder - used to compute 3D descriptors
-        prtemp = pathFolder.cleanFolder(self.prout + "temp3D/")
+        prtemp = pathFolder.createFolder(self.prout + "temp3D/", clean = 1)
         psdf3Dout = self.prout + "structure_3DLigprep.sdf"
 
         # temp SMILES
@@ -251,6 +254,7 @@ class Descriptors:
         filesmile.write(self.compound["SMILES"])
         filesmile.close()
 
+        pdesc = ""
         # run ligprep
         if not path.exists(psdf3Dout):
             psdf3D = runExternalSoft.runLigprep(psmilin=pfilesmile)
@@ -260,7 +264,6 @@ class Descriptors:
                 self.all3D = toolbox.parsePadelOut()
                 self.l3D = self.all3D.keys()
                 log.write(self.compound["DATABASE_ID"] + "\t" + self.compound["SMILES"] + "\t" + psdf3D)
-                pdesc = ""
             else:
                 psdf3Dout = toolbox.selectMinimalEnergyLigPrep(psdfin=psdf3D,
                                                                psdfout=psdf3Dout)

@@ -2,7 +2,7 @@ from os import system, path, remove
 from re import search
 from time import sleep
 
-LIGPREP = "/opt/schrodinger2016-4/ligprep"
+LIGPREP = "/opt/schrodinger2017-3/ligprep"
 PADEL = "/home/aborrel/softwares/padel/PaDEL-Descriptor.jar"
 
 

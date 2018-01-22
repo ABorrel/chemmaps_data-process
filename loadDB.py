@@ -125,7 +125,7 @@ class sdfDB:
 
         for compound in self.lc:
             try:
-                filout.write(compound["DRUGBANK_ID"])
+                filout.write(compound["DRUGBANK_ID"] + "\t")
                 linejs = "\"" + compound["DRUGBANK_ID"] + "\":"
             except: continue
             lwrite = []
