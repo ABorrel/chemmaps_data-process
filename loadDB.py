@@ -7,9 +7,10 @@ import runExternalSoft
 
 class sdfDB:
 
-    def __init__(self, psdf, prout):
+    def __init__(self, psdf, kname, prout):
         self.psdf = psdf
         self.prout = prout
+        self.name = kname
 
 
     def parseAll (self):
@@ -36,20 +37,22 @@ class sdfDB:
                     valuek = llines[i+1].strip()
                     dcompound[kin] = valuek
                 i += 1
-            if "DRUGBANK_ID" in dcompound.keys():
+            if self.name in dcompound.keys():
                 lout.append(dcompound)
+
+
         self.lc=lout
         print len(lout)
 
-    def writeTable(self):
+    def writeTable(self, filname):
 
         if not "lc" in dir(self):
             self.parseAll()
 
-        ptable = self.prout + "drugbank.csv"
+        ptable = self.prout + str(filname)
         filout = open(ptable, "w")
 
-        lheader = ["DRUGBANK_ID"]
+        lheader = [self.name]
         for compound in self.lc:
             for k in compound.keys():
                 if not k in lheader:
@@ -59,7 +62,7 @@ class sdfDB:
         filout.write("\t".join(lheader) + "\n")
 
         for compound in self.lc:
-            try: filout.write(compound["DRUGBANK_ID"])
+            try: filout.write(compound[self.name])
             except:
                 continue
             for h in lheader[1:]:
@@ -69,6 +72,16 @@ class sdfDB:
                     filout.write("\tNA")
             filout.write("\n")
         filout.close()
+
+
+    def renameHeader(self):
+        if not "lc" in dir(self):
+            self.parseAll()
+        for compound in self.lc:
+            sdfin = compound["sdf"]
+            sdfin = sdfin.split("\n")
+            sdfin[0] = compound[self.name]
+            compound["sdf"] = "\n".join(sdfin)
 
 
     def splitSDF(self):
@@ -84,11 +97,10 @@ class sdfDB:
             return
         else:
             for compound in self.lc:
-                if "DRUGBANK_ID" in compound.keys():
-                    pfilout = self.prsdf + compound["DRUGBANK_ID"] + ".sdf"
-                    filout = open(pfilout, "w")
-                    filout.write(compound["sdf"])
-                    filout.close()
+                pfilout = self.prsdf + compound[self.name] + ".sdf"
+                filout = open(pfilout, "w")
+                filout.write(compound["sdf"])
+                filout.close()
 
 
     def drawMolecules(self, prpng):
@@ -147,7 +159,7 @@ class sdfDB:
         filoutjs.close()
 
 
-    def writeNameforJS(self, pfilout):
+    def writeNameforJS(self, pfilout, keysforsearch=["DRUGBANK_ID", "GENERIC_NAME"]):
 
 
         if not "lc" in dir(self):
@@ -156,12 +168,12 @@ class sdfDB:
         filout = open(pfilout, "w")
         filout.write("var lsearch = [")
 
-        lID = [str("\"") + compound["DRUGBANK_ID"] + str("\"") for compound in self.lc]
-        lname = [str("\"") + compound["GENERIC_NAME"] + str("\"") for compound in self.lc]
-        lwrite = lname+lID
+        lwrite = []
+        for keyforsearch in keysforsearch:
+            ltemp = [str("\"") + compound[keyforsearch] + str("\"") for compound in self.lc]
+            lwrite = lwrite + ltemp
 
         filout.write(",".join(lwrite) + "]")
-
         filout.close()
 
 

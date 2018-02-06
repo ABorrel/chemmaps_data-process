@@ -24,9 +24,11 @@ LSMILESREMOVE=["[C-]#N", "[Al+3]", "[Gd+3]", "[Pt+2]", "[Au+3]", "[Bi+3]", "[Al]
 
 class Descriptors:
 
-    def __init__(self, dcompound, logfile, prout, writecheck=1):
+    def __init__(self, dcompound, logfile, prout, dfiles, writecheck=1, namek = "DATABASE_ID"):
         self.compound = dcompound
         self.prout = prout
+        self.namek = namek
+        self.descFiles = dfiles
         loader = pydrug.PyDrug()
 
         # if SMILES, load using SMILES code
@@ -34,11 +36,12 @@ class Descriptors:
             try:
                 smile = runExternalSoft.babelConvertSDFtoSMILE(dcompound["sdf"])
                 self.compound["SMILES"] = smile
+                print smile
             except:
                 print "ERROR INPUT SDF - l33"
                 self.log = "ERROR"
                 try:logfile.write(
-                    self.compound["DATABASE_ID"] + "\t---\tERROR-SDF ORIGINAL INPUT\n")
+                    self.compound[namek] + "\t---\tERROR-SDF ORIGINAL INPUT\n")
                 except:pass
 
                 return
@@ -47,7 +50,7 @@ class Descriptors:
         #Standardize smile code
         try: smilestandadized = standardize_smiles(self.compound["SMILES"])
         except:
-            logfile.write(self.compound["DATABASE_ID"] + "\t" + str(self.compound["SMILES"]) + "\tERROR-SMILES INPUT"
+            logfile.write(self.compound[namek] + "\t" + str(self.compound["SMILES"]) + "\tERROR-SMILES INPUT"
                                                                                                "\n")
             self.log = "ERROR"
             return
@@ -59,7 +62,7 @@ class Descriptors:
         smilestandadized = Chem.MolToSmiles(molstandardized)
 
         # remove salt
-        # 1.default
+        # 1.defaultre
         remover = SaltRemover()
         mol = Chem.MolFromSmiles(smilestandadized)
         molcleandefault = remover(mol)
@@ -75,14 +78,14 @@ class Descriptors:
             for smilesdel in LSMILESREMOVE:
                 if smilesdel in lelem:
                     lelem.remove(smilesdel)
-            try:lelem.remove("")# case of bad smile
+            try:lelem.remove("") #case of bad smile
             except:pass
             if len(lelem) == 1:
                 smilesclean = str(lelem[0])
             else:
                 # 4. Fragments
                 #Case of fragment -> stock in log file, check after to control
-                logfile.write(self.compound["DATABASE_ID"] + "\t" + str(self.compound["SMILES"]) + "\tFRAGMENT IN INPUT"
+                logfile.write(self.compound[namek] + "\t" + str(self.compound["SMILES"]) + "\tFRAGMENT IN INPUT"
                                                                                                    "\n")
                 print ".".join(lelem), " - FRAGMENTS - l66"
                 self.log = "ERROR"
@@ -96,7 +99,7 @@ class Descriptors:
 
         # case where only salt are included
         if smilesclean == "":
-            logfile.write(self.compound["DATABASE_ID"] + "\t" + str(self.compound["SMILES"]) + "\tEMPTY SMILES AFTER "
+            logfile.write(self.compound[namek] + "\t" + str(self.compound["SMILES"]) + "\tEMPTY SMILES AFTER "
                                                                                                "STANDARDIZATION\n")
             print "EMPTY SMILES AFTER STANDARDIZATION - l84"
             self.log = "ERROR"
@@ -110,13 +113,13 @@ class Descriptors:
 
         if writecheck == 1:
             # SMILES code
-            pfileSMILES = prCpdSmi + str(dcompound["DATABASE_ID"]) + ".smi"
+            pfileSMILES = prCpdSmi + str(dcompound[namek]) + ".smi"
             fileSMILES = open(pfileSMILES, "w")
             fileSMILES.write(self.compound["SMILES"])
             fileSMILES.close()
 
             # SDF input
-            pfileSDF = prCpdSDF + str(dcompound["DATABASE_ID"]) + ".sdf"
+            pfileSDF = prCpdSDF + str(dcompound[namek]) + ".sdf"
             fileSDF = open(pfileSDF, "w")
             fileSDF.write(self.compound["sdf"])
             fileSDF.close()
@@ -124,8 +127,10 @@ class Descriptors:
         # read mol
         self.mol = loader.ReadMolFromSmile(self.compound["SMILES"])
 
-    def get_descriptor1D2D(self):
 
+
+
+    def get_descriptor1D2D(self):
 
         # 0D and 1D
         try:
@@ -190,21 +195,22 @@ class Descriptors:
             self.MOE = {}
 
         # combine all 1D2D
-        self.all1D2D = dict()
-        self.all1D2D.update(deepcopy(self.consti))
-        self.all1D2D.update(deepcopy(self.compo))
-        self.all1D2D.update(deepcopy(self.molprop))
-        self.all1D2D.update(deepcopy(self.topo))
-        self.all1D2D.update(deepcopy(self.connect))
-        self.all1D2D.update(deepcopy(self.kap))
-        self.all1D2D.update(deepcopy(self.burden))
-        self.all1D2D.update(deepcopy(self.basakD))
-        self.all1D2D.update(deepcopy(self.est))
-        self.all1D2D.update(deepcopy(self.moreauBurto))
-        self.all1D2D.update(deepcopy(self.autcormoran))
-        self.all1D2D.update(deepcopy(self.gearycor))
-        self.all1D2D.update(deepcopy(self.charges))
-        self.all1D2D.update(deepcopy(self.MOE))
+        if not "allDesc" in dir(self):
+            self.allDesc = dict()
+        self.allDesc.update(deepcopy(self.consti))
+        self.allDesc.update(deepcopy(self.compo))
+        self.allDesc.update(deepcopy(self.molprop))
+        self.allDesc.update(deepcopy(self.topo))
+        self.allDesc.update(deepcopy(self.connect))
+        self.allDesc.update(deepcopy(self.kap))
+        self.allDesc.update(deepcopy(self.burden))
+        self.allDesc.update(deepcopy(self.basakD))
+        self.allDesc.update(deepcopy(self.est))
+        self.allDesc.update(deepcopy(self.moreauBurto))
+        self.allDesc.update(deepcopy(self.autcormoran))
+        self.allDesc.update(deepcopy(self.gearycor))
+        self.allDesc.update(deepcopy(self.charges))
+        self.allDesc.update(deepcopy(self.MOE))
 
 
 
@@ -245,11 +251,13 @@ class Descriptors:
         """
 
         # define folder with selected 3D structure
-        pr3DSDF = pathFolder.createFolder(self.prout + "SDF3D")
+        pr3DSDF = pathFolder.createFolder(self.prout + "SDF3D/")
 
         # clean temp folder - used to compute 3D descriptors
         prtemp = pathFolder.createFolder(self.prout + "temp3D/", clean = 1)
-        psdf3Dout = pr3DSDF + self.compound["DATABASE_ID"] + ".sdf"
+        psdf3Dout = pr3DSDF + self.compound[self.namek] + ".sdf"
+
+        print psdf3Dout
 
         # temp SMILES
         pfilesmile = prtemp + "tem.smi"
@@ -261,10 +269,10 @@ class Descriptors:
         # run ligprep
         if not path.exists(psdf3Dout):
             psdf3D = runExternalSoft.runLigprep(psmilin=pfilesmile)
-
+            #ffff
             # case error in ligprep
             if not path.exists(psdf3D) or path.getsize(psdf3D) == 0:
-                log.write(self.compound["DATABASE_ID"] + "\t" + self.compound["SMILES"] + "\t" + psdf3D)
+                log.write(self.compound[self.namek] + "\t" + self.compound["SMILES"] + "\t" + psdf3D)
             else:
                 psdf3Dout = toolbox.selectMinimalEnergyLigPrep(psdfin=psdf3D,
                                                                psdfout=psdf3Dout)
@@ -275,29 +283,41 @@ class Descriptors:
 
 
 
-
-
-
-    def writeTablesDesc(self, prresult):
+    def writeTablesDesc(self, kfile):
 
         # case 1D2D
-        if "all1D2D" in self.__dict__:
-            if not path.exists(prresult + "1D2D.csv"):
-                self.fil1D2D = open(prresult + "1D2D.csv", "w")
-                # header
-                self.fil1D2D.write("ID\tSMILES\t")
-                self.fil1D2D.write("\t".join(self.l1D2D) + "\n")
-            else:
-                self.fil1D2D = open(prresult + "1D2D.csv", "a")
-            self.fil1D2D.write(self.compound['DRUGBANK_ID'] + "\t" + self.compound['SMILES'])
+        if not kfile in self.descFiles.keys():
+             return
+        else:
+            pfilin = self.descFiles[kfile]
 
-            for desc1D2D in self.l1D2D:
-                try:
-                    self.fil1D2D.write("\t" + str(self.all1D2D[desc1D2D]))
-                except:
-                    self.fil1D2D.write("\tNA")
-            self.fil1D2D.write("\n")
-            self.fil1D2D.close()
+        if not path.exists(pfilin):
+            filin = open(pfilin, "w")
+            # header
+            if kfile == "1D2D":
+                filin.write("ID\tSMILES\t")
+                filin.write("\t".join(self.l1D2D) + "\n")
+            elif kfile == "3D":
+                filin.write("ID\tSMILES\t")
+                filin.write("\t".join(self.l3D) + "\n")
+            filin.close()
+
+        # write desc
+        filin = open(pfilin, "a")
+        filin.write(self.compound[self.namek] + "\t" + self.compound['SMILES'])
+
+        if kfile == "1D2D":
+            ldescs = self.l1D2D
+        elif kfile == "3D":
+            ldescs = self.l3D
+
+        for desc in ldescs:
+            try:
+                filin.write("\t" + str(self.allDesc[desc]))
+            except:
+                filin.write("\tNA")
+        filin.write("\n")
+        filin.close()
 
 
 
@@ -306,16 +326,16 @@ def get_descriptor3D(pr3DSDF, pdesc3D):
 
     pPadel = runExternalSoft.runPadel(pr3DSDF)
     dpadel = toolbox.parsePadelOut(pPadel)
-
     filout = open(pdesc3D, "w")
 
     # write descriptor
     ldesc = toolbox.parsePadelOut().keys()
     filout.write("\t".join(ldesc) + "\n")
     for compound in dpadel.keys():
+        print dpadel[compound]
         filout.write(compound)
         for desc in ldesc:
-            filout.write("\t" + str(dpadel[desc]))
+            filout.write("\t" + str(dpadel[compound][desc]))
         filout.write("\n")
     filout.close()
 

@@ -160,12 +160,12 @@ def parsePadelOut(pfiledesc=""):
         i = 1
         while i < len(lline):
             lvalues = lline[i].strip().split(",")
+            #print lvalues
             j = 1
             dtemp = deepcopy(ddesc)
             while j < len(lheaders):
-                dtemp[lheaders[i]] = lvalues[i]
+                dtemp[lheaders[j]] = lvalues[j]
                 j += 1
             dout[lvalues[0]] = dtemp
             i += 1
-
-        return dout
+    return dout
