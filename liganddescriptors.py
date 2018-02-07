@@ -257,7 +257,7 @@ class Descriptors:
         prtemp = pathFolder.createFolder(self.prout + "temp3D/", clean = 1)
         psdf3Dout = pr3DSDF + self.compound[self.namek] + ".sdf"
 
-        print psdf3Dout
+        #print psdf3Dout
 
         # temp SMILES
         pfilesmile = prtemp + "tem.smi"
@@ -297,10 +297,11 @@ class Descriptors:
             if kfile == "1D2D":
                 filin.write("ID\tSMILES\t")
                 filin.write("\t".join(self.l1D2D) + "\n")
-            elif kfile == "3D":
-                filin.write("ID\tSMILES\t")
-                filin.write("\t".join(self.l3D) + "\n")
-            filin.close()
+            # does not work with 3D descriptors, table from Padel formated already
+            #elif kfile == "3D":
+            #    filin.write("ID\tSMILES\t")
+            #    filin.write("\t".join(self.l3D) + "\n")
+            #filin.close()
 
         # write desc
         filin = open(pfilin, "a")
@@ -308,8 +309,8 @@ class Descriptors:
 
         if kfile == "1D2D":
             ldescs = self.l1D2D
-        elif kfile == "3D":
-            ldescs = self.l3D
+        #elif kfile == "3D":
+        #    ldescs = self.l3D
 
         for desc in ldescs:
             try:
@@ -332,10 +333,13 @@ def get_descriptor3D(pr3DSDF, pdesc3D):
     ldesc = toolbox.parsePadelOut().keys()
     filout.write("\t".join(ldesc) + "\n")
     for compound in dpadel.keys():
-        print dpadel[compound]
+        #print dpadel[compound]
         filout.write(compound)
         for desc in ldesc:
-            filout.write("\t" + str(dpadel[compound][desc]))
+            if dpadel[compound][desc] == "":
+                filout.write("\tNA")
+            else:
+                filout.write("\t" + str(dpadel[compound][desc]))
         filout.write("\n")
     filout.close()
 

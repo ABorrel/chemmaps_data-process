@@ -7,7 +7,7 @@ from os import path, remove
 import math
 
 
-def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=2, namek="DATABASE_ID"):
+def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0, namek="DATABASE_ID"):
 
     dout = {}
     dout["1D2D"] = prdesc + "1D2D.csv"
@@ -15,7 +15,7 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=2,
 
 
     # shortcut
-    if path.exists(prdesc + "3D.csv") or path.exists(prdesc + "1D2D.csv") and control == 1:
+    if path.exists(prdesc + "3D.csv") and path.exists(prdesc + "1D2D.csv") and control == 1:
         return dout
 
     if path.exists(prdesc + "3D.csv") or path.exists(prdesc + "1D2D.csv") and control == 2:
@@ -26,6 +26,15 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=2,
         except:pass
 
         return dout
+
+
+    if control == 0:
+        if Desc1D2D == 1:
+            try: remove(dout["1D2D"])
+            except: pass
+        if Desc3D == 1:
+            try: remove(dout["3D"])
+            except: pass
 
 
     # formate database
@@ -125,67 +134,66 @@ def extractCloseCompounds(pfilin, nneighbor, pfilout):
 ###############
 
 
+def main(psdf, pranalysis, kname, Desc1D2D=1, generation3D = 1, Desc3D=1):
+
+    pathFolder.createFolder(pranalysis)
+    prforjsupdate = pranalysis + "JS/"
+    pathFolder.createFolder(prforjsupdate)
+
+
+    ###################################
+    # analysis and compute descriptor #
+    ###################################
+
+    db = loadDB.sdfDB(psdf, kname, pranalysis)
+    db.writeTable("ToxTrain.csv")
+    #db.writeTableSpecific(["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"], "tableChemmaps")
+    #db.writeNameforJS(prforjsupdate + "listSearch.js", ["CASRN", "DTXSID", "Name"])
+
+
+    # descriptor computation #
+    ##########################
+    prDesc = pranalysis + "Desc/"
+    pathFolder.createFolder(prDesc, clean = 0)
+
+    dpfiledesc = computeDesc(psdf, prDesc, Desc1D2D=Desc1D2D, generation3D = generation3D, Desc3D=Desc3D, namek=kname)
+    #analysis.PCAplot(dpfiledesc["1D2D"], dpfiledesc["3D"])
+
+
+
+
 ###################################
 # Tox dataset from Kamel Monsouri #
 ###################################
+
 psdf = "/home/aborrel/ChemMap/generateCords/ToxTrainingSet_3D.sdf"
 pranalysis = "/home/aborrel/ChemMap/generateCords/ToxAnalysis/"
-pathFolder.createFolder(pranalysis)
+kname = "CASRN"
 
-prforjsupdate = "/home/aborrel/ChemMap/generateCords/ToxAnalysis/JS/"
-pathFolder.createFolder(prforjsupdate)
-
-
-###################################
-# analysis and compute descriptor #
-###################################
-
-db = loadDB.sdfDB(psdf, "CASRN", pranalysis)
-db.writeTable("ToxTrain.csv")
-#db.writeTableSpecific(["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"], "tableChemmaps")
-db.writeNameforJS(prforjsupdate + "listSearch.js", ["CASRN", "DTXSID", "Name"])
+main(psdf, pranalysis, kname, Desc1D2D=1, generation3D=0, Desc3D=1)
 
 
 
-# descriptor computation #
-##########################
-prDesc = "/home/aborrel/ChemMap/generateCords/ToxAnalysis/Desc/"
-pathFolder.createFolder(prDesc, clean = 1)
-
-dpfiledesc = computeDesc(psdf, prDesc, namek="CASRN")
-#analysis.PCAplot(dpfiledesc["1D2D"], dpfiledesc["3D"])
-
-
-
-
-
-dddd
-
-###### HAVE TO UPDATE
-
-
-#############################################################################################################################
-#############################################################################################################################
 
 ###################################
 #drugbank https://www.drugbank.ca/#
 ###################################
+
 psdf = "/home/aborrel/ChemMap/generateCords/drugbank-20-12-2017.sdf"
 pranalysis = "/home/aborrel/ChemMap/generateCords/drugBankAnalysis/"
-pathFolder.createFolder(pranalysis)
+kname = "DATABASE_ID"
 
-prforjsupdate = "/home/aborrel/ChemMap/generateCords/drugBankAnalysis/JS/"
-pathFolder.createFolder(prforjsupdate)
+#main(psdf, pranalysis, kname, Desc1D2D=1, generation3D=1, Desc3D=1)
 
 
 ###################################
 # analysis and compute descriptor #
 ###################################
 
-db = loadDB.sdfDB(psdf, pranalysis)
-db.writeTable()
-db.writeTableSpecific(["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"], "tableChemmaps")
-db.writeNameforJS(prforjsupdate + "listSearch.js")
+#db = loadDB.sdfDB(psdf, pranalysis)
+#db.writeTable()
+#db.writeTableSpecific(["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"], "tableChemmaps")
+#db.writeNameforJS(prforjsupdate + "listSearch.js")
 
 
 # draw compounds #
@@ -198,10 +206,10 @@ db.writeNameforJS(prforjsupdate + "listSearch.js")
 
 # descriptor computation #
 ##########################
-prDesc = "/home/aborrel/ChemMap/updateDrugBank/dbanalyse/Desc/"
-pathFolder.createFolder(prDesc, clean = 1)
+#prDesc = "/home/aborrel/ChemMap/updateDrugBank/dbanalyse/Desc/"
+#pathFolder.createFolder(prDesc, clean = 1)
 
-dpfiledesc = computeDesc(psdf, prDesc)
+#dpfiledesc = computeDesc(psdf, prDesc)
 #analysis.PCAplot(dpfiledesc["1D2D"], dpfiledesc["3D"])
 
 
