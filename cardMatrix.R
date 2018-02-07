@@ -94,7 +94,7 @@ cardMatrixCor = function(matrixIN, name_file, nb_color){
 
 	png (file = paste (name_file, ".png", sep = ""), width = 1700, height = 1700)
 
-	par( mar=c(20,20,1.5,1.5))
+	par( mar=c(10,10,1.5,1.5))
 	image(as.matrix(matrixIN), yaxt = "n", xaxt = "n", col = list_color, breaks = seq(-1,1, 2/(nb_color+x)))
 	grid(nx = nb_line, ny = nb_col, col = "black", lwd = 1, lty = 1)
 	box()

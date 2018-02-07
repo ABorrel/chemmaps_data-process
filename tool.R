@@ -364,23 +364,26 @@ separeData = function (data, descriptor_class){
 
 
 openData = function (pfilin, valcor, prout, vexclude){
-	desc = read.csv (pfilin, header = TRUE, sep = "\t")
-	#print(dim(desc))
-	#print (rownames(desc))
-	#rownames(desc) = desc[,1]
-	#desc = desc[,-1]
-	#print (desc)
+	
+  desc = read.csv (pfilin, header = TRUE, sep = "\t")
+	
+  # remove chemical with only NA
+  desc = delete.na(desc, dim(desc)[2])
+  
+  # remove col not well computed
+  desc = t(delete.na(t(desc), dim(desc)[2]-100))
+  
 
 	# deleted line with NA
 	#rownames (desc) = seq (1, dim(desc)[1])
 	desc = na.omit(desc)
   #print (dim(desc))
   cexclude = desc[,vexclude]
-  #print(dim(desc))
   desc = desc[,-vexclude]
   
+  #print(dim(desc))
+  
 	# dell when sd = 0
-
 	sd_desc =apply (desc[,1:(dim(desc)[2])], 2, sd)
 
 	#print (sd_desc)
@@ -400,6 +403,9 @@ openData = function (pfilin, valcor, prout, vexclude){
 		cexclude = subset(cexclude,select=-sd_0)
 		#print(dim(desc_new))
 	}
+	
+	desc = apply(desc,2,as.double)
+	
 	if (valcor != 0){
 		out_elimcor = elimcor_sansY (desc, valcor)
 		descriptor = out_elimcor$possetap
@@ -407,15 +413,16 @@ openData = function (pfilin, valcor, prout, vexclude){
 		#MDSElimcor (desc, out_elimcor, paste (prout, "MDSDesc_", valcor, sep = ""), "corr")
 		descriptor = colnames (desc) [descriptor]
 		desc = desc[,descriptor]
-		#print (dim(desc))
 	}
+	
   desc = cbind(cexclude, desc)
-  #print(dim(desc))
 	return (list((desc),colnames (desc)))
 }
 
+
 delete.na <- function(DF, n=0) {
   DF[rowSums(is.na(DF)) <= n,]
+  return(DF)
 }
 
 
@@ -452,18 +459,21 @@ is.integer0 <- function(x)
 
 delnohomogeniousdistribution = function(din, cutoff = 80){
 
-  countMax = dim(din)[1]*cutoff/100  
+  
+  dwork = apply(din,2,as.double)
+  
+  countMax = dim(dwork)[1]*cutoff/100  
   
   i = 1
-  imax = dim(din)[2]
+  imax = dim(dwork)[2]
   while(i <= imax){
     #print (i)
-    #print (din[,i])
-    qt = hist(din[,i], breaks = 10, plot = FALSE)$counts
+    #print (dwork[,i])
+    qt = hist(dwork[,i], breaks = 10, plot = FALSE)$counts
       
     for (qtc in qt){
       if (qtc >= countMax){
-        din = din[,-i]
+        dwork = dwork[,-i]
         imax = imax - 1
         i = i - 1
         break()
@@ -471,7 +481,8 @@ delnohomogeniousdistribution = function(din, cutoff = 80){
     }
     i = i + 1
   }
-  return(din)
+  rownames(dwork) = rownames(din)
+  return(dwork)
 }
 
 ###############################

@@ -22,7 +22,7 @@ generatePCAcoords = function(din){
 }
 
 
-generateIPAcoords = function(din, path_result){
+generateICAcoords = function(din, path_result){
   
   a = fastICA(din, 3, alg.typ = "parallel", fun = "logcosh", alpha = 1, method = "R", row.norm = FALSE, maxit = 200, tol = 0.0001, verbose = TRUE)
   print (a)
@@ -195,108 +195,107 @@ args <- commandArgs(TRUE)
 p1D2D = args[2]
 p3D = args[3]
 prout = args[4]
+valcor = as.double(args[5])
+maxquantile = as.integer(args[6])
 
 
-p1D2D = "/home/aborrel/ChemMap/results/Desc2D.csv"
-p3D = "/home/aborrel/ChemMap/results/Desc3D.csv"
-pprop = "/home/aborrel/ChemMap/structures.csv"
-prout = "/home/aborrel/ChemMap/results/analysis/PCAs/"
+p1D2D = "c://Users/Aborrel/chemmaps/drugbankDesc/1D2D.csv"
+p3D = "c://Users/Aborrel/chemmaps/drugbankDesc/3D.csv"
+#pprop = "/home/aborrel/ChemMap/structures.csv"
+prout = "c://Users/Aborrel/chemmaps/drugbankDesc/PCAs/"
+valcor = 0.9
+maxquantile = 80
 
 # manually define
-outlier = c("DB00793", "DB00516", "DB06690", "DB09157", "DB03627", "DB01751", "DB03853" ,"DB04711")
+# outlier = c("DB00793", "DB00516", "DB06690", "DB09157", "DB03627", "DB01751", "DB03853" ,"DB04711")
 
-valcor = 0.9
-d1D = openData(p1D2D, valcor, prout, c(1,2))
-d2D = openData(p3D, valcor, prout, c(1,2))
+#### 1D2D matrix ####
+#####################
+d1D2D = openData(p1D2D, valcor, prout, c(1,2))
+d1D2D_data = d1D2D[[1]]
+rownames(d1D2D_data) = d1D2D_data[,1]
+d1D2D_data = d1D2D_data[,-1] # remove name
+d1D2D_data = d1D2D_data[,-1] # remove SMILES
+
+# remove not well distributed descriptors #
+###########################################
+d1D2D_data = delnohomogeniousdistribution(d1D2D_data, 80)
+
+p1D2Dclean = paste(prout, "1D2D_clean.csv", sep = "")
+write.table(d1D2D_data, file = p1D2Dclean, row.names = TRUE, sep = "\t")
 
 
-d1D_data = d1D[[1]]
-rownames(d1D_data) = d1D_data[,1]
-d1D_data = d1D_data[,-1]
-d1D_data = d1D_data[,-1] # SMILES
-
-#d2D_data = d2D[[1]]
-#rownames(d2D_data) = d2D_data[,1]
-#d2D_data = d2D_data[,-1]
-#d2D_data = d2D_data[,-1] # SMILES
 
 
-##############################################
-#3D need to remove empty cols and rows
-d3 = read.csv(p3D, sep = "\t", header = TRUE)
-# remove compound not computed
-d3 = delete.na(d3,(dim(d3)[1] - 3))
-# remove empty descriptor
-d3 = delete.na(t(d3),(dim(d3)[2] - 20))
-d3clean = delete.na(t(d3),(dim(d3)[1] - 3))
-
-# rewrite descriptors3D
-p3Dclean = paste(strsplit(p3D, "[.]")[[1]][1], "_clean.csv", sep = "")
-write.table(d3clean, file = p3Dclean, row.names = FALSE, sep = "\t")
-d3D = openData(p3Dclean, valcor, prout, c(1,2))
+##### 3D matrix #####
+#####################
+d3D = openData(p3D, valcor, prout, c(1))
 d3D_data = d3D[[1]]
 rownames(d3D_data) = d3D_data[,1]
-d3D_data = d3D_data[,-1]
-d3D_data = d3D_data[,-1] # SMILES
-
-
-# prop for color
-dprop = read.csv(pprop, sep = "\t", stringsAsFactors = F, header = TRUE)
-dcol = as.matrix(dprop[,c("DRUGBANK_ID","DRUG_GROUPS")])
-dcol = cbind(dcol, rep("grey", dim(dcol)[1]))
-dcol[which(dcol[,2] == "approved"),3] = "green"
-dcol[which(dcol[,2] == "withdrawn"),3] = "red"
-dcol[which(dcol[,2] == "illicit"),3] = "orange"
-rownames(dcol) = dcol[,1]
-dcol = dcol[,-1]
-
-# selection using distribution
-#print (dim(d1D_data))
-#print (dim(d2D_data))
-#print (dim(d3D_data))
-
-
-d1D_data = delnohomogeniousdistribution(d1D_data, 80)
-d2D_data = delnohomogeniousdistribution(d2D_data, 80)
+d3D_data = d3D_data[,-1] # remove name
+# remove not well distributed descriptors #
+###########################################
 d3D_data = delnohomogeniousdistribution(d3D_data, 80)
 
-#print (dim(d1D_data))
-#print (dim(d2D_data))
-#print (dim(d3D_data))
+# write selected descriptors
+p3Dclean = paste(prout, "3D_clean.csv", sep = "")
+write.table(d3D_data, file = p3Dclean, row.names = TRUE, sep = "\t")
 
-#fusion dataset
-vcompound = rownames(d1D_data)
-vcompound = intersect(vcompound,rownames(d2D_data))
+
+
+#################
+# merge dataset #
+#################
+
+vcompound = rownames(d1D2D_data)
 vcompound = intersect(vcompound,rownames(d3D_data))
-vcompound = vcompound[!vcompound %in% outlier]
-dglobal = cbind(d2D_data[vcompound,], d1D_data[vcompound,])
-dglobal = cbind(dglobal, d3D_data[vcompound,])
-dcol = dcol[vcompound,]
 
-#cardMatrixCor(cor(cbind(d1D_data[vcompound,], d2D_data[vcompound,])), paste(prout, "matrixCor1D2D", sep = ""), 6)
-#cardMatrixCor(cor(cbind(d2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "matrixCor2D3D", sep = ""), 6)
-#cardMatrixCor(cor(cbind(d1D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "matrixCor1D3D", sep = ""), 6)
+## case of outlier ##
+#####################
+#vcompound = vcompound[!vcompound %in% outlier]
 
-cardMatrix(scale(dglobal), paste(prout, "data.png", sep = ""), 6)
-
-#plot histogram
-#histDataOne(data1 = d1D_data[vcompound,], paste(prout, "homodishist1D.pdf"))
-#histDataOne(data1 = d2D_data[vcompound,], paste(prout, "homodishist2D.pdf"))
-#histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf"))
-
-#generateIPAcoords(dglobal, prout)
-#print (colnames(dglobal))
-#print (dglobal[1:3,])
-
-#PCAplot(dglobal, paste(prout, "global", sep = ""))
-#PCA3D(dglobal, paste(prout, "global", sep = ""))
-#PCAplot(d1D_data[vcompound,], paste(prout, "1DDesc", sep = ""))
-#PCAplot(d2D_data[vcompound,], paste(prout, "2DDesc", sep = ""))
-#PCAplot(d3D_data[vcompound,], paste(prout, "3DDesc", sep = ""))
+dglobal = cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])
 
 
-#PCA multiple
-#PCAcombined3plans(d1D_data[vcompound,], d2D_data[vcompound,], d3D_data[vcompound,], prout)
-#PCAcombined2plans(cbind(d1D_data[vcompound,], d2D_data[vcompound,]), d3D_data[vcompound,], prout)
 
-#model3D(cbind(d1D_data[vcompound,], d2D_data[vcompound,]), d3D_data[vcompound,], dcol, prout)
+#####################################################
+#  Analyse descriptor correlation  and distribution #
+#####################################################
+cardMatrixCor(cor(cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "cor1D2DVS3D", sep = ""), 6)
+
+#plot histogram #
+histDataOne(data1 = d1D2D_data[vcompound,], paste(prout, "homodishist1D2D.pdf"))
+histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf"))
+
+
+#######################
+# analyse projection  #
+#######################
+# ICA
+generateICAcoords(dglobal, prout)
+
+# PCA 2D
+PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
+
+# PCA 3D
+PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
+
+# PCA combined
+PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D"))
+
+# model for AR
+#model3D(cbind(d1D2D_data[vcompound,] d3D_data[vcompound,], dcol, prout)
+
+
+### color not used ####
+# prop for color
+#dprop = read.csv(pprop, sep = "\t", stringsAsFactors = F, header = TRUE)
+#dcol = as.matrix(dprop[,c("DRUGBANK_ID","DRUG_GROUPS")])
+#dcol = cbind(dcol, rep("grey", dim(dcol)[1]))
+#dcol[which(dcol[,2] == "approved"),3] = "green"
+#dcol[which(dcol[,2] == "withdrawn"),3] = "red"
+#dcol[which(dcol[,2] == "illicit"),3] = "orange"
+#rownames(dcol) = dcol[,1]
+#dcol = dcol[,-1]
+
+

@@ -331,7 +331,7 @@ def get_descriptor3D(pr3DSDF, pdesc3D):
 
     # write descriptor
     ldesc = toolbox.parsePadelOut().keys()
-    filout.write("\t".join(ldesc) + "\n")
+    filout.write("ID" + "\t".join(ldesc) + "\n")
     for compound in dpadel.keys():
         #print dpadel[compound]
         filout.write(compound)
