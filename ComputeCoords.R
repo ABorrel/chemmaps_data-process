@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 source ("tool.R")
 source("cardMatrix.R")
+source("MDSMultiple.R")
 library(fastICA)
 library (vrmlgen)
 
@@ -261,32 +262,46 @@ dglobal = cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])
 #####################################################
 #  Analyse descriptor correlation  and distribution #
 #####################################################
-cardMatrixCor(cor(cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "cor1D2DVS3D", sep = ""), 6)
+#cardMatrixCor(cor(cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "cor1D2DVS3D", sep = ""), 6)
 
 #plot histogram #
-histDataOne(data1 = d1D2D_data[vcompound,], paste(prout, "homodishist1D2D.pdf"))
-histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf"))
+#histDataOne(data1 = d1D2D_data[vcompound,], paste(prout, "homodishist1D2D.pdf"))
+#histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf"))
 
 
 #######################
 # analyse projection  #
 #######################
 # ICA
-generateICAcoords(dglobal, prout)
+#generateICAcoords(dglobal, prout)
 
 # PCA 2D
-PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
+#PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
 
 # PCA 3D
-PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
+#PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
 
 # PCA combined
-PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D"))
+#PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D"))
+
+
+# MDSglobal
+#MDS3DGlobal(dglobal, prout, "corr")
+#MDS3DGlobal(dglobal, prout, "euclidean")
+#MDS3DGlobal(dglobal, prout, "manhattan")
+
+#MDS combined
+MDSMulti(d1D2D, d3D, pout, "corr")
+MDSMulti(d1D2D, d3D, pout, "euclidean")
+MDSMulti(d1D2D, d3D, pout, "manhattan")
 
 # model for AR
 #model3D(cbind(d1D2D_data[vcompound,] d3D_data[vcompound,], dcol, prout)
 
 
+
+
+####################### old
 ### color not used ####
 # prop for color
 #dprop = read.csv(pprop, sep = "\t", stringsAsFactors = F, header = TRUE)
