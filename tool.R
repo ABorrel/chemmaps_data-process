@@ -202,6 +202,7 @@ gifGeneration = function(pin, d){
   
   # convert pngs to one gif using ImageMagick
   system(paste("convert -delay 50 ", pin, "*.png ", pin, ".gif", sep = ""))
+  #system(paste("rm ", pin, "*png", sep = ""))
   
 }
 

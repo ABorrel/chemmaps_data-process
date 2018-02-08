@@ -155,6 +155,35 @@ PCAplot = function (din, path_result){
 }
 
 
+generateCoordCombinedPCA = function(d1D2D, d3D, prout){
+
+  lcoord1D2D = generatePCAcoords(d1D2D)
+  lcoord3D = generatePCAcoords(d3D)
+  
+  coordSpace = cbind(lcoord1D2D[[1]][,1], lcoord1D2D[[1]][,2])
+  coordSpace = cbind(coordSpace, lcoord3D[[1]][,1])
+  
+  
+  colnames(coordSpace) = c("1D", "2D", "3D")
+  rownames(coordSpace) = rownames(d1D2D)
+  
+  write.csv(coordSpace, file = paste(prout, "coordPCAcombined.csv", sep = ""), row.names = TRUE, col.names = "TRUE")
+  
+  variancePlane = c(lcoord1D2D[[2]][1], lcoord1D2D[[2]][2], lcoord3D[[2]][1])
+  names(variancePlane) = c("1D", "2D", "3D")
+  write.csv(variancePlane, file = paste(prout, "variancePlanPCAcombined.csv", sep = ""), row.names = TRUE, col.names = "TRUE")
+  
+  vrml.open(file = "SpacePCAcombined.wrl", scale = 1,5)
+  points3d(coordSpace, col = "white", scale = 1, transparency = 0.5,  pointstyle = "b")
+  lines3d(x = c(0,10), y = c(0,0), z = c(0,0), lwd = 3, col = "blue")
+  lines3d(x = c(0,0), y = c(0,10), z = c(0,0), lwd = 3, col = "blue")
+  lines3d(x = c(0,0), y = c(0,0), z = c(0,10), lwd = 3, col = "blue")
+  vrml.close()
+  print(paste(lcoord1D2D[[2]][1], lcoord1D2D[[2]][2], lcoord3D[[2]][1], sep = "%  "))
+  
+    
+}
+
 
 model3D = function(d1D, d2D, dcol, pfilout){
   
@@ -283,7 +312,7 @@ dglobal = cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])
 
 # PCA combined
 #PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D"))
-
+generateCoordCombinedPCA(d1D2D_data[vcompound,], d3D_data[vcompound,], prout)
 
 # MDSglobal
 #MDS3DGlobal(dglobal, prout, "corr")
@@ -291,9 +320,9 @@ dglobal = cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])
 #MDS3DGlobal(dglobal, prout, "manhattan")
 
 #MDS combined
-MDSMulti(d1D2D, d3D, pout, "corr")
-MDSMulti(d1D2D, d3D, pout, "euclidean")
-MDSMulti(d1D2D, d3D, pout, "manhattan")
+#MDSMulti(d1D2D, d3D, prout, "corr")
+#MDSMulti(d1D2D, d3D, prout, "euclidean")
+#MDSMulti(d1D2D, d3D, prout, "manhattan")
 
 # model for AR
 #model3D(cbind(d1D2D_data[vcompound,] d3D_data[vcompound,], dcol, prout)

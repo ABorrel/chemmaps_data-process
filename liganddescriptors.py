@@ -24,7 +24,7 @@ LSMILESREMOVE=["[C-]#N", "[Al+3]", "[Gd+3]", "[Pt+2]", "[Au+3]", "[Bi+3]", "[Al]
 
 class Descriptors:
 
-    def __init__(self, dcompound, logfile, prout, dfiles, writecheck=1, namek = "DATABASE_ID"):
+    def __init__(self, dcompound, logfile, prout, dfiles, writecheck=1, namek="DATABASE_ID"):
         self.compound = dcompound
         self.prout = prout
         self.namek = namek

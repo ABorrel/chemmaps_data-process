@@ -77,9 +77,9 @@ def babelConvertSDFtoSMILE(sdfread, clean_smi=0, rm_smi=1):
 
 
 
-def PCAplot(pfilin1D, pfilin2D, pfilin3D, prout):
+def RComputeCor(pfilin1D, pfilin2D, pfilin3D, prout):
 
-    cmdplotPCA = "./PCAMultiple.R " + str(pfilin1D) + " " + str(pfilin2D) + " " + str(pfilin3D) + " " + str(prout)
+    cmdplotPCA = "./ComputeCoords.R " + str(pfilin1D) + " " + str(pfilin2D) + " " + str(pfilin3D) + " " + str(prout)
 
     print cmdplotPCA
     system(cmdplotPCA)

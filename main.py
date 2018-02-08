@@ -1,7 +1,7 @@
 import pathFolder
 import loadDB
 import liganddescriptors
-import analysis
+import runExternalSoft
 import toolbox
 
 from os import path, remove, listdir
@@ -84,10 +84,8 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
         if generation3D == 1:
             lsdf3D = listdir(prSDF3D)
             for sdf3D in lsdf3D:
-                toolbox.renameHeaderSDF(prSDF3d + str(sdf3D))
-
+                toolbox.renameHeaderSDF(prSDF3D + str(sdf3D))
         liganddescriptors.get_descriptor3D(prSDF3D, dout["3D"])
-
     log.close()
     return dout
 
@@ -160,11 +158,37 @@ def main(psdf, pranalysis, kname, Desc1D2D=1, generation3D = 1, Desc3D=1):
     # descriptor computation #
     ##########################
     prDesc = pranalysis + "Desc/"
-    pathFolder.createFolder(prDesc, clean = 0)
-
+    pathFolder.createFolder(prDesc, clean=0)
     dpfiledesc = computeDesc(psdf, prDesc, Desc1D2D=Desc1D2D, generation3D = generation3D, Desc3D=Desc3D, namek=kname)
-    analysis.PCAplot(dpfiledesc["1D2D"], dpfiledesc["3D"])
 
+    # analyse projection  and compute coordinate #
+    ##############################################
+    prproject = pathFolder.createFolder(pranalysis + "projection/")
+    runExternalSoft.RComputeCor(dpfiledesc["1D2D"], dpfiledesc["3D"], prproject)
+
+    ###################
+    # for the website #
+    ###################
+
+    # 1. compute png #
+    ##################
+    prpng = pranalysis + "cpdpng/"
+    pathFolder.createFolder(prpng)
+
+    # draw from desc descriptors
+    prSDF = prDesc + "SDF/"
+    if path.exists(prSDF):
+        lsdfs = listdir(prSDF)
+        for sdfile in lsdfs:
+            runExternalSoft.molconvert(prSDF + sdfile, prpng + sdfile.split(".")[0] + ".png")
+    else:
+        db.drawMolecules(prpng)
+
+
+    # 2. update JS coords #
+    #######################
+    # 3. update JS properties
+    # 4. update neighborhood
 
 
 
@@ -224,12 +248,6 @@ kname = "DATABASE_ID"
 #db.writeTableSpecific(["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"], "tableChemmaps")
 #db.writeNameforJS(prforjsupdate + "listSearch.js")
 
-
-# draw compounds #
-##################
-#prpng = "/home/aborrel/ChemMap/updateDrugBank/dbanalyse/cpdpng/"
-#pathFolder.createFolder(prpng)
-#db.drawMolecules()
 
 
 

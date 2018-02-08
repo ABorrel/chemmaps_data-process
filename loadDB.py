@@ -131,14 +131,14 @@ class sdfDB:
         filoutjs = open(pfiloutjs, "w")
 
         # header table
-        filout.write("DRUGBANK_ID" + "\t" + "\t".join(lkin) + "\n")
+        filout.write("ID" + "\t" + "\t".join(lkin) + "\n")
 
         lwritejs = []
 
         for compound in self.lc:
             try:
-                filout.write(compound["DRUGBANK_ID"] + "\t")
-                linejs = "\"" + compound["DRUGBANK_ID"] + "\":"
+                filout.write(compound[self.name] + "\t")
+                linejs = "\"" + compound[self.name] + "\":"
             except: continue
             lwrite = []
             for kin in lkin:
