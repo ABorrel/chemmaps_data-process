@@ -257,7 +257,10 @@ class Descriptors:
         prtemp = pathFolder.createFolder(self.prout + "temp3D/", clean = 1)
         psdf3Dout = pr3DSDF + self.compound[self.namek] + ".sdf"
 
-        #print psdf3Dout
+        # control if chemical exists
+        print psdf3Dout
+        if path.exists(psdf3Dout):
+            return pr3DSDF
 
         # temp SMILES
         pfilesmile = prtemp + "tem.smi"
@@ -278,7 +281,7 @@ class Descriptors:
                                                                psdfout=psdf3Dout)
                 # take only best energy
                 pathFolder.cleanFolder(prtemp)
-
+        return pr3DSDF
 
 
 

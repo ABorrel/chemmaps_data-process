@@ -169,3 +169,21 @@ def parsePadelOut(pfiledesc=""):
             dout[lvalues[0]] = dtemp
             i += 1
     return dout
+
+
+
+
+def renameHeaderSDF(pfilin):
+    """Rename header with name file"""
+    namesdf = pfilin.split("/")[-1].split(".")[0]
+    filin = open(pfilin, "r")
+    llines = filin.readlines()
+    filin.close()
+    llines[0] = str(namesdf) + "\n"
+
+    filout = open(pfilin, "w")
+    filout.write("".join(llines))
+    filout.close()
+
+
+

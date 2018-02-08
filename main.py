@@ -2,8 +2,9 @@ import pathFolder
 import loadDB
 import liganddescriptors
 import analysis
+import toolbox
 
-from os import path, remove
+from os import path, remove, listdir
 import math
 
 
@@ -15,7 +16,7 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
 
 
     # shortcut
-    if path.exists(prdesc + "3D.csv") and path.exists(prdesc + "1D2D.csv") and control == 1:
+    if path.exists(prdesc + "3D.csv") and path.exists(prdesc + "1D2D.csv") and Desc3D == 0 and Desc1D2D == 0:
         return dout
 
     if path.exists(prdesc + "3D.csv") or path.exists(prdesc + "1D2D.csv") and control == 2:
@@ -40,7 +41,7 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
     # formate database
     DB = loadDB.sdfDB(psdf, namek, prdesc)
     DB.parseAll()
-    DB.renameHeader() # change first line of sdf to wrtie the good name
+    DB.renameHeader() # change first line of sdf to write the good name
 
     print len(DB.lc)
 
@@ -79,6 +80,11 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
                 desc = liganddescriptors.Descriptors(compound, log, prdesc, dout, 1, namek)
                 prSDF3D = prdesc + "SDF/"
             i += 1
+        # rename header
+        if generation3D == 1:
+            lsdf3D = listdir(prSDF3D)
+            for sdf3D in lsdf3D:
+                toolbox.renameHeaderSDF(prSDF3d + str(sdf3D))
 
         liganddescriptors.get_descriptor3D(prSDF3D, dout["3D"])
 
@@ -146,7 +152,7 @@ def main(psdf, pranalysis, kname, Desc1D2D=1, generation3D = 1, Desc3D=1):
     ###################################
 
     db = loadDB.sdfDB(psdf, kname, pranalysis)
-    db.writeTable("ToxTrain.csv")
+    db.writeTable("TaleProp.csv")
     #db.writeTableSpecific(["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"], "tableChemmaps")
     #db.writeNameforJS(prforjsupdate + "listSearch.js", ["CASRN", "DTXSID", "Name"])
 
@@ -157,20 +163,43 @@ def main(psdf, pranalysis, kname, Desc1D2D=1, generation3D = 1, Desc3D=1):
     pathFolder.createFolder(prDesc, clean = 0)
 
     dpfiledesc = computeDesc(psdf, prDesc, Desc1D2D=Desc1D2D, generation3D = generation3D, Desc3D=Desc3D, namek=kname)
-    #analysis.PCAplot(dpfiledesc["1D2D"], dpfiledesc["3D"])
+    analysis.PCAplot(dpfiledesc["1D2D"], dpfiledesc["3D"])
 
 
 
 
-###################################
-# Tox dataset from Kamel Monsouri #
-###################################
+#########################################
+# Tox train dataset from Kamel Monsouri #
+#########################################
 
 psdf = "/home/aborrel/ChemMap/generateCords/ToxTrainingSet_3D.sdf"
 pranalysis = "/home/aborrel/ChemMap/generateCords/ToxAnalysis/"
 kname = "CASRN"
 
+#main(psdf, pranalysis, kname, Desc1D2D=1, generation3D=0, Desc3D=1)
+
+
+
+
+
+##########################################
+# Tox global dataset from Kamel Monsouri #
+##########################################
+
+psdf = "/home/aborrel/ChemMap/generateCords/ToxGlobal_3D.sdf"
+pranalysis = "/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/"
+kname = "CASRN"
+
 main(psdf, pranalysis, kname, Desc1D2D=1, generation3D=0, Desc3D=1)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -183,7 +212,7 @@ psdf = "/home/aborrel/ChemMap/generateCords/drugbank-20-12-2017.sdf"
 pranalysis = "/home/aborrel/ChemMap/generateCords/drugBankAnalysis/"
 kname = "DATABASE_ID"
 
-#main(psdf, pranalysis, kname, Desc1D2D=1, generation3D=1, Desc3D=1)
+#main(psdf, pranalysis, kname, Desc1D2D=0, generation3D=1, Desc3D=1)
 
 
 ###################################
