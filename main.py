@@ -19,14 +19,12 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
     if path.exists(prdesc + "3D.csv") and path.exists(prdesc + "1D2D.csv") and Desc3D == 0 and Desc1D2D == 0:
         return dout
 
-    if path.exists(prdesc + "3D.csv") or path.exists(prdesc + "1D2D.csv") and control == 2:
+    if control == 2:
         try:remove(dout["1D2D"])
         except:pass
 
         try:remove(dout["3D"])
         except:pass
-
-        return dout
 
 
     if control == 0:
@@ -58,7 +56,7 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
         i = 0
         for compound in DB.lc:
             print i
-            desc = liganddescriptors.Descriptors(compound, log, prdesc, dout, 1, namek)
+            desc = liganddescriptors.Descriptors(compound, log, prdesc, dout, namek)
             if desc.log == "ERROR":
                 continue
             desc.get_descriptor1D2D()
@@ -73,11 +71,11 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
         for compound in DB.lc:
             print i, "generation 3D or split file"
             if generation3D == 1:
-                desc = liganddescriptors.Descriptors(compound, log, prdesc, dout, 1, namek)
+                desc = liganddescriptors.Descriptors(compound, log, prdesc, dout, namek)
                 prSDF3D = desc.generate3DFromSMILES(log)
             else:
                 # write check == 1 to generate sdf
-                desc = liganddescriptors.Descriptors(compound, log, prdesc, dout, 1, namek)
+                desc = liganddescriptors.Descriptors(compound, log, prdesc, dout, namek)
                 prSDF3D = prdesc + "SDF/"
             i += 1
         # rename header
@@ -90,44 +88,6 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
     return dout
 
 
-def extractCloseCompounds(pfilin, nneighbor, pfilout):
-
-    filin = open(pfilin, "r")
-    lcords = filin.readlines()
-    filin.close()
-
-    dcor = {}
-
-    for cord in lcords[1:]:
-        lelem = cord.strip().split(",")
-        ID = lelem[0]
-        x = lelem[1]
-        y = lelem[2]
-        z = lelem[3]
-        dcor[ID] = [float(x),float(y),float(z)]
-
-    ddist = {}
-    for ID in dcor.keys():
-        ddist[ID] = {}
-        for ID2 in dcor.keys():
-            if ID != ID2:
-                ddist[ID][ID2] = math.sqrt(sum([(xi-yi)**2 for xi,yi in zip(dcor[ID], dcor[ID2])]))
-
-        lID = [i[0] for i in sorted(ddist[ID].items(), key=lambda x:x[1])][:nneighbor]
-        ddist[ID] = lID
-
-
-    filout = open(pfilout, "w")
-    filout.write("var lneighbor = {")
-
-    lwrite = []
-    for ID in ddist.keys():
-        w = str(ID) + ":[" + ",".join(ddist[ID]) + "]"
-        lwrite.append(w)
-
-    filout.write(",".join(lwrite))
-    filout.write("}")
-    filout.close()
 
 
 
@@ -138,12 +98,9 @@ def extractCloseCompounds(pfilin, nneighbor, pfilout):
 ###############
 
 
-def main(psdf, pranalysis, kname, Desc1D2D=1, generation3D = 1, Desc3D=1):
+def main(psdf, pranalysis, kname, control=1, Desc1D2D=1, generation3D = 1, Desc3D=1):
 
     pathFolder.createFolder(pranalysis)
-    prforjsupdate = pranalysis + "JS/"
-    pathFolder.createFolder(prforjsupdate)
-
 
     ###################################
     # analysis and compute descriptor #
@@ -159,16 +116,21 @@ def main(psdf, pranalysis, kname, Desc1D2D=1, generation3D = 1, Desc3D=1):
     ##########################
     prDesc = pranalysis + "Desc/"
     pathFolder.createFolder(prDesc, clean=0)
-    dpfiledesc = computeDesc(psdf, prDesc, Desc1D2D=Desc1D2D, generation3D = generation3D, Desc3D=Desc3D, namek=kname)
+    dpfiledesc = computeDesc(psdf, prDesc, control=control, Desc1D2D=Desc1D2D, generation3D = generation3D, Desc3D=Desc3D, namek=kname)
 
     # analyse projection  and compute coordinate #
     ##############################################
     prproject = pathFolder.createFolder(pranalysis + "projection/")
-    runExternalSoft.RComputeCor(dpfiledesc["1D2D"], dpfiledesc["3D"], prproject)
+    corval = 0.9
+    maxQuantile = 80
+    runExternalSoft.RComputeCor(dpfiledesc["1D2D"], dpfiledesc["3D"], prproject, corval, maxQuantile)
 
     ###################
     # for the website #
     ###################
+    prforjsupdate = pranalysis + "JS/"
+    pathFolder.createFolder(prforjsupdate)
+
 
     # 1. compute png #
     ##################
@@ -179,16 +141,22 @@ def main(psdf, pranalysis, kname, Desc1D2D=1, generation3D = 1, Desc3D=1):
     prSDF = prDesc + "SDF/"
     if path.exists(prSDF):
         lsdfs = listdir(prSDF)
-        for sdfile in lsdfs:
-            runExternalSoft.molconvert(prSDF + sdfile, prpng + sdfile.split(".")[0] + ".png")
+        # control if nSDF = nPNG
+        if len(lsdfs) != len(listdir(prpng)):
+            for sdfile in lsdfs:
+                runExternalSoft.molconvert(prSDF + sdfile, prpng + sdfile.split(".")[0] + ".png")
     else:
         db.drawMolecules(prpng)
 
 
     # 2. update JS coords #
     #######################
-    # 3. update JS properties
-    # 4. update neighborhood
+
+    # 3. update JS properties #
+    ###########################
+
+    # 4. update neighborhood #
+    ##########################
 
 
 
@@ -214,7 +182,7 @@ psdf = "/home/aborrel/ChemMap/generateCords/ToxGlobal_3D.sdf"
 pranalysis = "/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/"
 kname = "CASRN"
 
-main(psdf, pranalysis, kname, Desc1D2D=1, generation3D=0, Desc3D=1)
+#main(psdf, pranalysis, kname, control =1, Desc1D2D=0, generation3D=0, Desc3D=1)
 
 
 
@@ -236,7 +204,7 @@ psdf = "/home/aborrel/ChemMap/generateCords/drugbank-20-12-2017.sdf"
 pranalysis = "/home/aborrel/ChemMap/generateCords/drugBankAnalysis/"
 kname = "DATABASE_ID"
 
-#main(psdf, pranalysis, kname, Desc1D2D=0, generation3D=1, Desc3D=1)
+main(psdf, pranalysis, kname, Desc1D2D=0, generation3D=1, Desc3D=1)
 
 
 ###################################

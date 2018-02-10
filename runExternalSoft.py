@@ -77,9 +77,9 @@ def babelConvertSDFtoSMILE(sdfread, clean_smi=0, rm_smi=1):
 
 
 
-def RComputeCor(pfilin1D, pfilin2D, pfilin3D, prout):
+def RComputeCor(pfilin1D, pfilin2D, pfilin3D, prout, valcor = 0.9, maxquantile=80):
 
-    cmdplotPCA = "./ComputeCoords.R " + str(pfilin1D) + " " + str(pfilin2D) + " " + str(pfilin3D) + " " + str(prout)
+    cmdplotPCA = "./ComputeCoords.R " + str(pfilin1D) + " " + str(pfilin2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(valcor) + " " + str(maxquantile)
 
     print cmdplotPCA
     system(cmdplotPCA)
@@ -93,10 +93,11 @@ def molconvert(pfilin, pfilout= ""):
     if pfilout == "":
         pfilout = pfilin[:-3] + "png"
 
-    if path.exists(pfilin[:-3] + "jpeg"):
-        return pfilin[:-3] + "jpeg"
+    if path.exists(pfilout):
+        return pfilout
     cmdconvert = "molconvert \"png:w500,Q100,#00000000\" " + pfilin + " -o " + pfilout
     system(cmdconvert)
+    return pfilout
 
 
 

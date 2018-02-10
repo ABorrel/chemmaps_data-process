@@ -24,108 +24,123 @@ LSMILESREMOVE=["[C-]#N", "[Al+3]", "[Gd+3]", "[Pt+2]", "[Au+3]", "[Bi+3]", "[Al]
 
 class Descriptors:
 
-    def __init__(self, dcompound, logfile, prout, dfiles, writecheck=1, namek="DATABASE_ID"):
+    def __init__(self, dcompound, logfile, prout, dfiles, namek="DATABASE_ID"):
         self.compound = dcompound
         self.prout = prout
         self.namek = namek
         self.descFiles = dfiles
         loader = pydrug.PyDrug()
 
-        # if SMILES, load using SMILES code
-        if not "SMILES" in dcompound.keys():
-            try:
-                smile = runExternalSoft.babelConvertSDFtoSMILE(dcompound["sdf"])
-                self.compound["SMILES"] = smile
-                print smile
-            except:
-                print "ERROR INPUT SDF - l33"
-                self.log = "ERROR"
-                try:logfile.write(
-                    self.compound[namek] + "\t---\tERROR-SDF ORIGINAL INPUT\n")
-                except:pass
-
-                return
-
-
-        #Standardize smile code
-        try: smilestandadized = standardize_smiles(self.compound["SMILES"])
-        except:
-            logfile.write(self.compound[namek] + "\t" + str(self.compound["SMILES"]) + "\tERROR-SMILES INPUT"
-                                                                                               "\n")
-            self.log = "ERROR"
-            return
-
-        #Standardize using molvs (http://molvs.readthedocs.io/en/latest/api.html#molvs-fragment)
-        s = Standardizer()
-        mol = Chem.MolFromSmiles(smilestandadized)
-        molstandardized = s.standardize(mol)
-        smilestandadized = Chem.MolToSmiles(molstandardized)
-
-        # remove salt
-        # 1.defaultre
-        remover = SaltRemover()
-        mol = Chem.MolFromSmiles(smilestandadized)
-        molcleandefault = remover(mol)
-        # 2. Personal remover
-        homeremover = SaltRemover(defnData=LSALT)
-        molclean = homeremover(molcleandefault)
-        smilesclean = Chem.MolToSmiles(molclean)
-        # 3. SMILES remove other manual salts + fragments -> for fragment take one if exactly same compound
-        lelem = smilesclean.split(".")
-        if len(lelem) > 1:
-            # reduce double, case of several salts are included - 255
-            lelem = list(set(lelem))
-            for smilesdel in LSMILESREMOVE:
-                if smilesdel in lelem:
-                    lelem.remove(smilesdel)
-            try:lelem.remove("") #case of bad smile
-            except:pass
-            if len(lelem) == 1:
-                smilesclean = str(lelem[0])
-            else:
-                # 4. Fragments
-                #Case of fragment -> stock in log file, check after to control
-                logfile.write(self.compound[namek] + "\t" + str(self.compound["SMILES"]) + "\tFRAGMENT IN INPUT"
-                                                                                                   "\n")
-                print ".".join(lelem), " - FRAGMENTS - l66"
-                self.log = "ERROR"
-                return
-        else:
-            pass
-
-
-        print self.compound["SMILES"], "SMILES IN - l25 liganddescriptors"
-        print smilesclean, "SMILES without salt and standardized"
-
-        # case where only salt are included
-        if smilesclean == "":
-            logfile.write(self.compound[namek] + "\t" + str(self.compound["SMILES"]) + "\tEMPTY SMILES AFTER "
-                                                                                               "STANDARDIZATION\n")
-            print "EMPTY SMILES AFTER STANDARDIZATION - l84"
-            self.log = "ERROR"
-            return
-
-        self.compound["SMILES"] = smilesclean
-        self.log = "OK"
-
+        # folder with SDF and SMI
         prCpdSmi = pathFolder.createFolder(self.prout + "SMI/")
         prCpdSDF = pathFolder.createFolder(self.prout + "SDF/")
 
-        if writecheck == 1:
-            # SMILES code
+        psdf = prCpdSDF + self.compound[namek] + ".sdf"
+        psmi = prCpdSmi + self.compound[namek] + ".smi"
+
+        # already clean and SMILES desalt
+        if path.exists(psdf) and path.exists(psmi):
+            print "Already clean", self.compound[namek]
+            fsmile = open(psmi, "r")
+            smile = fsmile.readlines()[0].strip()
+            fsmile.close()
+            self.compound["SMILES"] = smile
+            self.log = "OK"
+            self.mol = loader.ReadMolFromSmile(self.compound["SMILES"])
+        else:
+
+            if not "SMILES" in dcompound.keys():
+                try:
+                    smile = runExternalSoft.babelConvertSDFtoSMILE(dcompound["sdf"])
+                    self.compound["SMILES"] = smile
+                    #print smile
+                except:
+                    print "ERROR INPUT SDF - l33"
+                    self.log = "ERROR"
+                    try:logfile.write(
+                        self.compound[namek] + "\t---\tERROR-SDF ORIGINAL INPUT\n")
+                    except:pass
+
+                    return
+
+
+            #Standardize smile code
+            try: smilestandadized = standardize_smiles(self.compound["SMILES"])
+            except:
+                logfile.write(self.compound[namek] + "\t" + str(self.compound["SMILES"]) + "\tERROR-SMILES INPUT"
+                                                                                            "\n")
+                self.log = "ERROR"
+                return
+
+            #Standardize using molvs (http://molvs.readthedocs.io/en/latest/api.html#molvs-fragment)
+            s = Standardizer()
+            mol = Chem.MolFromSmiles(smilestandadized)
+            molstandardized = s.standardize(mol)
+            smilestandadized = Chem.MolToSmiles(molstandardized)
+
+            # remove salt
+            # 1.defaultre
+            remover = SaltRemover()
+            mol = Chem.MolFromSmiles(smilestandadized)
+            molcleandefault = remover(mol)
+            # 2. Personal remover
+            homeremover = SaltRemover(defnData=LSALT)
+            molclean = homeremover(molcleandefault)
+            smilesclean = Chem.MolToSmiles(molclean)
+            # 3. SMILES remove other manual salts + fragments -> for fragment take one if exactly same compound
+            lelem = smilesclean.split(".")
+            if len(lelem) > 1:
+                # reduce double, case of several salts are included - 255
+                lelem = list(set(lelem))
+                for smilesdel in LSMILESREMOVE:
+                    if smilesdel in lelem:
+                        lelem.remove(smilesdel)
+                try:lelem.remove("") #case of bad smile
+                except:pass
+                if len(lelem) == 1:
+                    smilesclean = str(lelem[0])
+                else:
+                    # 4. Fragments
+                    #Case of fragment -> stock in log file, check after to control
+                    logfile.write(self.compound[namek] + "\t" + str(self.compound["SMILES"]) + "\tFRAGMENT IN INPUT"
+                                                                                                       "\n")
+                    print ".".join(lelem), " - FRAGMENTS - l66"
+                    self.log = "ERROR"
+                    return
+            else:
+                pass
+
+
+            #print self.compound["SMILES"], "SMILES IN - l25 liganddescriptors"
+            print smilesclean, "SMILES without salt and standardized"
+
+            # case where only salt are included
+            if smilesclean == "":
+                logfile.write(self.compound[namek] + "\t" + str(self.compound["SMILES"]) + "\tEMPTY SMILES AFTER "
+                                                                                               "STANDARDIZATION\n")
+                print "EMPTY SMILES AFTER STANDARDIZATION - l84"
+                print self.compound[self.namek]
+                self.log = "ERROR"
+                return
+
+            self.compound["SMILES"] = smilesclean
+            self.log = "OK"
+
+
+            #write clean SMILES and split sdf
             pfileSMILES = prCpdSmi + str(dcompound[namek]) + ".smi"
             fileSMILES = open(pfileSMILES, "w")
             fileSMILES.write(self.compound["SMILES"])
             fileSMILES.close()
 
-            # SDF input
+            #SDF input
             pfileSDF = prCpdSDF + str(dcompound[namek]) + ".sdf"
             fileSDF = open(pfileSDF, "w")
             fileSDF.write(self.compound["sdf"])
             fileSDF.close()
 
-        # read mol
-        self.mol = loader.ReadMolFromSmile(self.compound["SMILES"])
+            # read mol
+            self.mol = loader.ReadMolFromSmile(self.compound["SMILES"])
 
 
 
@@ -258,7 +273,7 @@ class Descriptors:
         psdf3Dout = pr3DSDF + self.compound[self.namek] + ".sdf"
 
         # control if chemical exists
-        print psdf3Dout
+        #print psdf3Dout
         if path.exists(psdf3Dout):
             return pr3DSDF
 

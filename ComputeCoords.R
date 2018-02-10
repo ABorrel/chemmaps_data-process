@@ -222,19 +222,19 @@ model3D = function(d1D, d2D, dcol, pfilout){
 ################
 
 args <- commandArgs(TRUE)
-p1D2D = args[2]
-p3D = args[3]
-prout = args[4]
-valcor = as.double(args[5])
-maxquantile = as.integer(args[6])
+p1D2D = args[1]
+p3D = args[2]
+prout = args[3]
+valcor = as.double(args[4])
+maxquantile = as.integer(args[5])
 
 
-p1D2D = "c://Users/Aborrel/chemmaps/drugbankDesc/1D2D.csv"
-p3D = "c://Users/Aborrel/chemmaps/drugbankDesc/3D.csv"
+#p1D2D = "c://Users/Aborrel/chemmaps/drugbankDesc/1D2D.csv"
+#p3D = "c://Users/Aborrel/chemmaps/drugbankDesc/3D.csv"
 #pprop = "/home/aborrel/ChemMap/structures.csv"
-prout = "c://Users/Aborrel/chemmaps/drugbankDesc/PCAs/"
-valcor = 0.9
-maxquantile = 80
+#prout = "c://Users/Aborrel/chemmaps/drugbankDesc/PCAs/"
+#valcor = 0.9
+#maxquantile = 80
 
 # manually define
 # outlier = c("DB00793", "DB00516", "DB06690", "DB09157", "DB03627", "DB01751", "DB03853" ,"DB04711")
@@ -291,27 +291,27 @@ dglobal = cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])
 #####################################################
 #  Analyse descriptor correlation  and distribution #
 #####################################################
-#cardMatrixCor(cor(cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "cor1D2DVS3D", sep = ""), 6)
+cardMatrixCor(cor(cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "cor1D2DVS3D", sep = ""), 6)
 
 #plot histogram #
-#histDataOne(data1 = d1D2D_data[vcompound,], paste(prout, "homodishist1D2D.pdf"))
-#histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf"))
+histDataOne(data1 = d1D2D_data[vcompound,], paste(prout, "homodishist1D2D.pdf"))
+histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf"))
 
 
 #######################
 # analyse projection  #
 #######################
 # ICA
-#generateICAcoords(dglobal, prout)
+generateICAcoords(dglobal, prout)
 
 # PCA 2D
-#PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
+PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
 
 # PCA 3D
-#PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
+PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
 
 # PCA combined
-#PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D"))
+PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D"))
 generateCoordCombinedPCA(d1D2D_data[vcompound,], d3D_data[vcompound,], prout)
 
 # MDSglobal
