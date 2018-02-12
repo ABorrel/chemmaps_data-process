@@ -1,7 +1,6 @@
 import geo3D
-from pydpi import pydrug
-from pydpi.drug import constitution
-
+import cpsa
+import vector3d
 
 # compute from CHEMPY
 # replace MOPAC file by sdf parsing
@@ -10,13 +9,6 @@ from pydpi.drug import constitution
 ####################
 # COMPUTE PARSING  #
 ####################
-
-
-class Vector3D:
-    def __init__(self):
-        self.x = 0.0
-        self.y = 0.0
-        self.z = 0.0
 
 
 
@@ -34,7 +26,7 @@ class Atom:
 
     def __init__(self, Coordinates):
 
-        self.pos = Vector3D()
+        self.pos = vector3d.Vector3d()
         self.radius = 0.0
         self.Coordinates = Coordinates
         self.Element = ''
@@ -42,9 +34,9 @@ class Atom:
     def SetCoordinates(self):
 
         temp = self.Coordinates
-        self.pos.x = float(temp[1])
-        self.pos.y = float(temp[2])
-        self.pos.z = float(temp[3])
+        self.pos.x = float(temp[0])
+        self.pos.y = float(temp[1])
+        self.pos.z = float(temp[2])
 
     def GetCoordinates(self):
 
@@ -56,7 +48,7 @@ class Atom:
 
         temp = self.Coordinates
 
-        self.Element = temp[0]
+        self.Element = temp[3]
 
     def GetElement(self):
 
@@ -83,6 +75,8 @@ class Atom:
         self.SetRadius()
 
         return self.radius
+
+
 
 
 ###########################################################################
@@ -264,7 +258,7 @@ def get_MW(lcoords, H=1):
 #############################################################################
 
 
-def get3Ddesc(psdf, psmiles, geometry=1):
+def get3Ddesc(psdf, psmiles, geometry=1, cpsa=1):
 
     ddesc = {}
     lcoordinates = parseSDFfor3D(psdf)
@@ -285,30 +279,42 @@ def get3Ddesc(psdf, psmiles, geometry=1):
         ddesc['ASPAN'] = geo3D.CalculateAverageSPANR(lcoordinates)
         ddesc['MEcc'] = geo3D.CalculateMolecularEccentricity(lcoordinates)
 
-    # res.update(CalculatePrincipalMomentofInertia(mol,ChargeCoordinates))
-    # res.update(CalculateRatioPMI(mol,ChargeCoordinates))
+    if cpsa == 1:
+
+        ChargeSA = cpsa.GetChargeSA(lcoordinates, RadiusProbe=1.5, n_sphere_point=5000)
+
+        #ddesc['ASA'] = round(cpsa.CalculateASA(ChargeSA), 3)
+        #ddesc['MSA'] = round(cpsa.CalculateMSA(), 3)
+        #ddesc['PNSA1'] = round(cpsa.CalculatePNSA1(ChargeSA), 3)
+        #ddesc['PNSA2'] = round(cpsa.CalculatePNSA2(ChargeSA), 3)
+        #ddesc['PNSA3'] = round(cpsa.CalculatePNSA3(ChargeSA), 3)
+        #ddesc['PPSA1'] = round(cpsa.CalculatePPSA1(ChargeSA), 3)
+        #ddesc['PPSA2'] = round(cpsa.CalculatePPSA2(ChargeSA), 3)
+        #ddesc['PPSA3'] = round(cpsa.CalculatePPSA3(ChargeSA), 3)
+        #ddesc['DPSA1'] = round(cpsa.CalculateDPSA1(ChargeSA), 3)
+        #ddesc['DPSA2'] = round(cpsa.CalculateDPSA2(ChargeSA), 3)
+        #ddesc['DPSA3'] = round(cpsa.CalculateDPSA3(ChargeSA), 3)
+        #ddesc['FNSA1'] = round(cpsa.CalculateFNSA1(ChargeSA), 3)
+        #ddesc['FNSA2'] = round(cpsa.CalculateFNSA2(ChargeSA), 3)
+        #ddesc['FNSA3'] = round(cpsa.CalculateFNSA3(ChargeSA), 3)
+        #ddesc['FPSA1'] = round(cpsa.CalculateFPSA1(ChargeSA), 3)
+        #ddesc['FPSA2'] = round(cpsa.CalculateFPSA2(ChargeSA), 3)
+        #ddesc['FPSA3'] = round(cpsa.CalculateFPSA3(ChargeSA), 3)
+        #ddesc['WNSA1'] = round(cpsa.CalculateWNSA1(ChargeSA), 3)
+        #ddesc['WNSA2'] = round(cpsa.CalculateWNSA2(ChargeSA), 3)
+        #ddesc['WNSA3'] = round(cpsa.CalculateWNSA3(ChargeSA), 3)
+        #ddesc['WPSA1'] = round(cpsa.CalculateWPSA1(ChargeSA), 3)
+        #ddesc['WPSA2'] = round(cpsa.CalculateWPSA2(ChargeSA), 3)
+        #ddesc['WPSA3'] = round(cpsa.CalculateWPSA3(ChargeSA), 3)
+        #ddesc['TASA'] = round(cpsa.CalculateTASA(ChargeSA), 3)
+        #ddesc['PSA'] = round(cpsa.CalculateTPSA(ChargeSA), 3)
+        #ddesc['RASA'] = round(cpsa.CalculateRASA(ChargeSA), 3)
+        #ddesc['RPSA'] = round(cpsa.CalculateRPSA(ChargeSA), 3)
+        #desc['RNCS'] = round(cpsa.CalculateRNCS(ChargeSA), 3)
+        #ddesc['RPCS'] = round(cpsa.CalculateRPCS(ChargeSA), 3)
+        #ddesc['FrTATP'] = round(cpsa.CalculateFractionTATP(ChargeSA), 3)
+
 
     return ddesc
-
-
-
-
-
-
-
-
-#############################################################################
-#if __name__ == "__main__":
-#    from GeoOpt import GetARCFile
-
-#    mol = 'C1C=CCCS1'
-#    mol = 'ClC(Cl)(Cl)Cl'
-#
-#    inputmol = pybel.readstring('smi', mol)
-#    GetARCFile(inputmol)
-#    result = GetGeometric(inputmol)
-#    print result
-#    print len(result)
-
 
 
