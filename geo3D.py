@@ -6,6 +6,7 @@ import descriptors3D
 
 
 import scipy
+import scipy.linalg
 import math
 
 
@@ -72,9 +73,9 @@ def _GetGeometricalCenter(ChargeCoordinates):
     res3 = []
 
     for i in ChargeCoordinates:
-        res1.append(float(i[1]))
-        res2.append(float(i[2]))
-        res3.append(float(i[3]))
+        res1.append(float(i[0]))
+        res2.append(float(i[1]))
+        res3.append(float(i[2]))
 
     result = [scipy.mean(res1), scipy.mean(res2), scipy.mean(res3)]
 
@@ -91,7 +92,7 @@ def Calculate3DWienerWithH(ChargeCoordinates):
     """
     temp = []
     for i in ChargeCoordinates:
-        temp.append([float(i[1]), float(i[2]), float(i[3])])
+        temp.append([float(i[0]), float(i[1]), float(i[2])])
 
     DistanceMatrix = GetGementricalDistanceMatrix(temp)
 
@@ -109,8 +110,8 @@ def Calculate3DWienerWithoutH(ChargeCoordinates):
     """
     temp = []
     for i in ChargeCoordinates:
-        if i[0] != 'H':
-            temp.append([float(i[1]), float(i[2]), float(i[3])])
+        if i[3] != 'H':
+            temp.append([float(i[0]), float(i[1]), float(i[2])])
 
     DistanceMatrix = GetGementricalDistanceMatrix(temp)
 
@@ -135,7 +136,7 @@ def CalculatePetitjean3DIndex(ChargeCoordinates):
     """
     temp = []
     for i in ChargeCoordinates:
-        temp.append([float(i[1]), float(i[2]), float(i[3])])
+        temp.append([float(i[0]), float(i[1]), float(i[2])])
 
     DistanceMatrix = GetGementricalDistanceMatrix(temp)
     temp1 = scipy.amax(DistanceMatrix, axis=0)
@@ -152,7 +153,7 @@ def CalculateGemetricalDiameter(ChargeCoordinates):
     """
     temp = []
     for i in ChargeCoordinates:
-        temp.append([float(i[1]), float(i[2]), float(i[3])])
+        temp.append([float(i[0]), float(i[1]), float(i[2])])
 
     DistanceMatrix = GetGementricalDistanceMatrix(temp)
     temp1 = scipy.amax(DistanceMatrix, axis=0)
@@ -215,7 +216,6 @@ def CalculateRadiusofGyration(psdf, ChargeCoordinates):
     for coords in ChargeCoordinates:
         temp.append([descriptors3D.get_atomicMass(coords[3]), [coords[0], coords[1], coords[2]]])
 
-
     nAT = len(temp)
 
     masscenter = _GetMassCenter(temp)
@@ -224,21 +224,19 @@ def CalculateRadiusofGyration(psdf, ChargeCoordinates):
         dis = GetAtomDistance(temp[i][1], masscenter)
         result = result + temp[i][0] * scipy.power(dis, p=2)
 
-    return round(scipy.sqrt(float(result / descriptors3D.get_MW(psdf))), 3)
+    return round(scipy.sqrt(float(result / descriptors3D.get_MW(ChargeCoordinates))), 3)
 
 
-def GetInertiaMatrix(mol, ChargeCoordinates):
+def GetInertiaMatrix(ChargeCoordinates):
     """
     #################################################################
     Get Inertia matrix based on atomic mass and optimized coordinates.
     #################################################################
     """
-    mol.removeh()
-    mol.addh()
-
     temp = []
-    for i, j in enumerate(ChargeCoordinates):
-        temp.append([mol.atoms[i].atomicmass, [float(j[1]), float(j[2]), float(j[3])]])
+    for coords in ChargeCoordinates:
+        temp.append([descriptors3D.get_atomicMass(coords[3]), [coords[0], coords[1], coords[2]]])
+
     #
     #    masscenter=_GetMassCenter(temp)
     #
@@ -282,7 +280,7 @@ def CalculatePrincipalMomentofInertia(mol, ChargeCoordinates):
     drived from ADAPT developed by Jurs.
     #################################################################
     """
-    InertiaMatrix = GetInertiaMatrix(mol, ChargeCoordinates)
+    InertiaMatrix = GetInertiaMatrix(ChargeCoordinates)
     ma = scipy.mean(InertiaMatrix, axis=1)
     ms = scipy.std(InertiaMatrix, axis=1, ddof=1)
     bb = scipy.ones((3, 1))
@@ -324,7 +322,7 @@ def CalculateHarary3D(ChargeCoordinates):
     """
     temp = []
     for i in ChargeCoordinates:
-        temp.append([float(i[1]), float(i[2]), float(i[3])])
+        temp.append([float(i[0]), float(i[1]), float(i[2])])
     DistanceMatrix = GetGementricalDistanceMatrix(temp)
     nAT = len(temp)
     res = 0.0
@@ -349,7 +347,7 @@ def CalculateAverageGeometricalDistanceDegree(ChargeCoordinates):
     """
     temp = []
     for i in ChargeCoordinates:
-        temp.append([float(i[1]), float(i[2]), float(i[3])])
+        temp.append([float(i[0]), float(i[1]), float(i[2])])
     DistanceMatrix = GetGementricalDistanceMatrix(temp)
     nAT = len(temp)
 
@@ -368,7 +366,7 @@ def CalculateAbsEigenvalueSumOnGeometricMatrix(ChargeCoordinates):
     """
     temp = []
     for i in ChargeCoordinates:
-        temp.append([float(i[1]), float(i[2]), float(i[3])])
+        temp.append([float(i[0]), float(i[1]), float(i[2])])
     DistanceMatrix = GetGementricalDistanceMatrix(temp)
 
     u, s, vt = scipy.linalg.svd(DistanceMatrix)
@@ -376,7 +374,7 @@ def CalculateAbsEigenvalueSumOnGeometricMatrix(ChargeCoordinates):
     return round(sum(abs(s)), 3)
 
 
-def CalculateSPANR(mol, ChargeCoordinates):
+def CalculateSPANR(ChargeCoordinates):
     """
     #################################################################
     The span R (SPAN) is a size descriptor defined as
@@ -388,11 +386,10 @@ def CalculateSPANR(mol, ChargeCoordinates):
     --->SPAN
     #################################################################
     """
-    mol.removeh()
-    mol.addh()
+
     temp = []
-    for i, j in enumerate(ChargeCoordinates):
-        temp.append([mol.atoms[i].atomicmass, [float(j[1]), float(j[2]), float(j[3])]])
+    for coords in ChargeCoordinates:
+        temp.append([descriptors3D.get_atomicMass(coords[3]), [coords[0], coords[1], coords[2]]])
 
     masscenter = _GetMassCenter(temp)
 
@@ -403,7 +400,7 @@ def CalculateSPANR(mol, ChargeCoordinates):
     return round(float(max(res)), 3)
 
 
-def CalculateAverageSPANR(mol, ChargeCoordinates):
+def CalculateAverageSPANR(ChargeCoordinates):
     """
     #################################################################
     The average span R (SPAM) is the root square of
@@ -411,11 +408,9 @@ def CalculateAverageSPANR(mol, ChargeCoordinates):
     --->ASPAN
     #################################################################
     """
-    mol.removeh()
-    mol.addh()
     temp = []
-    for i, j in enumerate(ChargeCoordinates):
-        temp.append([mol.atoms[i].atomicmass, [float(j[1]), float(j[2]), float(j[3])]])
+    for coords in ChargeCoordinates:
+        temp.append([descriptors3D.get_atomicMass(coords[3]), [coords[0], coords[1], coords[2]]])
 
     nAT = len(temp)
     masscenter = _GetMassCenter(temp)
@@ -426,7 +421,7 @@ def CalculateAverageSPANR(mol, ChargeCoordinates):
     return round(math.pow(float(max(res)) / nAT, 0.5), 3)
 
 
-def CalculateMolecularEccentricity(mol, ChargeCoordinates):
+def CalculateMolecularEccentricity(ChargeCoordinates):
     """
     #################################################################
     The molecular eccentricity (MEcc) is a shape descriptor
@@ -437,7 +432,7 @@ def CalculateMolecularEccentricity(mol, ChargeCoordinates):
     --->MEcc
     #################################################################
     """
-    InertiaMatrix = GetInertiaMatrix(mol, ChargeCoordinates)
+    InertiaMatrix = GetInertiaMatrix(ChargeCoordinates)
     u, s, v = scipy.linalg.svd(InertiaMatrix)
 
     res1 = s[0]

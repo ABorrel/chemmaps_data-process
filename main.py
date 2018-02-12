@@ -193,8 +193,10 @@ kname = "CASRN"
 # test 3D desciptor
 import descriptors3D
 
-descriptors3D.get3Ddesc("/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SDF/28610-84-6.sdf", "/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SMI/28610-84-6.smi")
+d = descriptors3D.get3Ddesc("/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SDF/28610-84-6.sdf", "/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SMI/28610-84-6.smi")
 
+
+print d
 
 
 

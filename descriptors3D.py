@@ -1,6 +1,7 @@
 import geo3D
-from pydpi import
+from pydpi import pydrug
 from pydpi.drug import constitution
+
 
 # compute from CHEMPY
 # replace MOPAC file by sdf parsing
@@ -178,11 +179,11 @@ def get_atomicMass(element):
     return atomicMass[element]
 
 
-def get_MW(psdf):
-    loader = pydrug.PyDrug()
-    mol = loader.ReadMolFromMOL(psdf)
-    MW = constitution.CalculateMolWeight(mol)
-
+def get_MW(lcoords, H=1):
+    MW = 0
+    for coords in lcoords:
+        if coords[3] != "H" and H ==0:MW = MW + get_atomicMass(coords[3])
+        else:MW = MW + get_atomicMass(coords[3])
     return MW
 
 
@@ -263,32 +264,31 @@ def get_MW(psdf):
 #############################################################################
 
 
-def get3Ddesc(psdf, geometry=1):
+def get3Ddesc(psdf, psmiles, geometry=1):
 
     ddesc = {}
     lcoordinates = parseSDFfor3D(psdf)
 
     if geometry == 1:
-        res = {}
         ddesc['W3DH'] = geo3D.Calculate3DWienerWithH(lcoordinates)
         ddesc['W3D'] = geo3D.Calculate3DWienerWithoutH(lcoordinates)
         ddesc['Petitj3D'] = geo3D.CalculatePetitjean3DIndex(lcoordinates)
         ddesc['GeDi'] = geo3D.CalculateGemetricalDiameter(lcoordinates)
         ddesc['grav'] = geo3D.CalculateGravitational3D1(lcoordinates)
-        ddesc['rygr'] = geo3D.CalculateRadiusofGyration(psdf, lcoordinates)
+        ddesc['rygr'] = geo3D.CalculateRadiusofGyration(psmiles, lcoordinates)
         ddesc['Harary3D'] = geo3D.CalculateHarary3D(lcoordinates)
         ddesc['AGDD'] = geo3D.CalculateAverageGeometricalDistanceDegree(lcoordinates)
         ddesc['SEig'] = geo3D.CalculateAbsEigenvalueSumOnGeometricMatrix(lcoordinates)
 
 
-        #ddesc['SPAN'] = geo3D.CalculateSPANR(mol, lcoordinates)
-        #ddesc['ASPAN'] = geo3D.CalculateAverageSPANR(mol, lcoordinates)
-        #ddesc['MEcc'] = geo3D.CalculateMolecularEccentricity(mol, lcoordinates)
+        ddesc['SPAN'] = geo3D.CalculateSPANR(lcoordinates)
+        ddesc['ASPAN'] = geo3D.CalculateAverageSPANR(lcoordinates)
+        ddesc['MEcc'] = geo3D.CalculateMolecularEccentricity(lcoordinates)
 
     # res.update(CalculatePrincipalMomentofInertia(mol,ChargeCoordinates))
     # res.update(CalculateRatioPMI(mol,ChargeCoordinates))
 
-    return res
+    return ddesc
 
 
 
