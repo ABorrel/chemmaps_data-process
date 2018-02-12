@@ -340,7 +340,7 @@ class Descriptors:
 
 
 
-def get_descriptor3D(pr3DSDF, pdesc3D):
+def get_descriptor3DPadel(pr3DSDF, pdesc3D):
 
 
     pPadel = runExternalSoft.runPadel(pr3DSDF)
@@ -362,3 +362,17 @@ def get_descriptor3D(pr3DSDF, pdesc3D):
     filout.close()
 
     return pdesc3D
+
+
+
+def get_descriptor3Down():
+
+    # geometric
+    #CPSA
+    #RDF
+    #MoRSE
+    #WHIM
+
+
+    return
+

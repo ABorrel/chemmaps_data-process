@@ -1,9 +1,9 @@
 import vector3d
 import os
 import string
+import geo3D
 
-
-
+import pybel
 
 
 # compute from CHEMPY
@@ -128,7 +128,7 @@ def GetAtomClassList(Coordinates):
 #   return res
 
 
-def _ReadCoordinatesSDF(pfilin):
+def parseSDFfor3D(pfilin):
     """
     Read the coordinates and charge of each atom in molecule from .sdf file.
     """
@@ -231,5 +231,58 @@ def _ReadCoordinatesSDF(pfilin):
 #    GetARCFile(inputmol)
 #    res = _ReadCoordinates('temp')
 #    print res
+
+
+
+#############################################################################
+
+
+def get3Ddesc(psdf, psmi, geometry=1):
+
+    ddesc = {}
+    lcoordinates = parseSDFfor3D(psdf)
+
+    fsmi = open(psmi, "r")
+    smi = fsmi.readline()[0].strip()
+    fsmi.close
+
+
+    mol = pybel.readstring('smi', smi)# // have to transform
+
+    if geometry == 1:
+        res = {}
+        ddesc['W3DH'] = geo3D.Calculate3DWienerWithH(lcoordinates)
+        ddesc['W3D'] = geo3D.Calculate3DWienerWithoutH(lcoordinates)
+        ddesc['Petitj3D'] = geo3D.CalculatePetitjean3DIndex(lcoordinates)
+        ddesc['GeDi'] = geo3D.CalculateGemetricalDiameter(lcoordinates)
+        ddesc['grav'] = geo3D.CalculateGravitational3D1(mol, lcoordinates)
+        ddesc['rygr'] = geo3D.CalculateRadiusofGyration(mol, lcoordinates)
+        ddesc['Harary3D'] = geo3D.CalculateHarary3D(lcoordinates)
+        ddesc['AGDD'] = geo3D.CalculateAverageGeometricalDistanceDegree(lcoordinates)
+        ddesc['SEig'] = geo3D.CalculateAbsEigenvalueSumOnGeometricMatrix(lcoordinates)
+        ddesc['SPAN'] = geo3D.CalculateSPANR(mol, lcoordinates)
+        ddesc['ASPAN'] = geo3D.CalculateAverageSPANR(mol, lcoordinates)
+        ddesc['MEcc'] = geo3D.CalculateMolecularEccentricity(mol, lcoordinates)
+
+    # res.update(CalculatePrincipalMomentofInertia(mol,ChargeCoordinates))
+    # res.update(CalculateRatioPMI(mol,ChargeCoordinates))
+
+    return res
+
+
+
+#############################################################################
+#if __name__ == "__main__":
+#    from GeoOpt import GetARCFile
+
+#    mol = 'C1C=CCCS1'
+#    mol = 'ClC(Cl)(Cl)Cl'
+#
+#    inputmol = pybel.readstring('smi', mol)
+#    GetARCFile(inputmol)
+#    result = GetGeometric(inputmol)
+#    print result
+#    print len(result)
+
 
 

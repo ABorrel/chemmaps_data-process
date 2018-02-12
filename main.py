@@ -83,7 +83,7 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
             lsdf3D = listdir(prSDF3D)
             for sdf3D in lsdf3D:
                 toolbox.renameHeaderSDF(prSDF3D + str(sdf3D))
-        liganddescriptors.get_descriptor3D(prSDF3D, dout["3D"])
+        liganddescriptors.get_descriptor3DPadel(prSDF3D, dout["3D"])
     log.close()
     return dout
 
@@ -190,6 +190,12 @@ kname = "CASRN"
 
 
 
+# test 3D desciptor
+import descriptors3D
+
+descriptors3D.get3Ddesc("/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SDF/28610-84-6.sdf", "/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SMI/28610-84-6.smi")
+
+
 
 
 
@@ -204,7 +210,7 @@ psdf = "/home/aborrel/ChemMap/generateCords/drugbank-20-12-2017.sdf"
 pranalysis = "/home/aborrel/ChemMap/generateCords/drugBankAnalysis/"
 kname = "DATABASE_ID"
 
-main(psdf, pranalysis, kname, Desc1D2D=0, generation3D=1, Desc3D=1)
+#main(psdf, pranalysis, kname, Desc1D2D=0, generation3D=1, Desc3D=1)
 
 
 ###################################
