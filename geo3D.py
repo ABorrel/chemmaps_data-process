@@ -2,16 +2,12 @@
 # GEOMETRY DESCRIPTORS  #
 #########################
 
+import descriptors3D
 
 
-import pybel
 import scipy
-# import scipy.linalg
-from GeoOpt import _ReadCoordinates
-
 import math
 
-Version = 1.0
 
 
 ############################################################################
@@ -172,18 +168,16 @@ def CalculateTopoElectronic(ChargeCoordinates):
     pass
 
 
-def CalculateGravitational3D1(mol, ChargeCoordinates):
+def CalculateGravitational3D1(ChargeCoordinates):
     """
     #################################################################
     Calculation of Gravitational 3D index.
     --->grav1
     #################################################################
     """
-    mol.removeh()
-    mol.addh()
     temp = []
-    for i, j in enumerate(ChargeCoordinates):
-        temp.append([mol.atoms[i].atomicmass, [float(j[1]), float(j[2]), float(j[3])]])
+    for coords in ChargeCoordinates:
+        temp.append([descriptors3D.get_atomicMass(coords[3]), [coords[0], coords[1], coords[2]]])
 
     nAT = len(temp)
     result = 0.0
@@ -209,17 +203,19 @@ def CalculateGravitational3D2((mol, ChargeCoordinates)):
     pass
 
 
-def CalculateRadiusofGyration(mol, ChargeCoordinates):
+def CalculateRadiusofGyration(psdf, ChargeCoordinates):
     """
     #################################################################
     Calculation of Radius of gyration.
     --->rygr
     #################################################################
     """
-    mol.addh()
     temp = []
-    for i, j in enumerate(ChargeCoordinates):
-        temp.append([mol.atoms[i].atomicmass, [float(j[1]), float(j[2]), float(j[3])]])
+
+    for coords in ChargeCoordinates:
+        temp.append([descriptors3D.get_atomicMass(coords[3]), [coords[0], coords[1], coords[2]]])
+
+
     nAT = len(temp)
 
     masscenter = _GetMassCenter(temp)
@@ -228,7 +224,7 @@ def CalculateRadiusofGyration(mol, ChargeCoordinates):
         dis = GetAtomDistance(temp[i][1], masscenter)
         result = result + temp[i][0] * scipy.power(dis, p=2)
 
-    return round(scipy.sqrt(float(result / mol.molwt)), 3)
+    return round(scipy.sqrt(float(result / descriptors3D.get_MW(psdf))), 3)
 
 
 def GetInertiaMatrix(mol, ChargeCoordinates):

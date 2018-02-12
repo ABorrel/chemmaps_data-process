@@ -1,10 +1,6 @@
-import vector3d
-import os
-import string
 import geo3D
-
-import pybel
-
+from pydpi import
+from pydpi.drug import constitution
 
 # compute from CHEMPY
 # replace MOPAC file by sdf parsing
@@ -13,6 +9,15 @@ import pybel
 ####################
 # COMPUTE PARSING  #
 ####################
+
+
+class Vector3D:
+    def __init__(self):
+        self.x = 0.0
+        self.y = 0.0
+        self.z = 0.0
+
+
 
 ################################################################################
 class Atom:
@@ -28,7 +33,7 @@ class Atom:
 
     def __init__(self, Coordinates):
 
-        self.pos = vector3d.Vector3d()
+        self.pos = Vector3D()
         self.radius = 0.0
         self.Coordinates = Coordinates
         self.Element = ''
@@ -162,6 +167,27 @@ def parseSDFfor3D(pfilin):
     return latoms
 
 
+def get_atomicMass(element):
+
+    atomicMass={'H': 1.0079, 'N': 14.0067, 'Na': 22.9897, 'Cu': 63.546, 'Cl': 35.453, 'C': 12.0107,
+                 'O': 15.9994, 'I': 126.9045, 'P': 30.9738, 'B': 10.811, 'Br': 79.904, 'S': 32.065, 'Se': 78.96,
+                 'F': 18.9984, 'Fe': 55.845, 'K': 39.0983, 'Mn': 54.938, 'Mg': 24.305, 'Zn': 65.39, 'Hg': 200.59,
+                 'Li': 6.941, 'Co': 58.9332}
+
+
+    return atomicMass[element]
+
+
+def get_MW(psdf):
+    loader = pydrug.PyDrug()
+    mol = loader.ReadMolFromMOL(psdf)
+    MW = constitution.CalculateMolWeight(mol)
+
+    return MW
+
+
+
+
 #############################################################################
 
 
@@ -237,17 +263,10 @@ def parseSDFfor3D(pfilin):
 #############################################################################
 
 
-def get3Ddesc(psdf, psmi, geometry=1):
+def get3Ddesc(psdf, geometry=1):
 
     ddesc = {}
     lcoordinates = parseSDFfor3D(psdf)
-
-    fsmi = open(psmi, "r")
-    smi = fsmi.readline()[0].strip()
-    fsmi.close
-
-
-    mol = pybel.readstring('smi', smi)# // have to transform
 
     if geometry == 1:
         res = {}
@@ -255,19 +274,26 @@ def get3Ddesc(psdf, psmi, geometry=1):
         ddesc['W3D'] = geo3D.Calculate3DWienerWithoutH(lcoordinates)
         ddesc['Petitj3D'] = geo3D.CalculatePetitjean3DIndex(lcoordinates)
         ddesc['GeDi'] = geo3D.CalculateGemetricalDiameter(lcoordinates)
-        ddesc['grav'] = geo3D.CalculateGravitational3D1(mol, lcoordinates)
-        ddesc['rygr'] = geo3D.CalculateRadiusofGyration(mol, lcoordinates)
+        ddesc['grav'] = geo3D.CalculateGravitational3D1(lcoordinates)
+        ddesc['rygr'] = geo3D.CalculateRadiusofGyration(psdf, lcoordinates)
         ddesc['Harary3D'] = geo3D.CalculateHarary3D(lcoordinates)
         ddesc['AGDD'] = geo3D.CalculateAverageGeometricalDistanceDegree(lcoordinates)
         ddesc['SEig'] = geo3D.CalculateAbsEigenvalueSumOnGeometricMatrix(lcoordinates)
-        ddesc['SPAN'] = geo3D.CalculateSPANR(mol, lcoordinates)
-        ddesc['ASPAN'] = geo3D.CalculateAverageSPANR(mol, lcoordinates)
-        ddesc['MEcc'] = geo3D.CalculateMolecularEccentricity(mol, lcoordinates)
+
+
+        #ddesc['SPAN'] = geo3D.CalculateSPANR(mol, lcoordinates)
+        #ddesc['ASPAN'] = geo3D.CalculateAverageSPANR(mol, lcoordinates)
+        #ddesc['MEcc'] = geo3D.CalculateMolecularEccentricity(mol, lcoordinates)
 
     # res.update(CalculatePrincipalMomentofInertia(mol,ChargeCoordinates))
     # res.update(CalculateRatioPMI(mol,ChargeCoordinates))
 
     return res
+
+
+
+
+
 
 
 
