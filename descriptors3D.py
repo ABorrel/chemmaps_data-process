@@ -3,7 +3,9 @@ import cpsa3D
 import rdf3D
 import morse3D
 import vector3d
+import whim3D
 
+import scipy
 # compute from CHEMPY
 # replace MOPAC file by sdf parsing
 
@@ -87,7 +89,6 @@ def GetAtomClassList(Coordinates):
     """
     #################################################################
     Combine all atoms in a molecule into a list form.
-
     Note that Coordinates is the output of the function (_ReadCoordinates).
     #################################################################
     """
@@ -101,6 +102,22 @@ def GetAtomClassList(Coordinates):
     return Atoms
 
 
+def GetAtomCoordinateMatrix(lcoordinates):
+    """
+    #################################################################
+    Get the atom coordinate matrix
+    #################################################################
+    """
+    nAtom = len(lcoordinates)
+    CoordinateMatrix = scipy.zeros([nAtom, 3])
+    AtomLabel = []
+
+    for i, j in enumerate(lcoordinates):
+        CoordinateMatrix[i, :] = [j[0], j[1], j[2]]
+        AtomLabel.append(j[3])
+
+    return scipy.matrix(CoordinateMatrix), AtomLabel
+
 ###########################################################################
 
 #def _ReadCoordinates(filename="temp"):
@@ -109,7 +126,7 @@ def GetAtomClassList(Coordinates):
 #    Read the coordinates and charge of each atom in molecule from .arc file.
 #    #################################################################
 #    """
-#    res = []
+#    ddesc = []
 
 #    f = file(filename, 'r')
 #    templine = f.readlines()
@@ -125,9 +142,9 @@ def GetAtomClassList(Coordinates):
 #        ElementCoordinate = [string.strip(temp[0]), string.strip(temp[1]),
 #                             string.strip(temp[3]), string.strip(temp[5]),
 #                             string.strip(temp[10])]
-#        res.append(ElementCoordinate)
+#        ddesc.append(ElementCoordinate)
 #
-#   return res
+#   return ddesc
 
 
 def parseSDFfor3D(pfilin):
@@ -260,7 +277,77 @@ def get3Ddesc(psdf, geometry=0, cpsa=0, rdf=0, morse=1, whim=0):
         ddesc.update(morse3D.CalculateVDWVolumeMoRSE(lcoordinates))
 
     if whim ==1:
-        print "to do"
+        CoordinateMatrix, AtomLabel = GetAtomCoordinateMatrix(lcoordinates)
+        ddesc['L1u'] = whim3D.wGetWHIM1(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['L2u'] = whim3D.GetWHIM2(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['L3u'] = whim3D.GetWHIM3(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['Tu'] = whim3D.GetWHIM4(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['Au'] = whim3D.GetWHIM5(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['Vu'] = whim3D.GetWHIM6(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['P1u'] = whim3D.GetWHIM7(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['P2u'] = whim3D.GetWHIM8(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['Ku'] = whim3D.GetWHIM9(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['E1u'] = whim3D.GetWHIM10(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['E2u'] = whim3D.GetWHIM11(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['E3u'] = whim3D.GetWHIM12(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['Du'] = whim3D.GetWHIM13(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['L1m'] = whim3D.GetWHIM1(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['L2m'] = whim3D.GetWHIM2(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['L3m'] = whim3D.GetWHIM3(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['Tm'] = whim3D.GetWHIM4(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['Am'] = whim3D.GetWHIM5(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['Vm'] = whim3D.GetWHIM6(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['P1m'] = whim3D.GetWHIM7(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['P2m'] = whim3D.GetWHIM8(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['Km'] = whim3D.GetWHIM9(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['E1m'] = whim3D.GetWHIM10(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['E2m'] = whim3D.GetWHIM11(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['E3m'] = whim3D.GetWHIM12(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['Dm'] = whim3D.GetWHIM13(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['L1e'] = whim3D.GetWHIM1(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['L2e'] = whim3D.GetWHIM2(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['L3e'] = whim3D.GetWHIM3(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['Te'] = whim3D.GetWHIM4(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['Ae'] = whim3D.GetWHIM5(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['Ve'] = whim3D.GetWHIM6(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['P1e'] = whim3D.GetWHIM7(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['P2e'] = whim3D.GetWHIM8(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['Ke'] = whim3D.GetWHIM9(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['E1e'] = whim3D.GetWHIM10(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['E2e'] = whim3D.GetWHIM11(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['E3e'] = whim3D.GetWHIM12(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['De'] = whim3D.GetWHIM13(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['L1v'] = whim3D.GetWHIM1(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['L2v'] = whim3D.GetWHIM2(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['L3v'] = whim3D.GetWHIM3(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['Tv'] = whim3D.GetWHIM4(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['Av'] = whim3D.GetWHIM5(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['Vv'] = whim3D.GetWHIM6(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['P1v'] = whim3D.GetWHIM7(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['P2v'] = whim3D.GetWHIM8(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['Kv'] = whim3D.GetWHIM9(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['E1v'] = whim3D.GetWHIM10(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['E2v'] = whim3D.GetWHIM11(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['E3v'] = whim3D.GetWHIM12(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['Dv'] = whim3D.GetWHIM13(CoordinateMatrix, AtomLabel, proname='V')
+        ddesc['L1p'] = whim3D.GetWHIM1(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['L2p'] = whim3D.GetWHIM2(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['L3p'] = whim3D.GetWHIM3(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['Tp'] = whim3D.GetWHIM4(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['Ap'] = whim3D.GetWHIM5(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['Vp'] = whim3D.GetWHIM6(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['P1p'] = whim3D.GetWHIM7(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['P2p'] = whim3D.GetWHIM8(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['Kp'] = whim3D.GetWHIM9(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['E1p'] = whim3D.GetWHIM10(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['E2p'] = whim3D.GetWHIM11(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['E3p'] = whim3D.GetWHIM12(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['Dp'] = whim3D.GetWHIM13(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['P3p'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='alapha')
+        ddesc['P3u'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['P3m'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='m')
+        ddesc['P3e'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='En')
+        ddesc['P3v'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='V')
 
     return ddesc
 
