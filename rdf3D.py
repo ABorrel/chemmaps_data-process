@@ -1,25 +1,7 @@
-"""
-##############################################################################
-
-The calculation of 3D RDF descriptors. You can get 180 molecular
-
-decriptors. You can freely use and distribute it. If you hava  
-
-any problem, you could contact with us timely!
-
-Authors: Dongsheng Cao and Yizeng Liang.
-
-Date: 2012.11.13
-
-Email: oriental-cds@163.com
-
-##############################################################################
-"""
-
-from GeoOpt import _ReadCoordinates
 from AtomProperty import GetRelativeAtomicProperty
 import scipy
 import math
+import descriptors3D
 
 
 #########################################################################
@@ -61,33 +43,34 @@ def GetGementricalDistanceMatrix(CoordinateList):
     return DistanceMatrix
 
     
-def CalculateUnweightRDF(ChargeCoordinates):
+def CalculateUnweightRDF(lcoordinates):
     """
     The calculation of unweighted radial distribution
     function (RDF) descriptors.
     """
     R=_GetR(n=30)
     temp=[]
-#    ChargeCoordinates=_ReadCoordinates('temp.arc')
-    for i in ChargeCoordinates:
-        #if i[0]!='H':
-        temp.append([float(i[1]),float(i[2]),float(i[3])])
-        
+
+    for i in lcoordinates:
+        #if i[0]!='H': Have to considerate the H?
+        temp.append([float(i[0]),float(i[1]),float(i[2])])
+
     DM=GetGementricalDistanceMatrix(temp)
     nAT=len(temp)
     RDFresult={}
-    
-    for kkk,Ri in enumerate(R):        
+
+    for kkk,Ri in enumerate(R):
         res=0.0
         for j in range(nAT-1):
             for k in range(j+1,nAT):
                 res=res+math.exp(-_beta*math.pow(Ri-DM[j,k],2))
         RDFresult['RDF'+'U'+str(kkk+1)]=round(res,3)
-        
+
     return RDFresult
 
-def CalculateChargeRDF(ChargeCoordinates):
-    
+
+
+def CalculateChargeRDF(lcoordinates):
     """
     The calculation of  radial distribution function
     (RDF) descriptors based on atomic charge.
@@ -95,56 +78,53 @@ def CalculateChargeRDF(ChargeCoordinates):
     R=_GetR(n=30)
     temp=[]
     Charge=[]
-#    ChargeCoordinates=_ReadCoordinates('temp.arc')
-    for i in ChargeCoordinates:
+    for i in lcoordinates:
         #if i[0]!='H':
-        temp.append([float(i[1]),float(i[2]),float(i[3])])
+        temp.append([float(i[0]),float(i[1]),float(i[2])])
         Charge.append(float(i[4]))
-        
+
     DM=GetGementricalDistanceMatrix(temp)
     nAT=len(temp)
     RDFresult={}
-    
-    for kkk,Ri in enumerate(R):        
+
+    for kkk,Ri in enumerate(R):
         res=0.0
         for j in range(nAT-1):
             for k in range(j+1,nAT):
                 res=res+Charge[j]*Charge[k]*math.exp(-_beta*math.pow(Ri-DM[j,k],2))
         RDFresult['RDF'+'C'+str(kkk+1)]=round(res,3)
-        
+
     return RDFresult
 
 
-def CalculateMassRDF(mol,ChargeCoordinates):
+def CalculateMassRDF(lcoordinates):
     """
     The calculation of radial distribution function (RDF)
     descriptors based on atomic mass.
     """
-    mol.addh()
-    mass=[i.atomicmass for i in mol.atoms]
+    mass=[descriptors3D.get_atomicMass(coords[3]) for coords in lcoordinates]
     R=_GetR(n=30)
     temp=[]
-#    ChargeCoordinates=_ReadCoordinates('temp.arc')
-    for i in ChargeCoordinates:
+    for i in lcoordinates:
         #if i[0]!='H':
-        temp.append([float(i[1]),float(i[2]),float(i[3])])
-        
+        temp.append([float(i[0]),float(i[1]),float(i[2])])
+
     DM=GetGementricalDistanceMatrix(temp)
     nAT=len(temp)
     RDFresult={}
-    
-    for kkk,Ri in enumerate(R):        
+
+    for kkk,Ri in enumerate(R):
         res=0.0
         for j in range(nAT-1):
             for k in range(j+1,nAT):
                 res=res+mass[j]*mass[k]*math.exp(-_beta*math.pow(Ri-DM[j,k],2))
         RDFresult['RDF'+'M'+str(kkk+1)]=round(res/144,3)
-        
-    return RDFresult
- 
-        
 
-def CalculatePolarizabilityRDF(ChargeCoordinates):
+    return RDFresult
+
+
+
+def CalculatePolarizabilityRDF(lcoordinates):
     """
     The calculation of  radial distribution function
     (RDF) descriptors based on atomic polarizability.
@@ -152,28 +132,28 @@ def CalculatePolarizabilityRDF(ChargeCoordinates):
     R=_GetR(n=30)
     temp=[]
     polarizability=[]
-#    ChargeCoordinates=_ReadCoordinates('temp.arc')
-    for i in ChargeCoordinates:
+#    lcoordinates=_ReadCoordinates('temp.arc')
+    for i in lcoordinates:
         #if i[0]!='H':
-        temp.append([float(i[1]),float(i[2]),float(i[3])])
-        polarizability.append(GetRelativeAtomicProperty(i[0],'alapha'))
-        
+        temp.append([float(i[0]),float(i[1]),float(i[2])])
+        polarizability.append(GetRelativeAtomicProperty(i[3],'alapha'))
+
     DM=GetGementricalDistanceMatrix(temp)
     nAT=len(temp)
     RDFresult={}
-    
-    for kkk,Ri in enumerate(R):        
+
+    for kkk,Ri in enumerate(R):
         res=0.0
         for j in range(nAT-1):
             for k in range(j+1,nAT):
                 res=res+polarizability[j]*polarizability[k]*math.exp(-_beta*math.pow(Ri-DM[j,k],2))
         RDFresult['RDF'+'P'+str(kkk+1)]=round(res,3)
-        
+
     return RDFresult
 
 
 
-def CalculateSandersonElectronegativityRDF(ChargeCoordinates):
+def CalculateSandersonElectronegativityRDF(lcoordinates):
     """
     The calculation of  radial distribution function
     (RDF) descriptors based on atomic electronegativity.
@@ -181,27 +161,27 @@ def CalculateSandersonElectronegativityRDF(ChargeCoordinates):
     R=_GetR(n=30)
     temp=[]
     EN=[]
-#    ChargeCoordinates=_ReadCoordinates('temp.arc')
-    for i in ChargeCoordinates:
+#    lcoordinates=_ReadCoordinates('temp.arc')
+    for i in lcoordinates:
         #if i[0]!='H':
-        temp.append([float(i[1]),float(i[2]),float(i[3])])
-        EN.append(GetRelativeAtomicProperty(i[0],'En'))
-        
+        temp.append([float(i[0]),float(i[1]),float(i[2])])
+        EN.append(GetRelativeAtomicProperty(i[3],'En'))
+
     DM=GetGementricalDistanceMatrix(temp)
     nAT=len(temp)
     RDFresult={}
-    
-    for kkk,Ri in enumerate(R):        
+
+    for kkk,Ri in enumerate(R):
         res=0.0
         for j in range(nAT-1):
             for k in range(j+1,nAT):
                 res=res+EN[j]*EN[k]*math.exp(-_beta*math.pow(Ri-DM[j,k],2))
         RDFresult['RDF'+'E'+str(kkk+1)]=round(res,3)
-        
+
     return RDFresult
 
 
-def CalculateVDWVolumeRDF(ChargeCoordinates):
+def CalculateVDWVolumeRDF(lcoordinates):
     """
     The calculation of  radial distribution function
     (RDF) descriptors based on atomic van der Waals volume.
@@ -209,23 +189,23 @@ def CalculateVDWVolumeRDF(ChargeCoordinates):
     R=_GetR(n=30)
     temp=[]
     VDW=[]
-#    ChargeCoordinates=_ReadCoordinates('temp.arc')
-    for i in ChargeCoordinates:
+#    lcoordinates=_ReadCoordinates('temp.arc')
+    for i in lcoordinates:
         #if i[0]!='H':
-        temp.append([float(i[1]),float(i[2]),float(i[3])])
-        VDW.append(GetRelativeAtomicProperty(i[0],'V'))
-        
+        temp.append([float(i[0]),float(i[1]),float(i[2])])
+        VDW.append(GetRelativeAtomicProperty(i[3],'V'))
+
     DM=GetGementricalDistanceMatrix(temp)
     nAT=len(temp)
     RDFresult={}
-    
-    for kkk,Ri in enumerate(R):        
+
+    for kkk,Ri in enumerate(R):
         res=0.0
         for j in range(nAT-1):
             for k in range(j+1,nAT):
                 res=res+VDW[j]*VDW[k]*math.exp(-_beta*math.pow(Ri-DM[j,k],2))
         RDFresult['RDF'+'V'+str(kkk+1)]=round(res,3)
-        
+
     return RDFresult
 
 
@@ -236,8 +216,8 @@ def GetRDFUnweighed(mol):
     """
 
     filename='temp'
-    ChargeCoordinates=_ReadCoordinates(filename) 
-    result=CalculateUnweightRDF(ChargeCoordinates)
+    lcoordinates=_ReadCoordinates(filename) 
+    result=CalculateUnweightRDF(lcoordinates)
      
     return result
 
@@ -250,8 +230,8 @@ def GetRDFCharge(mol):
     """
 
     filename='temp'
-    ChargeCoordinates=_ReadCoordinates(filename) 
-    result=CalculateChargeRDF(ChargeCoordinates)
+    lcoordinates=_ReadCoordinates(filename) 
+    result=CalculateChargeRDF(lcoordinates)
      
     return result
     
@@ -263,8 +243,8 @@ def GetRDFMass(mol):
     """
 
     filename='temp'
-    ChargeCoordinates=_ReadCoordinates(filename) 
-    result=CalculateMassRDF(mol,ChargeCoordinates)
+    lcoordinates=_ReadCoordinates(filename) 
+    result=CalculateMassRDF(mol,lcoordinates)
      
     return result
     
@@ -276,8 +256,8 @@ def GetRDFPolarizability(mol):
     """
 
     filename='temp'
-    ChargeCoordinates=_ReadCoordinates(filename) 
-    result=CalculatePolarizabilityRDF(ChargeCoordinates)
+    lcoordinates=_ReadCoordinates(filename) 
+    result=CalculatePolarizabilityRDF(lcoordinates)
      
     return result
 
@@ -290,8 +270,8 @@ def GetRDFSandersonElectronegativity(mol):
     """
 
     filename='temp'
-    ChargeCoordinates=_ReadCoordinates(filename) 
-    result=CalculateSandersonElectronegativityRDF(ChargeCoordinates)
+    lcoordinates=_ReadCoordinates(filename) 
+    result=CalculateSandersonElectronegativityRDF(lcoordinates)
      
     return result
 
@@ -303,8 +283,8 @@ def GetRDFVDWVolume(mol):
     """
 
     filename='temp'
-    ChargeCoordinates=_ReadCoordinates(filename) 
-    result=CalculateVDWVolumeRDF(ChargeCoordinates)
+    lcoordinates=_ReadCoordinates(filename) 
+    result=CalculateVDWVolumeRDF(lcoordinates)
      
     return result
 

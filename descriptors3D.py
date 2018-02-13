@@ -184,82 +184,9 @@ def get_MW(lcoords, H=1):
 
 
 
-#############################################################################
 
 
-#def FormatConversion(inputmol):
-#    """
-#    #################################################################
-#    Using Pybel to convert the smi/sdf formats to mop format!
-#    #################################################################
-#    """
-#    # inputmol.removeh()
-#    inputmol.addh()
-#    inputmol.make3D(forcefield='mmff94', steps=50)  ##Gemetrical optimization
-#    ##forcefields = ['uff', 'mmff94', 'ghemical']
-#    # make3D(self, forcefield = "mmff94", steps = 50)
-#    ##inputmol.localopt(forcefield='mmff94',steps=50)
-#    outputmol = pybel.Outputfile('mop', "temp.dat", overwrite=True)
-#    outputmol.write(inputmol)
-#    outputmol.close()
-#    f = file('temp.dat', 'r+')
-#    f.write('AM1              ')
-#    f.close()
-
-
-#def RunMOPAC(filename):
-#    """
-#    #################################################################
-#    Run the MOPAC using os.system
-#    #################################################################
-#    """
-
-#    itest = os.system("run_mopac7" + " " + filename)
-#    # time.sleep(1)
-#    return itest
-
-
-############################################################################
-#def GetARCFile(inputmol):
-#    """
-    #################################################################
-#    Get ARC file for each molecule
-    #################################################################
-#    """
-
-#    FormatConversion(inputmol)
-
-#    itest = RunMOPAC('temp')
-
-#    if not itest:
-#        print itest, '\t', 'Finshed successfully!'
-#    else:
-#        print itest, '\t', 'Failed Finished........'
-
-#    os.remove('temp.dat')
-#    os.remove('temp.log')
-#    os.remove('temp.OUT')
-    # os.remove('temp.arc')
-#    oldpath = os.getcwd() + '/temp.arc'
-#    newpath = os.getcwd() + '/temp'
-#    os.rename(oldpath, newpath)
-
-
-##############################################################################
-#if __name__ == "__main__":
-#    mol = 'C1C=CCS1'
-#    mol = 'SCCC(=O)N1[C@@H](CCC1)C(=O)OCC'
-#    inputmol = pybel.readstring('smi', mol)
-#    GetARCFile(inputmol)
-#    res = _ReadCoordinates('temp')
-#    print res
-
-
-
-#############################################################################
-
-
-def get3Ddesc(psdf, geometry=0, cpsa=1, rdf=1):
+def get3Ddesc(psdf, geometry=0, cpsa=0, rdf=1):
 
     ddesc = {}
     lcoordinates = parseSDFfor3D(psdf)
@@ -315,12 +242,12 @@ def get3Ddesc(psdf, geometry=0, cpsa=1, rdf=1):
         ddesc['FrTATP'] = cpsa3D.CalculateFractionTATP(ChargeSA)
 
     if rdf ==1:
-        ddesc["UnweightRDF"] = rdf3D.CalculateUnweightRDF(lcoordinates)
-        ddesc["ChargeRDF"] = rdf3D.CalculateChargeRDF(lcoordinates)
-        ddesc["MassRDF"] = rdf3D.CalculateMassRDF(mol, lcoordinates)
-        ddesc["PolRDF"] = rdf3D.CalculatePolarizabilityRDF(lcoordinates)
-        ddesc["sandersonRDF"] = rdf3D.CalculateSandersonElectronegativityRDF(lcoordinates)
-        ddesc["VolRDF"] = rdf3D.CalculateVDWVolumeRDF(lcoordinates)
+        ddesc.update(rdf3D.CalculateUnweightRDF(lcoordinates))
+        ddesc.update(rdf3D.CalculateChargeRDF(lcoordinates))
+        ddesc.update(rdf3D.CalculateMassRDF(lcoordinates))
+        ddesc.update(rdf3D.CalculatePolarizabilityRDF(lcoordinates))
+        ddesc.update(rdf3D.CalculateSandersonElectronegativityRDF(lcoordinates))
+        ddesc.update(rdf3D.CalculateVDWVolumeRDF(lcoordinates))
 
     return ddesc
 
