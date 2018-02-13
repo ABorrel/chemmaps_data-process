@@ -1,5 +1,5 @@
 import geo3D
-import cpsa
+import cpsa3D
 import vector3d
 
 # compute from CHEMPY
@@ -258,7 +258,7 @@ def get_MW(lcoords, H=1):
 #############################################################################
 
 
-def get3Ddesc(psdf, psmiles, geometry=1, cpsa=1):
+def get3Ddesc(psdf, geometry=0, cpsa=1):
 
     ddesc = {}
     lcoordinates = parseSDFfor3D(psdf)
@@ -269,7 +269,7 @@ def get3Ddesc(psdf, psmiles, geometry=1, cpsa=1):
         ddesc['Petitj3D'] = geo3D.CalculatePetitjean3DIndex(lcoordinates)
         ddesc['GeDi'] = geo3D.CalculateGemetricalDiameter(lcoordinates)
         ddesc['grav'] = geo3D.CalculateGravitational3D1(lcoordinates)
-        ddesc['rygr'] = geo3D.CalculateRadiusofGyration(psmiles, lcoordinates)
+        ddesc['rygr'] = geo3D.CalculateRadiusofGyration(lcoordinates)
         ddesc['Harary3D'] = geo3D.CalculateHarary3D(lcoordinates)
         ddesc['AGDD'] = geo3D.CalculateAverageGeometricalDistanceDegree(lcoordinates)
         ddesc['SEig'] = geo3D.CalculateAbsEigenvalueSumOnGeometricMatrix(lcoordinates)
@@ -280,39 +280,44 @@ def get3Ddesc(psdf, psmiles, geometry=1, cpsa=1):
         ddesc['MEcc'] = geo3D.CalculateMolecularEccentricity(lcoordinates)
 
     if cpsa == 1:
+        ChargeSA = cpsa3D.GetChargeSA(lcoordinates, RadiusProbe=1.5, n_sphere_point=5000)
 
-        ChargeSA = cpsa.GetChargeSA(lcoordinates, RadiusProbe=1.5, n_sphere_point=5000)
+        ddesc['ASA'] = cpsa3D.CalculateASA(ChargeSA)
+        ddesc['MSA'] = cpsa3D.CalculateMSA(lcoordinates)
+        ddesc['PNSA1'] = cpsa3D.CalculatePNSA1(ChargeSA)
+        ddesc['PNSA2'] = cpsa3D.CalculatePNSA2(ChargeSA)
+        ddesc['PNSA3'] = cpsa3D.CalculatePNSA3(ChargeSA)
+        ddesc['PPSA1'] = cpsa3D.CalculatePPSA1(ChargeSA)
+        ddesc['PPSA2'] = cpsa3D.CalculatePPSA2(ChargeSA)
+        ddesc['PPSA3'] = cpsa3D.CalculatePPSA3(ChargeSA)
+        ddesc['DPSA1'] = cpsa3D.CalculateDPSA1(ChargeSA)
+        ddesc['DPSA2'] = cpsa3D.CalculateDPSA2(ChargeSA)
+        ddesc['DPSA3'] = cpsa3D.CalculateDPSA3(ChargeSA)
+        ddesc['FNSA1'] = cpsa3D.CalculateFNSA1(ChargeSA)
+        ddesc['FNSA2'] = cpsa3D.CalculateFNSA2(ChargeSA)
+        ddesc['FNSA3'] = cpsa3D.CalculateFNSA3(ChargeSA)
+        ddesc['FPSA1'] = cpsa3D.CalculateFPSA1(ChargeSA)
+        ddesc['FPSA2'] = cpsa3D.CalculateFPSA2(ChargeSA)
+        ddesc['FPSA3'] = cpsa3D.CalculateFPSA3(ChargeSA)
+        ddesc['WNSA1'] = cpsa3D.CalculateWNSA1(ChargeSA)
+        ddesc['WNSA2'] = cpsa3D.CalculateWNSA2(ChargeSA)
+        ddesc['WNSA3'] = cpsa3D.CalculateWNSA3(ChargeSA)
+        ddesc['WPSA1'] = cpsa3D.CalculateWPSA1(ChargeSA)
+        ddesc['WPSA2'] = cpsa3D.CalculateWPSA2(ChargeSA)
+        ddesc['WPSA3'] = cpsa3D.CalculateWPSA3(ChargeSA)
+        ddesc['TASA'] = cpsa3D.CalculateTASA(ChargeSA)
+        ddesc['PSA'] = cpsa3D.CalculateTPSA(ChargeSA)
+        ddesc['RASA'] = cpsa3D.CalculateRASA(ChargeSA)
+        ddesc['RPSA'] = cpsa3D.CalculateRPSA(ChargeSA)
+        ddesc['RNCS'] = cpsa3D.CalculateRNCS(ChargeSA)
+        ddesc['RPCS'] = cpsa3D.CalculateRPCS(ChargeSA)
+        ddesc['FrTATP'] = cpsa3D.CalculateFractionTATP(ChargeSA)
 
-        #ddesc['ASA'] = round(cpsa.CalculateASA(ChargeSA), 3)
-        #ddesc['MSA'] = round(cpsa.CalculateMSA(), 3)
-        #ddesc['PNSA1'] = round(cpsa.CalculatePNSA1(ChargeSA), 3)
-        #ddesc['PNSA2'] = round(cpsa.CalculatePNSA2(ChargeSA), 3)
-        #ddesc['PNSA3'] = round(cpsa.CalculatePNSA3(ChargeSA), 3)
-        #ddesc['PPSA1'] = round(cpsa.CalculatePPSA1(ChargeSA), 3)
-        #ddesc['PPSA2'] = round(cpsa.CalculatePPSA2(ChargeSA), 3)
-        #ddesc['PPSA3'] = round(cpsa.CalculatePPSA3(ChargeSA), 3)
-        #ddesc['DPSA1'] = round(cpsa.CalculateDPSA1(ChargeSA), 3)
-        #ddesc['DPSA2'] = round(cpsa.CalculateDPSA2(ChargeSA), 3)
-        #ddesc['DPSA3'] = round(cpsa.CalculateDPSA3(ChargeSA), 3)
-        #ddesc['FNSA1'] = round(cpsa.CalculateFNSA1(ChargeSA), 3)
-        #ddesc['FNSA2'] = round(cpsa.CalculateFNSA2(ChargeSA), 3)
-        #ddesc['FNSA3'] = round(cpsa.CalculateFNSA3(ChargeSA), 3)
-        #ddesc['FPSA1'] = round(cpsa.CalculateFPSA1(ChargeSA), 3)
-        #ddesc['FPSA2'] = round(cpsa.CalculateFPSA2(ChargeSA), 3)
-        #ddesc['FPSA3'] = round(cpsa.CalculateFPSA3(ChargeSA), 3)
-        #ddesc['WNSA1'] = round(cpsa.CalculateWNSA1(ChargeSA), 3)
-        #ddesc['WNSA2'] = round(cpsa.CalculateWNSA2(ChargeSA), 3)
-        #ddesc['WNSA3'] = round(cpsa.CalculateWNSA3(ChargeSA), 3)
-        #ddesc['WPSA1'] = round(cpsa.CalculateWPSA1(ChargeSA), 3)
-        #ddesc['WPSA2'] = round(cpsa.CalculateWPSA2(ChargeSA), 3)
-        #ddesc['WPSA3'] = round(cpsa.CalculateWPSA3(ChargeSA), 3)
-        #ddesc['TASA'] = round(cpsa.CalculateTASA(ChargeSA), 3)
-        #ddesc['PSA'] = round(cpsa.CalculateTPSA(ChargeSA), 3)
-        #ddesc['RASA'] = round(cpsa.CalculateRASA(ChargeSA), 3)
-        #ddesc['RPSA'] = round(cpsa.CalculateRPSA(ChargeSA), 3)
-        #desc['RNCS'] = round(cpsa.CalculateRNCS(ChargeSA), 3)
-        #ddesc['RPCS'] = round(cpsa.CalculateRPCS(ChargeSA), 3)
-        #ddesc['FrTATP'] = round(cpsa.CalculateFractionTATP(ChargeSA), 3)
+    if RDF ==1:
+
+
+
+
 
 
     return ddesc

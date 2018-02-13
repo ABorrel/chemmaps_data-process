@@ -204,7 +204,7 @@ def CalculateGravitational3D2((mol, ChargeCoordinates)):
     pass
 
 
-def CalculateRadiusofGyration(psdf, ChargeCoordinates):
+def CalculateRadiusofGyration(ChargeCoordinates):
     """
     #################################################################
     Calculation of Radius of gyration.

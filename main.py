@@ -193,10 +193,13 @@ kname = "CASRN"
 # test 3D desciptor
 import descriptors3D
 
-d = descriptors3D.get3Ddesc("/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SDF/28610-84-6.sdf", "/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SMI/28610-84-6.smi")
-
-
+d = descriptors3D.get3Ddesc("/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SDF/28610-84-6.sdf")
 print d
+d = descriptors3D.get3Ddesc("/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SDF/16120-70-0.sdf")
+print d
+d = descriptors3D.get3Ddesc("/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SDF/74050-98-9.sdf")
+print d
+
 
 
 
