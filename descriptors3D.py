@@ -1,5 +1,6 @@
 import geo3D
 import cpsa3D
+import rdf3D
 import vector3d
 
 # compute from CHEMPY
@@ -258,7 +259,7 @@ def get_MW(lcoords, H=1):
 #############################################################################
 
 
-def get3Ddesc(psdf, geometry=0, cpsa=1):
+def get3Ddesc(psdf, geometry=0, cpsa=1, rdf=1):
 
     ddesc = {}
     lcoordinates = parseSDFfor3D(psdf)
@@ -313,12 +314,13 @@ def get3Ddesc(psdf, geometry=0, cpsa=1):
         ddesc['RPCS'] = cpsa3D.CalculateRPCS(ChargeSA)
         ddesc['FrTATP'] = cpsa3D.CalculateFractionTATP(ChargeSA)
 
-    if RDF ==1:
-
-
-
-
-
+    if rdf ==1:
+        ddesc["UnweightRDF"] = rdf3D.CalculateUnweightRDF(lcoordinates)
+        ddesc["ChargeRDF"] = rdf3D.CalculateChargeRDF(lcoordinates)
+        ddesc["MassRDF"] = rdf3D.CalculateMassRDF(mol, lcoordinates)
+        ddesc["PolRDF"] = rdf3D.CalculatePolarizabilityRDF(lcoordinates)
+        ddesc["sandersonRDF"] = rdf3D.CalculateSandersonElectronegativityRDF(lcoordinates)
+        ddesc["VolRDF"] = rdf3D.CalculateVDWVolumeRDF(lcoordinates)
 
     return ddesc
 
