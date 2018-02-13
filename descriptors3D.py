@@ -253,11 +253,11 @@ def get3Ddesc(psdf, geometry=0, cpsa=0, rdf=0, morse=1, whim=0):
     if morse ==1:
         ddesc.update(morse3D.CalculateUnweightMoRSE(lcoordinates))
         ddesc.update(morse3D.CalculateChargeMoRSE(lcoordinates))
-        #ddesc.update(morse3D.CalculateMassMoRSE(mol, ChargeCoordinates))
-        #ddesc.update(morse3D.CalculateAtomicNumberMoRSE(mol, ChargeCoordinates))
-        #ddesc.update(morse3D.CalculatePolarizabilityMoRSE(lcoordinates))
-        #ddesc.update(morse3D.CalculateSandersonElectronegativityMoRSE(lcoordinates))
-        #ddesc.update(morse3D.CalculateVDWVolumeMoRSE(lcoordinates))
+        ddesc.update(morse3D.CalculateMassMoRSE(lcoordinates))
+        ddesc.update(morse3D.CalculateAtomicNumberMoRSE(lcoordinates))
+        ddesc.update(morse3D.CalculatePolarizabilityMoRSE(lcoordinates))
+        ddesc.update(morse3D.CalculateSandersonElectronegativityMoRSE(lcoordinates))
+        ddesc.update(morse3D.CalculateVDWVolumeMoRSE(lcoordinates))
 
     if whim ==1:
         print "to do"
