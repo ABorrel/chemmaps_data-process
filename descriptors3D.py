@@ -1,6 +1,7 @@
 import geo3D
 import cpsa3D
 import rdf3D
+import morse3D
 import vector3d
 
 # compute from CHEMPY
@@ -186,7 +187,7 @@ def get_MW(lcoords, H=1):
 
 
 
-def get3Ddesc(psdf, geometry=0, cpsa=0, rdf=1):
+def get3Ddesc(psdf, geometry=0, cpsa=0, rdf=0, morse=1, whim=0):
 
     ddesc = {}
     lcoordinates = parseSDFfor3D(psdf)
@@ -248,6 +249,18 @@ def get3Ddesc(psdf, geometry=0, cpsa=0, rdf=1):
         ddesc.update(rdf3D.CalculatePolarizabilityRDF(lcoordinates))
         ddesc.update(rdf3D.CalculateSandersonElectronegativityRDF(lcoordinates))
         ddesc.update(rdf3D.CalculateVDWVolumeRDF(lcoordinates))
+
+    if morse ==1:
+        ddesc.update(morse3D.CalculateUnweightMoRSE(lcoordinates))
+        ddesc.update(morse3D.CalculateChargeMoRSE(lcoordinates))
+        #ddesc.update(morse3D.CalculateMassMoRSE(mol, ChargeCoordinates))
+        #ddesc.update(morse3D.CalculateAtomicNumberMoRSE(mol, ChargeCoordinates))
+        #ddesc.update(morse3D.CalculatePolarizabilityMoRSE(lcoordinates))
+        #ddesc.update(morse3D.CalculateSandersonElectronegativityMoRSE(lcoordinates))
+        #ddesc.update(morse3D.CalculateVDWVolumeMoRSE(lcoordinates))
+
+    if whim ==1:
+        print "to do"
 
     return ddesc
 
