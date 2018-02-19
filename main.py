@@ -83,7 +83,8 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
             lsdf3D = listdir(prSDF3D)
             for sdf3D in lsdf3D:
                 toolbox.renameHeaderSDF(prSDF3D + str(sdf3D))
-        liganddescriptors.get_descriptor3DPadel(prSDF3D, dout["3D"])
+        #liganddescriptors.get_descriptor3DPadel(prSDF3D, dout["3D"])
+        liganddescriptors.get_descriptor3Down(prSDF3D, dout["3D"])
     log.close()
     return dout
 
@@ -117,7 +118,6 @@ def main(psdf, pranalysis, kname, control=1, Desc1D2D=1, generation3D = 1, Desc3
     prDesc = pranalysis + "Desc/"
     pathFolder.createFolder(prDesc, clean=0)
     dpfiledesc = computeDesc(psdf, prDesc, control=control, Desc1D2D=Desc1D2D, generation3D = generation3D, Desc3D=Desc3D, namek=kname)
-
     # analyse projection  and compute coordinate #
     ##############################################
     prproject = pathFolder.createFolder(pranalysis + "projection/")
@@ -143,7 +143,7 @@ def main(psdf, pranalysis, kname, control=1, Desc1D2D=1, generation3D = 1, Desc3
         lsdfs = listdir(prSDF)
         # control if nSDF = nPNG
         if len(lsdfs) != len(listdir(prpng)):
-            for sdfile in lsdfs:
+            for sdfile in lsdfs[30000:]:
                 runExternalSoft.molconvert(prSDF + sdfile, prpng + sdfile.split(".")[0] + ".png")
     else:
         db.drawMolecules(prpng)
@@ -170,7 +170,9 @@ kname = "CASRN"
 
 #main(psdf, pranalysis, kname, Desc1D2D=1, generation3D=0, Desc3D=1)
 
-
+# test 3D
+#import descriptors3D
+#print descriptors3D.get3Ddesc("/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SDF/361442-04-8.sdf")
 
 
 
@@ -178,31 +180,11 @@ kname = "CASRN"
 # Tox global dataset from Kamel Monsouri #
 ##########################################
 
-psdf = "/home/aborrel/ChemMap/generateCords/ToxGlobal_3D.sdf"
+psdf = "/home/aborrel/ChemMap/generateCords/ToxTrainTest_3D.sdf"
 pranalysis = "/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/"
 kname = "CASRN"
 
-#main(psdf, pranalysis, kname, control =1, Desc1D2D=0, generation3D=0, Desc3D=1)
-
-
-
-
-
-
-
-# test 3D desciptor
-import descriptors3D
-
-d = descriptors3D.get3Ddesc("/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SDF/28610-84-6.sdf")
-print d
-d = descriptors3D.get3Ddesc("/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SDF/16120-70-0.sdf")
-print d
-d = descriptors3D.get3Ddesc("/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SDF/74050-98-9.sdf")
-print d
-
-
-
-
+main(psdf, pranalysis, kname, control=1, Desc1D2D=0, generation3D=0, Desc3D=0)
 
 
 
@@ -215,7 +197,7 @@ psdf = "/home/aborrel/ChemMap/generateCords/drugbank-20-12-2017.sdf"
 pranalysis = "/home/aborrel/ChemMap/generateCords/drugBankAnalysis/"
 kname = "DATABASE_ID"
 
-#main(psdf, pranalysis, kname, Desc1D2D=0, generation3D=1, Desc3D=1)
+#main(psdf, pranalysis, kname, Desc1D2D=0, generation3D=0, Desc3D=0)
 
 
 ###################################

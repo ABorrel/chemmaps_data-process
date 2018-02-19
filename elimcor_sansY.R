@@ -8,6 +8,7 @@ elimcor_sansY<-function(X,s=0.95)
 	#s valeur seuil de corrélation
 	#print (rownames(X))
   correl=cor(as.matrix(X))
+  #print(correl)
 	stop=F
 	possetap=1:ncol(X)
 	groupes=as.list(1:ncol(X))

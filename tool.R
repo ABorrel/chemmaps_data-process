@@ -202,7 +202,7 @@ gifGeneration = function(pin, d){
   
   # convert pngs to one gif using ImageMagick
   system(paste("convert -delay 50 ", pin, "*.png ", pin, ".gif", sep = ""))
-  #system(paste("rm ", pin, "*png", sep = ""))
+  system(paste("rm ", pin, "*png", sep = ""))
   
 }
 
@@ -366,26 +366,28 @@ separeData = function (data, descriptor_class){
 
 openData = function (pfilin, valcor, prout, vexclude){
 	
-  desc = read.csv (pfilin, header = TRUE, sep = "\t")
+  	desc = read.csv (pfilin, header = TRUE, sep = "\t")
+  	print(dim(desc))
 	
-  # remove chemical with only NA
-  desc = delete.na(desc, dim(desc)[2])
+  	# remove chemical with only NA
+  	desc = delete.na(desc, dim(desc)[2])
   
-  # remove col not well computed
-  desc = t(delete.na(t(desc), dim(desc)[2]-100))
-  
+ 	# remove col not well computed
+  	desc = t(delete.na(t(desc), 10))
+  	print(dim(desc))
+  	#print(desc[2,])
 
-	# deleted line with NA
-	#rownames (desc) = seq (1, dim(desc)[1])
-	desc = na.omit(desc)
-  #print (dim(desc))
-  cexclude = desc[,vexclude]
-  desc = desc[,-vexclude]
+  	# deleted line with NA
+  	#rownames (desc) = seq (1, dim(desc)[1])
+  	desc = na.omit(desc)
+  	#print (dim(desc))
+  	cexclude = desc[,vexclude]
+  	desc = desc[,-vexclude]
   
-  #print(dim(desc))
+ 	print(dim(desc))
   
 	# dell when sd = 0
-	sd_desc =apply (desc[,1:(dim(desc)[2])], 2, sd)
+	sd_desc = apply (desc[,1:(dim(desc)[2])], 2, sd)
 
 	#print (sd_desc)
 	#print ("--------")
@@ -401,12 +403,13 @@ openData = function (pfilin, valcor, prout, vexclude){
 		#print (as.factor (sd_0))
 		#desc = desc[,-sd_0]
 		desc=subset(desc,select=-sd_0)
-		cexclude = subset(cexclude,select=-sd_0)
+		#cexclude = subset(cexclude,select=-sd_0)
 		#print(dim(desc_new))
 	}
-	
 	desc = apply(desc,2,as.double)
 	
+        print(dim(desc))
+	print(valcor)
 	if (valcor != 0){
 		out_elimcor = elimcor_sansY (desc, valcor)
 		descriptor = out_elimcor$possetap
@@ -421,8 +424,9 @@ openData = function (pfilin, valcor, prout, vexclude){
 }
 
 
-delete.na <- function(DF, n=0) {
-  DF[rowSums(is.na(DF)) <= n,]
+delete.na = function(DF, n=0) {
+  #print(which(rowSums(is.na(DF)) <= n))
+  DF = DF[which(rowSums(is.na(DF)) <= n),]
   return(DF)
 }
 

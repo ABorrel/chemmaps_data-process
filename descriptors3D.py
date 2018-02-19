@@ -6,6 +6,7 @@ import vector3d
 import whim3D
 
 import scipy
+from re import search
 # compute from CHEMPY
 # replace MOPAC file by sdf parsing
 
@@ -118,33 +119,6 @@ def GetAtomCoordinateMatrix(lcoordinates):
 
     return scipy.matrix(CoordinateMatrix), AtomLabel
 
-###########################################################################
-
-#def _ReadCoordinates(filename="temp"):
-#    """
-#    #################################################################
-#    Read the coordinates and charge of each atom in molecule from .arc file.
-#    #################################################################
-#    """
-#    ddesc = []
-
-#    f = file(filename, 'r')
-#    templine = f.readlines()
-#    f.close()
-
-#    for line in range(len(templine)):
-#        if templine[line][-7:-1] == "CHARGE":
-#            k = line
-#            break
-#
-#    for i in templine[k + 4:len(templine) - 1]:
-#        temp = i.split()
-#        ElementCoordinate = [string.strip(temp[0]), string.strip(temp[1]),
-#                             string.strip(temp[3]), string.strip(temp[5]),
-#                             string.strip(temp[10])]
-#        ddesc.append(ElementCoordinate)
-#
-#   return ddesc
 
 
 def parseSDFfor3D(pfilin):
@@ -166,7 +140,12 @@ def parseSDFfor3D(pfilin):
         if len(AtBlock) != 70:
             break
         else:
-            #print "-" + AtBlock[10:20] + "-"
+            #print "-" + AtBlock[0:10] + "-"
+            #print AtBlock
+            # remove IND from 3D and protonation issues
+            if search("IND", AtBlock):
+                #print "INNN"
+                continue
             X = float(AtBlock[0:10].replace(" ", ""))
             Y = float(AtBlock[10:20].replace(" ", ""))
             Z = float(AtBlock[20:30].replace(" ", ""))
@@ -186,7 +165,7 @@ def get_atomicMass(element):
     atomicMass={'H': 1.0079, 'N': 14.0067, 'Na': 22.9897, 'Cu': 63.546, 'Cl': 35.453, 'C': 12.0107,
                  'O': 15.9994, 'I': 126.9045, 'P': 30.9738, 'B': 10.811, 'Br': 79.904, 'S': 32.065, 'Se': 78.96,
                  'F': 18.9984, 'Fe': 55.845, 'K': 39.0983, 'Mn': 54.938, 'Mg': 24.305, 'Zn': 65.39, 'Hg': 200.59,
-                 'Li': 6.941, 'Co': 58.9332}
+                 'Li': 6.941, 'Co': 58.9332, "Si":28.0855}
 
 
     return atomicMass[element]
@@ -204,7 +183,7 @@ def get_MW(lcoords, H=1):
 
 
 
-def get3Ddesc(psdf, geometry=0, cpsa=0, rdf=0, morse=1, whim=0):
+def get3Ddesc(psdf, geometry=0, cpsa=0, rdf=0, morse=0, whim=0):
 
     ddesc = {}
     lcoordinates = parseSDFfor3D(psdf)
@@ -278,7 +257,7 @@ def get3Ddesc(psdf, geometry=0, cpsa=0, rdf=0, morse=1, whim=0):
 
     if whim ==1:
         CoordinateMatrix, AtomLabel = GetAtomCoordinateMatrix(lcoordinates)
-        ddesc['L1u'] = whim3D.wGetWHIM1(CoordinateMatrix, AtomLabel, proname='u')
+        ddesc['L1u'] = whim3D.GetWHIM1(CoordinateMatrix, AtomLabel, proname='u')
         ddesc['L2u'] = whim3D.GetWHIM2(CoordinateMatrix, AtomLabel, proname='u')
         ddesc['L3u'] = whim3D.GetWHIM3(CoordinateMatrix, AtomLabel, proname='u')
         ddesc['Tu'] = whim3D.GetWHIM4(CoordinateMatrix, AtomLabel, proname='u')

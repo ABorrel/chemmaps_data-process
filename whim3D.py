@@ -269,9 +269,10 @@ def GetWHIM12(CoordinateMatrix,AtomLabel,proname='u'):
     S=XPreCenter(CoordinateMatrix)
     u,s,v=scipy.linalg.svd(S.T*weight*S/sum(scipy.diag(weight)))
      
-    res=scipy.power(s[2],2)*nAtom/sum(scipy.power(S*scipy.matrix(u[:,2]).T,4))
-    
-    return round(float(res.real),3)
+    try:
+        res=scipy.power(s[2],2)*nAtom/sum(scipy.power(S*scipy.matrix(u[:,2]).T,4))
+        return round(float(res.real),3)
+    except: return "NA"
     
 def GetWHIM13(CoordinateMatrix,AtomLabel,proname='u'):
     

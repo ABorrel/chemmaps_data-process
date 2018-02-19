@@ -15,6 +15,9 @@ from re import search
 import toolbox
 import pathFolder
 import runExternalSoft
+import descriptors3D
+
+
 
 LSALT="[Co]"
 LSMILESREMOVE=["[C-]#N", "[Al+3]", "[Gd+3]", "[Pt+2]", "[Au+3]", "[Bi+3]", "[Al]", "[Si+4]", "[Fe]", "[Zn]", "[Fe+2]",
@@ -349,7 +352,7 @@ def get_descriptor3DPadel(pr3DSDF, pdesc3D):
 
     # write descriptor
     ldesc = toolbox.parsePadelOut().keys()
-    filout.write("ID" + "\t".join(ldesc) + "\n")
+    filout.write("ID\t" + "\t".join(ldesc) + "\n")
     for compound in dpadel.keys():
         #print dpadel[compound]
         filout.write(compound)
@@ -365,14 +368,29 @@ def get_descriptor3DPadel(pr3DSDF, pdesc3D):
 
 
 
-def get_descriptor3Down():
+def get_descriptor3Down(pr3DSDF, pdesc3D, geo=1, cpsa=1, rdf=1, morse=1, whim=1):
 
-    # geometric
-    #CPSA
-    #RDF
-    #MoRSE
-    #WHIM
+    i = 0
+    lsdf = listdir(pr3DSDF)
+    ddesc = {}
+    for psdf in lsdf[:7400]:
+        if psdf[-3:] == "sdf":
+            name = psdf[:-4]
+            print i, name, "3D"
+            ddesc[name]=descriptors3D.get3Ddesc(pr3DSDF + psdf, geometry=geo, cpsa=cpsa, rdf=rdf, morse=morse, whim=whim)
+        i += 1
+    lheader = ddesc[name].keys()
 
+    # write table desc
+    filout = open(pdesc3D, "w")
+    filout.write("ID\t" + "\t".join(lheader) + "\n")
 
-    return
+    for name in ddesc.keys():
+        filout.write(str(name))
+        for desc in lheader:
+            filout.write("\t" + str(ddesc[name][desc]))
+        filout.write("\n")
+    filout.close()
+
+    return pdesc3D
 

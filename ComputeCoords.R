@@ -26,7 +26,7 @@ generatePCAcoords = function(din){
 generateICAcoords = function(din, path_result){
   
   a = fastICA(din, 3, alg.typ = "parallel", fun = "logcosh", alpha = 1, method = "R", row.norm = FALSE, maxit = 200, tol = 0.0001, verbose = TRUE)
-  print (a)
+  #print (a)
   
   gifGeneration(paste(path_result, "ICA3D", sep = ""), a$S)
 }
@@ -67,7 +67,6 @@ PCAcombined2plans = function(d1D, d2D, pfilout){
 
 
 
-
 PCA3D = function(din, path_result){
   
   dinScale = scale(din)
@@ -83,6 +82,8 @@ PCA3D = function(din, path_result){
   
   #col.desc = colorDesc(colnames(din))
   
+  print(paste("PCA-3Dall ", var_cap[c(1,2,3)], sep = ""))
+
   col.desc = "black"
   
   gifGeneration(paste(path_result, "PCA3D", sep = ""), data_plot)
@@ -249,7 +250,7 @@ d1D2D_data = d1D2D_data[,-1] # remove SMILES
 
 # remove not well distributed descriptors #
 ###########################################
-d1D2D_data = delnohomogeniousdistribution(d1D2D_data, 80)
+d1D2D_data = delnohomogeniousdistribution(d1D2D_data, maxquantile)
 
 p1D2Dclean = paste(prout, "1D2D_clean.csv", sep = "")
 write.table(d1D2D_data, file = p1D2Dclean, row.names = TRUE, sep = "\t")
@@ -265,7 +266,9 @@ rownames(d3D_data) = d3D_data[,1]
 d3D_data = d3D_data[,-1] # remove name
 # remove not well distributed descriptors #
 ###########################################
-d3D_data = delnohomogeniousdistribution(d3D_data, 80)
+d3D_data = delnohomogeniousdistribution(d3D_data, maxquantile)
+
+#print(rownames(d3D_data))
 
 # write selected descriptors
 p3Dclean = paste(prout, "3D_clean.csv", sep = "")
@@ -294,8 +297,8 @@ dglobal = cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])
 cardMatrixCor(cor(cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "cor1D2DVS3D", sep = ""), 6)
 
 #plot histogram #
-histDataOne(data1 = d1D2D_data[vcompound,], paste(prout, "homodishist1D2D.pdf"))
-histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf"))
+histDataOne(data1 = d1D2D_data[vcompound,], paste(prout, "homodishist1D2D.pdf", sep = ""))
+histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf", sep = ""))
 
 
 #######################
@@ -311,12 +314,12 @@ PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
 PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
 
 # PCA combined
-PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D"))
+PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D", sep = ""))
 generateCoordCombinedPCA(d1D2D_data[vcompound,], d3D_data[vcompound,], prout)
 
 # MDSglobal
 #MDS3DGlobal(dglobal, prout, "corr")
-#MDS3DGlobal(dglobal, prout, "euclidean")
+MDS3DGlobal(dglobal, prout, "euclidean")
 #MDS3DGlobal(dglobal, prout, "manhattan")
 
 #MDS combined
