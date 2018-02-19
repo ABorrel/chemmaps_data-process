@@ -3,6 +3,7 @@ import loadDB
 import liganddescriptors
 import runExternalSoft
 import toolbox
+import createJS
 
 from os import path, remove, listdir
 import math
@@ -99,7 +100,7 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
 ###############
 
 
-def main(psdf, pranalysis, kname, control=1, Desc1D2D=1, generation3D = 1, Desc3D=1):
+def main(psdf, pranalysis, kname, lkinfo=[], control=1, Desc1D2D=1, generation3D = 1, Desc3D=1, projection=1, JS=1):
 
     pathFolder.createFolder(pranalysis)
 
@@ -109,8 +110,6 @@ def main(psdf, pranalysis, kname, control=1, Desc1D2D=1, generation3D = 1, Desc3
 
     db = loadDB.sdfDB(psdf, kname, pranalysis)
     db.writeTable("TaleProp.csv")
-    #db.writeTableSpecific(["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"], "tableChemmaps")
-    #db.writeNameforJS(prforjsupdate + "listSearch.js", ["CASRN", "DTXSID", "Name"])
 
 
     # descriptor computation #
@@ -123,13 +122,12 @@ def main(psdf, pranalysis, kname, control=1, Desc1D2D=1, generation3D = 1, Desc3
     prproject = pathFolder.createFolder(pranalysis + "projection/")
     corval = 0.9
     maxQuantile = 80
-    runExternalSoft.RComputeCor(dpfiledesc["1D2D"], dpfiledesc["3D"], prproject, corval, maxQuantile)
+    if projection == 1:
+        runExternalSoft.RComputeCor(dpfiledesc["1D2D"], dpfiledesc["3D"], prproject, corval, maxQuantile)
 
     ###################
     # for the website #
     ###################
-    prforjsupdate = pranalysis + "JS/"
-    pathFolder.createFolder(prforjsupdate)
 
 
     # 1. compute png #
@@ -143,21 +141,39 @@ def main(psdf, pranalysis, kname, control=1, Desc1D2D=1, generation3D = 1, Desc3
         lsdfs = listdir(prSDF)
         # control if nSDF = nPNG
         if len(lsdfs) != len(listdir(prpng)):
-            for sdfile in lsdfs[30000:]:
+            for sdfile in lsdfs:
                 runExternalSoft.molconvert(prSDF + sdfile, prpng + sdfile.split(".")[0] + ".png")
     else:
+        # case where considering only original map
         db.drawMolecules(prpng)
 
 
-    # 2. update JS coords #
-    #######################
+    ##################
+    # JS file update #
+    ##################
+    if JS == 1:
+        prforjsupdate = pranalysis + "JS/"
+        pathFolder.createFolder(prforjsupdate)
+        pfileDataJS = prforjsupdate + "data.js"
 
-    # 3. update JS properties #
-    ###########################
+        if path.exists(pfileDataJS):
+            remove(pfileDataJS)
 
-    # 4. update neighborhood #
-    ##########################
+        # 2. update JS coords #
+        #######################
+        pcoordsCombine = prproject + "coordPCAcombined.csv"
+        if path.exists(pcoordsCombine):
+            createJS.formatCoordinates(pcoordsCombine, pfileDataJS)
 
+
+        # 3. update JS properties #
+        ###########################
+        createJS.formatInfo(db, dpfiledesc["1D2D"], lkinfo, pfileDataJS)
+
+
+        # 4. update neighborhood #
+        ##########################
+        createJS.extractCloseCompounds(pcoordsCombine, 20, pfileDataJS)
 
 
 #########################################
@@ -183,8 +199,9 @@ kname = "CASRN"
 psdf = "/home/aborrel/ChemMap/generateCords/ToxTrainTest_3D.sdf"
 pranalysis = "/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/"
 kname = "CASRN"
+lkinfo = ["CASRN","LD50_mgkg", "GHS_category", "EPA_category", "Weight", "LogP"]
 
-main(psdf, pranalysis, kname, control=1, Desc1D2D=0, generation3D=0, Desc3D=0)
+#main(psdf, pranalysis, kname, lkinfo=lkinfo, control=1, Desc1D2D=0, generation3D=0, Desc3D=0)
 
 
 
@@ -196,49 +213,8 @@ main(psdf, pranalysis, kname, control=1, Desc1D2D=0, generation3D=0, Desc3D=0)
 psdf = "/home/aborrel/ChemMap/generateCords/drugbank-20-12-2017.sdf"
 pranalysis = "/home/aborrel/ChemMap/generateCords/drugBankAnalysis/"
 kname = "DATABASE_ID"
+lkinfo = ["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"]
 
-#main(psdf, pranalysis, kname, Desc1D2D=0, generation3D=0, Desc3D=0)
-
-
-###################################
-# analysis and compute descriptor #
-###################################
-
-#db = loadDB.sdfDB(psdf, pranalysis)
-#db.writeTable()
-#db.writeTableSpecific(["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"], "tableChemmaps")
-#db.writeNameforJS(prforjsupdate + "listSearch.js")
-
-
-
-
-# descriptor computation #
-##########################
-#prDesc = "/home/aborrel/ChemMap/updateDrugBank/dbanalyse/Desc/"
-#pathFolder.createFolder(prDesc, clean = 1)
-
-#dpfiledesc = computeDesc(psdf, prDesc)
-#analysis.PCAplot(dpfiledesc["1D2D"], dpfiledesc["3D"])
-
-
-
-
-#####################
-# update webserver  #
-#####################
-
-
-
-
-
-#pcord3D = pranalysis + "cor3D.csv"
-
-#extractCloseCompounds(pcord3D, 20, pranalysis + "lneighbor.js")
-
-
-
-#formate database and descriptor computation
-
-
+main(psdf, pranalysis, kname, lkinfo=lkinfo, Desc1D2D=0, generation3D=0, Desc3D=0, projection=0, JS=1)
 
 
