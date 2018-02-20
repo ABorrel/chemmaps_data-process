@@ -18,7 +18,7 @@ def formatCoordinates(pcoords, pjs):
 
 
     fcoords = open(pcoords, "r")
-    lcoords = fcoords.readline()
+    lcoords = fcoords.readlines()
     fcoords.close()
 
     lw = []
@@ -44,7 +44,7 @@ def formatInfo(db, pdesc, lkinfo, pjs):
         js = open(pjs, "w")
 
     # write headers
-    js.write("function loadinfoDrug(){\n")
+    js.write("function loadInfoDrug(){\n")
     js.write("    var infodrug={")
 
 
@@ -73,12 +73,12 @@ def formatInfo(db, pdesc, lkinfo, pjs):
         linfo = []
         for kinfo in lkinfo:
             if kinfo in cpd.keys():
-                linfo.append(str(cpd[kinfo]))
-            elif kinfo in ddesc[namecpd].keys():
-                linfo.append(str(ddesc[name][kinfo]))
+                linfo.append("\"" + str(cpd[kinfo]) + "\"")
+            elif namecpd in ddesc.keys() and kinfo in ddesc[namecpd].keys():
+                linfo.append("\"" + str(ddesc[name][kinfo]) + "\"")
             else:
                 linfo.append("\"NA\"")
-        linenew = str(namecpd) + ":[" + ",".join(linfo) + "]"
+        linenew = "\"" + str(namecpd) + "\"" + ":[" + ",".join(linfo) + "]"
         lw.append(linenew)
 
     js.write(",".join(lw) + "};\n")
@@ -91,6 +91,14 @@ def formatInfo(db, pdesc, lkinfo, pjs):
 
 
 def extractCloseCompounds(pcoords, nneighbor, pjs):
+
+
+    if path.exists(pjs):
+        js = open(pjs, "a")
+
+    else:
+        js = open(pjs, "w")
+
 
     filin = open(pcoords, "r")
     lcords = filin.readlines()
@@ -117,15 +125,13 @@ def extractCloseCompounds(pcoords, nneighbor, pjs):
         ddist[ID] = lID
 
 
-    filout = open(pjs, "w")
-    filout.write("var lneighbor = {")
+    js.write("function loadNeighbors(){\n    var lneighbor = {")
 
     lwrite = []
     for ID in ddist.keys():
         w = str(ID) + ":[" + ",".join(ddist[ID]) + "]"
         lwrite.append(w)
 
-    filout.write(",".join(lwrite))
-    filout.write("}")
-    filout.close()
+    js.write(",".join(lwrite) + "};\n    return(lneighbor);\n};\n")
+    js.close()
 
