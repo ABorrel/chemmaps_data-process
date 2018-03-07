@@ -52,7 +52,7 @@ def formatInfo(db, pdesc, lkinfo, pjs):
     ddesc = {}
     if path.exists(pdesc):
         fdesc = open(pdesc, "r")
-        lcpddesc = fdesc.readline()
+        lcpddesc = fdesc.readlines()
         fdesc.close()
 
         ldesc = lcpddesc[0].strip().split("\t")
@@ -73,9 +73,15 @@ def formatInfo(db, pdesc, lkinfo, pjs):
         linfo = []
         for kinfo in lkinfo:
             if kinfo in cpd.keys():
-                linfo.append("\"" + str(cpd[kinfo]) + "\"")
+                if cpd[kinfo] != "":
+                    linfo.append("\"" + str(cpd[kinfo]) + "\"")
+                else:
+                    linfo.append("\"NA\"")
             elif namecpd in ddesc.keys() and kinfo in ddesc[namecpd].keys():
-                linfo.append("\"" + str(ddesc[name][kinfo]) + "\"")
+                if ddesc[namecpd][kinfo] != "":
+                    linfo.append("\"" + str(ddesc[namecpd][kinfo]) + "\"")
+                else:
+                    linfo.append("\"NA\"")
             else:
                 linfo.append("\"NA\"")
         linenew = "\"" + str(namecpd) + "\"" + ":[" + ",".join(linfo) + "]"

@@ -4,7 +4,8 @@ require(lattice)
 library(scatterplot3d)
 
 
-MDS3DGlobal = function(dglobal, pout, disttype){
+MDS3DGlobal = function(dglobal, prout, disttype){
+  
   
   if(disttype == "corr"){
     MC = cor(t(scale(dglobal)))
@@ -12,10 +13,11 @@ MDS3DGlobal = function(dglobal, pout, disttype){
   }else{
     distG = dist(scale(dglobal), method = disttype)
   }
+  dim(distG)
     fit1 = cmdscale(as.dist(distG),eig=TRUE, k=3)
  
     coords = cbind(fit1$points[,1], fit1$points[,2])
-    coords = cbind(coords, fit1$points[,1])
+    coords = cbind(coords, fit1$points[,3])
  
     gifGeneration(paste(prout, "MDS3D_", disttype, sep = ""), coords)
 }

@@ -305,17 +305,17 @@ histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf", sep 
 # analyse projection  #
 #######################
 # ICA
-generateICAcoords(dglobal, prout)
+#generateICAcoords(dglobal, prout)
 
 # PCA 2D
-PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
+#PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
 
 # PCA 3D
-PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
+#PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
 
 # PCA combined
-PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D", sep = ""))
-generateCoordCombinedPCA(d1D2D_data[vcompound,], d3D_data[vcompound,], prout)
+#PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D", sep = ""))
+#generateCoordCombinedPCA(d1D2D_data[vcompound,], d3D_data[vcompound,], prout)
 
 # MDSglobal
 #MDS3DGlobal(dglobal, prout, "corr")

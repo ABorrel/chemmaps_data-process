@@ -8,6 +8,8 @@ import createJS
 from os import path, remove, listdir
 import math
 
+from formatDatabase import drugbank
+
 
 def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0, namek="DATABASE_ID"):
 
@@ -100,7 +102,7 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
 ###############
 
 
-def main(psdf, pranalysis, kname, lkinfo=[], control=1, Desc1D2D=1, generation3D = 1, Desc3D=1, projection=1, JS=1):
+def main(psdf, pranalysis, kname, lkinfo=[], corval=0.8, maxquantile=80, control=1, Desc1D2D=1, generation3D = 1, Desc3D=1, projection=1, JS=1, drawPNG=1):
 
     pathFolder.createFolder(pranalysis)
 
@@ -119,11 +121,9 @@ def main(psdf, pranalysis, kname, lkinfo=[], control=1, Desc1D2D=1, generation3D
     dpfiledesc = computeDesc(psdf, prDesc, control=control, Desc1D2D=Desc1D2D, generation3D = generation3D, Desc3D=Desc3D, namek=kname)
     # analyse projection  and compute coordinate #
     ##############################################
-    prproject = pathFolder.createFolder(pranalysis + "projection/")
-    corval = 0.9
-    maxQuantile = 80
+    prproject = pathFolder.createFolder(pranalysis + "projection" + str(corval) + "-" + str(maxquantile) + "/")
     if projection == 1:
-        runExternalSoft.RComputeCor(dpfiledesc["1D2D"], dpfiledesc["3D"], prproject, corval, maxQuantile)
+        runExternalSoft.RComputeCor(dpfiledesc["1D2D"], dpfiledesc["3D"], prproject, corval, maxquantile)
 
     ###################
     # for the website #
@@ -132,27 +132,28 @@ def main(psdf, pranalysis, kname, lkinfo=[], control=1, Desc1D2D=1, generation3D
 
     # 1. compute png #
     ##################
-    prpng = pranalysis + "cpdpng/"
-    pathFolder.createFolder(prpng)
+    if drawPNG == 1:
+        prpng = pranalysis + "cpdpng/"
+        pathFolder.createFolder(prpng)
 
-    # draw from desc descriptors
-    prSDF = prDesc + "SDF/"
-    if path.exists(prSDF):
-        lsdfs = listdir(prSDF)
-        # control if nSDF = nPNG
-        if len(lsdfs) != len(listdir(prpng)):
-            for sdfile in lsdfs:
-                runExternalSoft.molconvert(prSDF + sdfile, prpng + sdfile.split(".")[0] + ".png")
-    else:
-        # case where considering only original map
-        db.drawMolecules(prpng)
+        # draw from desc descriptors
+        prSMI = prDesc + "SMI/"
+        if path.exists(prSMI):
+            lsmi = listdir(prSMI)
+            # control if nSDF = nPNG
+            if len(lsmi) != len(listdir(prpng)):
+                for smifile in lsmi:
+                    runExternalSoft.molconvert(prSMI + smifile, prpng + smifile.split(".")[0] + ".png")
+        else:
+            # case where considering only original map
+            db.drawMolecules(prpng)
 
 
     ##################
     # JS file update #
     ##################
     if JS == 1:
-        prforjsupdate = pranalysis + "JS/"
+        prforjsupdate = pranalysis + "JS" + str(corval) + "-" + str(maxquantile) + "/"
         pathFolder.createFolder(prforjsupdate)
         pfileDataJS = prforjsupdate + "data.js"
 
@@ -180,28 +181,28 @@ def main(psdf, pranalysis, kname, lkinfo=[], control=1, Desc1D2D=1, generation3D
 # Tox train dataset from Kamel Monsouri #
 #########################################
 
-psdf = "/home/aborrel/ChemMap/generateCords/ToxTrainingSet_3D.sdf"
-pranalysis = "/home/aborrel/ChemMap/generateCords/ToxAnalysis/"
-kname = "CASRN"
+#psdf = "/home/aborrel/ChemMap/generateCords/ToxTrainingSet_3D.sdf"
+#pranalysis = "/home/aborrel/ChemMap/generateCords/ToxAnalysis/"
+#kname = "CASRN"
 
 #main(psdf, pranalysis, kname, Desc1D2D=1, generation3D=0, Desc3D=1)
 
-# test 3D
 #import descriptors3D
 #print descriptors3D.get3Ddesc("/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/Desc/SDF/361442-04-8.sdf")
-
 
 
 ##########################################
 # Tox global dataset from Kamel Monsouri #
 ##########################################
 
-psdf = "/home/aborrel/ChemMap/generateCords/ToxTrainTest_3D.sdf"
-pranalysis = "/home/aborrel/ChemMap/generateCords/ToxAnalysisGlobal/"
+psdf = "/home/borrela2/ChemMaps/data_analysis/ToxTrainTest_3D.sdf"
+pranalysis = "/home/borrela2/ChemMaps/data_analysis/ToxAnalysisGlobal/"
 kname = "CASRN"
-lkinfo = ["CASRN","LD50_mgkg", "GHS_category", "EPA_category", "Weight", "LogP"]
+lkinfo = ["CASRN", "LD50_mgkg", "GHS_category", "EPA_category", "Weight", "LogP"]
 
-#main(psdf, pranalysis, kname, lkinfo=lkinfo, control=1, Desc1D2D=0, generation3D=0, Desc3D=0)
+corval = 0.9
+maxquantile = 90
+main(psdf, pranalysis, kname, lkinfo=lkinfo, corval=corval, maxquantile=maxquantile, control=1, Desc1D2D=0, generation3D=0, Desc3D=0, drawPNG=0, projection=1, JS=0)
 
 
 
@@ -210,11 +211,40 @@ lkinfo = ["CASRN","LD50_mgkg", "GHS_category", "EPA_category", "Weight", "LogP"]
 #drugbank https://www.drugbank.ca/#
 ###################################
 
-psdf = "/home/aborrel/ChemMap/generateCords/drugbank-20-12-2017.sdf"
-pranalysis = "/home/aborrel/ChemMap/generateCords/drugBankAnalysis/"
+psdf = "/home/borrela2/ChemMaps/data_analysis/drugbank-20-12-2017.sdf"
+pranalysis = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/"
 kname = "DATABASE_ID"
 lkinfo = ["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"]
 
-main(psdf, pranalysis, kname, lkinfo=lkinfo, Desc1D2D=0, generation3D=0, Desc3D=0, projection=0, JS=1)
+corval = 0.9
+maxquantile = 90
+#main(psdf, pranalysis, kname, corval=corval, maxquantile=maxquantile, lkinfo=lkinfo, Desc1D2D=0, generation3D=0, Desc3D=0, projection=1, JS=1)
+
+
+
+
+##############################
+# by list from EPA dashboard #
+##############################
+
+prListChemical = "/home/borrela2/ChemMaps/data/toxEPA-lists/"
+llistChem = listdir(prListChemical)
+
+kname = "<CASRN>"
+ksmile = "SMILES"
+corval = 0.9
+maxquantile = 90
+
+
+for listChem in llistChem:
+    plist = prListChemical + listChem
+    print plist
+    # main(psdf, pranalysis, kname, corval=corval, maxquantile=maxquantile, lkinfo=lkinfo, Desc1D2D=0, generation3D=0, Desc3D=0, projection=1, JS=1)
+
+
+    # have to had generation 3D
+
+
+
 
 

@@ -370,10 +370,11 @@ openData = function (pfilin, valcor, prout, vexclude){
   	print(dim(desc))
 	
   	# remove chemical with only NA
-  	desc = delete.na(desc, dim(desc)[2])
-  
+  	desc = delete.na(desc, dim(desc)[2]-20)
+  	print(dim(desc))
+
  	# remove col not well computed
-  	desc = t(delete.na(t(desc), 10))
+  	desc = t(delete.na(t(desc), 100))
   	print(dim(desc))
   	#print(desc[2,])
 
