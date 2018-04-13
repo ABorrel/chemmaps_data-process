@@ -137,7 +137,7 @@ def parseSDFfor3D(pfilin):
 
     # start at line 5 classical format
     for AtBlock in llines[4:]:
-        if len(AtBlock) != 70:
+        if len(AtBlock) != 70 and len(AtBlock) != 52:
             break
         else:
             #print "-" + AtBlock[0:10] + "-"
@@ -165,7 +165,7 @@ def get_atomicMass(element):
     atomicMass={'H': 1.0079, 'N': 14.0067, 'Na': 22.9897, 'Cu': 63.546, 'Cl': 35.453, 'C': 12.0107,
                  'O': 15.9994, 'I': 126.9045, 'P': 30.9738, 'B': 10.811, 'Br': 79.904, 'S': 32.065, 'Se': 78.96,
                  'F': 18.9984, 'Fe': 55.845, 'K': 39.0983, 'Mn': 54.938, 'Mg': 24.305, 'Zn': 65.39, 'Hg': 200.59,
-                 'Li': 6.941, 'Co': 58.9332, "Si":28.0855}
+                 'Li': 6.941, 'Co': 58.9332, "Si":28.0855, "As": 74.9216, "Te":127.6, "Sr":87.62}
 
 
     return atomicMass[element]
@@ -183,10 +183,11 @@ def get_MW(lcoords, H=1):
 
 
 
-def get3Ddesc(psdf, geometry=0, cpsa=0, rdf=0, morse=0, whim=0):
+def get3Ddesc(psdf, geometry=1, cpsa=1, rdf=1, morse=1, whim=1):
 
     ddesc = {}
     lcoordinates = parseSDFfor3D(psdf)
+    print psdf
 
     if geometry == 1:
         ddesc['W3DH'] = geo3D.Calculate3DWienerWithH(lcoordinates)
@@ -297,7 +298,8 @@ def get3Ddesc(psdf, geometry=0, cpsa=0, rdf=0, morse=0, whim=0):
         ddesc['E3e'] = whim3D.GetWHIM12(CoordinateMatrix, AtomLabel, proname='En')
         ddesc['De'] = whim3D.GetWHIM13(CoordinateMatrix, AtomLabel, proname='En')
         ddesc['L1v'] = whim3D.GetWHIM1(CoordinateMatrix, AtomLabel, proname='V')
-        ddesc['L2v'] = whim3D.GetWHIM2(CoordinateMatrix, AtomLabel, proname='V')
+        try:ddesc['L2v'] = whim3D.GetWHIM2(CoordinateMatrix, AtomLabel, proname='V')
+        except: ddesc['L2v']="NA"
         ddesc['L3v'] = whim3D.GetWHIM3(CoordinateMatrix, AtomLabel, proname='V')
         ddesc['Tv'] = whim3D.GetWHIM4(CoordinateMatrix, AtomLabel, proname='V')
         ddesc['Av'] = whim3D.GetWHIM5(CoordinateMatrix, AtomLabel, proname='V')

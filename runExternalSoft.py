@@ -77,6 +77,15 @@ def babelConvertSDFtoSMILE(sdfread, clean_smi=0, rm_smi=1):
 
 
 
+def babelConvertMoltoSDF(pmolin, psdfout):
+
+    if not path.exists(psdfout):
+        cmd_convert = "babel " + pmolin + " " + psdfout + " 2>/dev/null"
+        system(cmd_convert)
+
+
+
+
 def RComputeCor(pfilin1D2D, pfilin3D, prout, valcor = 0.9, maxquantile=80):
 
     cmdplotPCA = "./ComputeCoords.R " + str(pfilin1D2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(valcor) + " " + str(maxquantile)

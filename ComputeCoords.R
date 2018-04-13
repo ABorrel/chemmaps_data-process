@@ -229,13 +229,11 @@ prout = args[3]
 valcor = as.double(args[4])
 maxquantile = as.integer(args[5])
 
-
-#p1D2D = "c://Users/Aborrel/chemmaps/drugbankDesc/1D2D.csv"
-#p3D = "c://Users/Aborrel/chemmaps/drugbankDesc/3D.csv"
-#pprop = "/home/aborrel/ChemMap/structures.csv"
-#prout = "c://Users/Aborrel/chemmaps/drugbankDesc/PCAs/"
+#p1D2D = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/Desc/1D2D.csv"
+#p3D = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/Desc/3D.csv"
+#prout = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/projection0.9-90/"
 #valcor = 0.9
-#maxquantile = 80
+#maxquantile = 90
 
 # manually define
 # outlier = c("DB00793", "DB00516", "DB06690", "DB09157", "DB03627", "DB01751", "DB03853" ,"DB04711")
@@ -256,8 +254,6 @@ p1D2Dclean = paste(prout, "1D2D_clean.csv", sep = "")
 write.table(d1D2D_data, file = p1D2Dclean, row.names = TRUE, sep = "\t")
 
 
-
-
 ##### 3D matrix #####
 #####################
 d3D = openData(p3D, valcor, prout, c(1))
@@ -266,6 +262,7 @@ rownames(d3D_data) = d3D_data[,1]
 d3D_data = d3D_data[,-1] # remove name
 # remove not well distributed descriptors #
 ###########################################
+
 d3D_data = delnohomogeniousdistribution(d3D_data, maxquantile)
 
 #print(rownames(d3D_data))
@@ -305,21 +302,21 @@ histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf", sep 
 # analyse projection  #
 #######################
 # ICA
-#generateICAcoords(dglobal, prout)
+generateICAcoords(dglobal, prout)
 
 # PCA 2D
-#PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
+PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
 
 # PCA 3D
-#PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
+PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
 
 # PCA combined
-#PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D", sep = ""))
-#generateCoordCombinedPCA(d1D2D_data[vcompound,], d3D_data[vcompound,], prout)
+PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D", sep = ""))
+generateCoordCombinedPCA(d1D2D_data[vcompound,], d3D_data[vcompound,], prout)
 
 # MDSglobal
 #MDS3DGlobal(dglobal, prout, "corr")
-MDS3DGlobal(dglobal, prout, "euclidean")
+#MDS3DGlobal(dglobal, prout, "euclidean")
 #MDS3DGlobal(dglobal, prout, "manhattan")
 
 #MDS combined

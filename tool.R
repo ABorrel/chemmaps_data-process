@@ -390,17 +390,15 @@ openData = function (pfilin, valcor, prout, vexclude){
 	# dell when sd = 0
 	sd_desc = apply (desc[,1:(dim(desc)[2])], 2, sd)
 
-	#print (sd_desc)
+	
 	#print ("--------")
 	sd_0 = which (sd_desc == 0)
-
-	#print (sd_0)
 
 	#print ("------------")
 	#print (mode(sd_0))
 	#print (length (sd_0))
 	#print ("------------")
-	if (length(sd_0) != 0){
+	if ( !is.integer0(sd_0)){
 		#print (as.factor (sd_0))
 		#desc = desc[,-sd_0]
 		desc=subset(desc,select=-sd_0)
@@ -409,8 +407,9 @@ openData = function (pfilin, valcor, prout, vexclude){
 	}
 	desc = apply(desc,2,as.double)
 	
-        print(dim(desc))
+  print(dim(desc))
 	print(valcor)
+	#print(head(desc))
 	if (valcor != 0){
 		out_elimcor = elimcor_sansY (desc, valcor)
 		descriptor = out_elimcor$possetap
