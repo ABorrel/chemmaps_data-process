@@ -165,7 +165,8 @@ def get_atomicMass(element):
     atomicMass={'H': 1.0079, 'N': 14.0067, 'Na': 22.9897, 'Cu': 63.546, 'Cl': 35.453, 'C': 12.0107,
                  'O': 15.9994, 'I': 126.9045, 'P': 30.9738, 'B': 10.811, 'Br': 79.904, 'S': 32.065, 'Se': 78.96,
                  'F': 18.9984, 'Fe': 55.845, 'K': 39.0983, 'Mn': 54.938, 'Mg': 24.305, 'Zn': 65.39, 'Hg': 200.59,
-                 'Li': 6.941, 'Co': 58.9332, "Si":28.0855, "As": 74.9216, "Te":127.6, "Sr":87.62}
+                 'Li': 6.941, 'Co': 58.9332, "Si":28.0855, "As": 74.9216, "Te":127.6, "Sr":87.62, "Ag": 107.8682,
+                "Cd": 112.411}
 
 
     return atomicMass[element]
@@ -187,23 +188,27 @@ def get3Ddesc(psdf, geometry=1, cpsa=1, rdf=1, morse=1, whim=1):
 
     ddesc = {}
     lcoordinates = parseSDFfor3D(psdf)
-    print psdf
 
-    if geometry == 1:
-        ddesc['W3DH'] = geo3D.Calculate3DWienerWithH(lcoordinates)
-        ddesc['W3D'] = geo3D.Calculate3DWienerWithoutH(lcoordinates)
-        ddesc['Petitj3D'] = geo3D.CalculatePetitjean3DIndex(lcoordinates)
-        ddesc['GeDi'] = geo3D.CalculateGemetricalDiameter(lcoordinates)
-        ddesc['grav'] = geo3D.CalculateGravitational3D1(lcoordinates)
-        ddesc['rygr'] = geo3D.CalculateRadiusofGyration(lcoordinates)
-        ddesc['Harary3D'] = geo3D.CalculateHarary3D(lcoordinates)
-        ddesc['AGDD'] = geo3D.CalculateAverageGeometricalDistanceDegree(lcoordinates)
-        ddesc['SEig'] = geo3D.CalculateAbsEigenvalueSumOnGeometricMatrix(lcoordinates)
+    try:
+        if geometry == 1:
+            ddesc['W3DH'] = geo3D.Calculate3DWienerWithH(lcoordinates)
+            ddesc['W3D'] = geo3D.Calculate3DWienerWithoutH(lcoordinates)
+            ddesc['Petitj3D'] = geo3D.CalculatePetitjean3DIndex(lcoordinates)
+            ddesc['Petitj3D'] ="NA"
+            ddesc['GeDi'] = geo3D.CalculateGemetricalDiameter(lcoordinates)
+            ddesc['GeDi'] = "NA"
+            ddesc['grav'] = geo3D.CalculateGravitational3D1(lcoordinates)
+            ddesc['rygr'] = geo3D.CalculateRadiusofGyration(lcoordinates)
+            ddesc['Harary3D'] = geo3D.CalculateHarary3D(lcoordinates)
+            ddesc['AGDD'] = geo3D.CalculateAverageGeometricalDistanceDegree(lcoordinates)
+            ddesc['SEig'] = geo3D.CalculateAbsEigenvalueSumOnGeometricMatrix(lcoordinates)
 
 
-        ddesc['SPAN'] = geo3D.CalculateSPANR(lcoordinates)
-        ddesc['ASPAN'] = geo3D.CalculateAverageSPANR(lcoordinates)
-        ddesc['MEcc'] = geo3D.CalculateMolecularEccentricity(lcoordinates)
+            ddesc['SPAN'] = geo3D.CalculateSPANR(lcoordinates)
+            ddesc['ASPAN'] = geo3D.CalculateAverageSPANR(lcoordinates)
+            ddesc['MEcc'] = geo3D.CalculateMolecularEccentricity(lcoordinates)
+    except:
+        return {}
 
     if cpsa == 1:
         ChargeSA = cpsa3D.GetChargeSA(lcoordinates, RadiusProbe=1.5, n_sphere_point=5000)

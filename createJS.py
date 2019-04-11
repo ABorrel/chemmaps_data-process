@@ -1,6 +1,6 @@
 from os import path
 import math
-
+import toolbox
 
 
 def formatCoordinates(pcoords, pjs):
@@ -34,7 +34,7 @@ def formatCoordinates(pcoords, pjs):
 
 
 
-def formatInfo(db, pdesc, lkinfo, pjs):
+def formatInfo(db, pdesc, lkinfo, pjs, prout):
 
 
     if path.exists(pjs):
@@ -49,22 +49,10 @@ def formatInfo(db, pdesc, lkinfo, pjs):
 
 
     # load 1D2D desc
-    ddesc = {}
     if path.exists(pdesc):
-        fdesc = open(pdesc, "r")
-        lcpddesc = fdesc.readlines()
-        fdesc.close()
-
-        ldesc = lcpddesc[0].strip().split("\t")
-        for cpd in lcpddesc[1:]:
-            desc = cpd.strip().split("\t")
-            name = desc[0]
-            ddesc[name] = {}
-            i = 1
-            nbdesc = len(ldesc)
-            while i < nbdesc:
-                ddesc[name][ldesc[i]]= desc[i]
-                i += 1
+        ddesc = toolbox.loadMatrixToDict(pdesc)
+    else:
+        return
 
     lw = []
     # write JS
@@ -93,10 +81,37 @@ def formatInfo(db, pdesc, lkinfo, pjs):
     js.close()
 
 
+    pinfo = prout + "tableinfo.csv"
+    finfo = open(pinfo, "w")
+    finfo.write("ID\t" + "\t".join(lkinfo) + "\n")
+
+    for cpd in db.lc:
+        namecpd = cpd[db.name]
+        linfo = []
+        for kinfo in lkinfo:
+            if kinfo in cpd.keys():
+                if cpd[kinfo] != "":
+                    linfo.append(str(cpd[kinfo]))
+                else:
+                    linfo.append("NA")
+            elif namecpd in ddesc.keys() and kinfo in ddesc[namecpd].keys():
+                if ddesc[namecpd][kinfo] != "":
+                    linfo.append(str(ddesc[namecpd][kinfo]))
+                else:
+                    linfo.append("NA")
+            else:
+                linfo.append("NA")
+
+        finfo.write("%s\t%s\n"%(namecpd, "\t".join(linfo)))
+
+    finfo.close()
 
 
 
-def extractCloseCompounds(pcoords, nneighbor, pjs):
+
+
+def extractCloseCompounds(pcoords, nneighbor, pjs, prout):
+
 
 
     if path.exists(pjs):
@@ -140,4 +155,13 @@ def extractCloseCompounds(pcoords, nneighbor, pjs):
 
     js.write(",".join(lwrite) + "};\n    return(lneighbor);\n};\n")
     js.close()
+
+
+    #write in table
+    ptableneighbor = prout + "tableNeighbor.csv"
+    ftable = open(ptableneighbor, "w")
+    ftable.write("ID\tNeighbors\n")
+    for ID in ddist.keys():
+        ftable.write("%s\t%s\n"%(ID, " ".join(ddist[ID])))
+    ftable.close()
 

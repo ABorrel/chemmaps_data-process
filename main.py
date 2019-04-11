@@ -10,91 +10,7 @@ import math
 
 from formatDatabase import drugbank
 
-
-
-
-
-
-###############
-##   MAIN    ##
-###############
-
-
-def main(psdf, pranalysis, kname, lkinfo=[], corval=0.8, maxquantile=80, control=1, Desc1D2D=1, generation3D = 1, Desc3D=1, projection=1, JS=1, drawPNG=1):
-
-    pathFolder.createFolder(pranalysis)
-
-    ###################################
-    # analysis and compute descriptor #
-    ###################################
-
-    db = loadDB.sdfDB(psdf, kname, pranalysis)
-    db.writeTable("TaleProp.csv")
-
-
-    # descriptor computation #
-    ##########################
-    prDesc = pranalysis + "Desc/"
-    pathFolder.createFolder(prDesc, clean=0)
-    dpfiledesc = computeDB.computeDesc(psdf, prDesc, control=control, Desc1D2D=Desc1D2D, generation3D=generation3D, Desc3D=Desc3D, namek=kname)
-    # analyse projection  and compute coordinate #
-    ##############################################
-    prproject = pathFolder.createFolder(pranalysis + "projection" + str(corval) + "-" + str(maxquantile) + "/")
-    if projection == 1:
-        print dpfiledesc["1D2D"], dpfiledesc["3D"], prproject, corval, maxquantile
-        runExternalSoft.RComputeCor(dpfiledesc["1D2D"], dpfiledesc["3D"], prproject, corval, maxquantile)
-
-    ###################
-    # for the website #
-    ###################
-
-
-    # 1. compute png #
-    ##################
-    if drawPNG == 1:
-        prpng = pranalysis + "cpdpng/"
-        pathFolder.createFolder(prpng)
-
-        # draw from desc descriptors
-        prSMI = prDesc + "SMI/"
-        if path.exists(prSMI):
-            lsmi = listdir(prSMI)
-            # control if nSDF = nPNG
-            if len(lsmi) != len(listdir(prpng)):
-                for smifile in lsmi:
-                    runExternalSoft.molconvert(prSMI + smifile, prpng + smifile.split(".")[0] + ".png")
-        else:
-            # case where considering only original map
-            db.drawMolecules(prpng)
-
-
-    ##################
-    # JS file update #
-    ##################
-    if JS == 1:
-        prforjsupdate = pranalysis + "JS" + str(corval) + "-" + str(maxquantile) + "/"
-        pathFolder.createFolder(prforjsupdate)
-        pfileDataJS = prforjsupdate + "data.js"
-
-        if path.exists(pfileDataJS):
-            remove(pfileDataJS)
-
-        # 2. update JS coords #
-        #######################
-        pcoordsCombine = prproject + "coordPCAcombined.csv"
-        if path.exists(pcoordsCombine):
-            createJS.formatCoordinates(pcoordsCombine, pfileDataJS)
-
-
-        # 3. update JS properties #
-        ###########################
-        createJS.formatInfo(db, dpfiledesc["1D2D"], lkinfo, pfileDataJS)
-
-
-        # 4. update neighborhood #
-        ##########################
-        createJS.extractCloseCompounds(pcoordsCombine, 20, pfileDataJS)
-
+import prepChemLib# to replace main
 
 #########################################
 # Tox train dataset from Kamel Monsouri #
@@ -121,44 +37,43 @@ def main(psdf, pranalysis, kname, lkinfo=[], corval=0.8, maxquantile=80, control
 
 #corval = 0.9
 #maxquantile = 90
-#main(psdf, pranalysis, kname, lkinfo=lkinfo, corval=corval, maxquantile=maxquantile, control=1, Desc1D2D=0, generation3D=0, Desc3D=0, drawPNG=0, projection=1, JS=0)
 
-
+#prepChemLib.Run(psdf, pranalysis, kname, corval=corval, maxquantile=maxquantile, lkinfo=lkinfo, Desc1D2D=0,
+#                generation3D=0, Desc3D=0, projection=1, JS=1)
 
 
 ###################################
 #drugbank https://www.drugbank.ca/#
 ###################################
 
-psdf = "/home/borrela2/ChemMaps/data_analysis/drugbank-20-12-2017.sdf"
-pranalysis = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/"
+import prepChemLib
+
+psdf = "/home/borrela2/ChemMaps/data/drugbank-20-12-2018.sdf"
+pranalysis = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysisV2018/"
 kname = "DATABASE_ID"
-lkinfo = ["DRUG_GROUPS", "GENERIC_NAME", "FORMULA", "MOLECULAR_WEIGHT", "ALOGPS_LOGP", "SYNONYMS"]
 
 corval = 0.9
 maxquantile = 90
-main(psdf, pranalysis, kname, corval=corval, maxquantile=maxquantile, lkinfo=lkinfo, Desc1D2D=0, generation3D=0,
-     Desc3D=1, projection=1, JS=1)
-
-
-
+prepChemLib.Run(psdf, pranalysis, kname, corval=corval, maxquantile=maxquantile, Desc1D2D=0,
+                generation3D=0, Desc3D=0, projection=0, map=1)
+jjj
 
 ##############################
 # by list from EPA dashboard #
 ##############################
 
-prListChemical = "/home/borrela2/ChemMaps/data/toxEPA-lists/"
-llistChem = listdir(prListChemical)
+#prListChemical = "/home/borrela2/ChemMaps/data/toxEPA-lists/"
+#llistChem = listdir(prListChemical)
 
-kname = "<CASRN>"
-ksmile = "SMILES"
-corval = 0.9
-maxquantile = 90
+#kname = "<CASRN>"
+#ksmile = "SMILES"
+#corval = 0.9
+#maxquantile = 90
 
 
-for listChem in llistChem:
-    plist = prListChemical + listChem
-    print plist
+#for listChem in llistChem:
+#    plist = prListChemical + listChem
+#    print plist
     # main(psdf, pranalysis, kname, corval=corval, maxquantile=maxquantile, lkinfo=lkinfo, Desc1D2D=0, generation3D=0, Desc3D=0, projection=1, JS=1)
 
 
@@ -169,3 +84,74 @@ for listChem in llistChem:
 
 
 
+#################
+# prep DSSTOX   #
+#################
+import DSSTOXlib
+
+pDSSTOX = "/home/borrela2/ChemMaps/data/DSSTox_QSAR-r_1-15.csv"
+prDSSTOX = "/home/borrela2/ChemMaps/data/DSSTox/"
+prDSSTOXPred = "/home/borrela2/ChemMaps/data/DSSTOX_pred/"
+pknownSDF = "/home/borrela2/ChemMaps/data/ToxTrainTest_3D.sdf"
+pLD50 = "/home/borrela2/ChemMaps/data/LD50_data.csv"
+corval = 0.9
+maxquantile = 90
+
+db = DSSTOXlib.DSSTOX(pDSSTOX, 1, 0, prDSSTOX)
+db.computeDesc2D3D(compute=0)
+db.writeDescMatrix("1D2D")
+db.writeDescMatrix("3D")
+db.generateFileMap(corval, maxquantile)
+db.splitMap(64)
+db.generateTableProp(prDSSTOXPred, pknownSDF, pLD50)
+db.generateNeighborMatrix(20)
+
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 50000, 100000, prDSSTOX)
+#db.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 100000, 150000, prDSSTOX)
+#db.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 150000, 200000, prDSSTOX)
+#db.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 200000, 250000, prDSSTOX)
+#db.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 250000, 300000, prDSSTOX)
+#db.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 300000, 350000, prDSSTOX)
+#db.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 350000, 400000, prDSSTOX)
+#db.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 400000, 450000, prDSSTOX)
+#db.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 450000, 500000, prDSSTOX)
+#db.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 500000, 550000, prDSSTOX)
+#b.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 550000, 600000, prDSSTOX)
+#db.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 650000, 700000, prDSSTOX)
+#db.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 700000, 750000, prDSSTOX)
+#db.computeDesc2D3D()
+
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 750000, 0, prDSSTOX)
+#db.computeDesc2D3D()
+
+
+
+# NEW DSSTOX
+#pDSSTOX = "/home/borrela2/ChemMaps/data/DSSTox_NewChems_20181129_QSAR-r_1-2.csv"
+#db = DSSTOXlib.DSSTOX(pDSSTOX, 1, 0, prDSSTOX)
+#db.computeDesc2D3D()

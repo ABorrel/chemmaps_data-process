@@ -97,6 +97,14 @@ def RComputeCor(pfilin1D2D, pfilin3D, prout, valcor = 0.9, maxquantile=80):
 
 
 
+def RComputeMapFiles(pfilin1D2D, pfilin3D, prout, corval, maxquantile):
+
+
+    cmdMAP = "./generateMapFile.R " + str(pfilin1D2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(corval) + " " + str(maxquantile)
+    print cmdMAP
+    system(cmdMAP)
+
+
 def molconvert(pfilin, pfilout= ""):
     """Convert with black background"""
     if pfilout == "":

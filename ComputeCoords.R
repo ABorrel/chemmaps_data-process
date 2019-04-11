@@ -60,7 +60,7 @@ PCAcombined2plans = function(d1D, d2D, pfilout){
   
   print(paste(lcoord1D[[2]][1], lcoord1D[[2]][2], lcoord3D[[2]][1], sep = "%  "))
   
-  gifGeneration(paste(pfilout, "PCA3D2plan", sep = ""), coordSpace)
+  #gifGeneration(paste(pfilout, "PCA3D2plan", sep = ""), coordSpace)
   
   
 }
@@ -174,13 +174,13 @@ generateCoordCombinedPCA = function(d1D2D, d3D, prout){
   names(variancePlane) = c("1D", "2D", "3D")
   write.csv(variancePlane, file = paste(prout, "variancePlanPCAcombined.csv", sep = ""), row.names = TRUE, col.names = "TRUE")
   
-  vrml.open(file = "SpacePCAcombined.wrl", scale = 1,5)
-  points3d(coordSpace, col = "white", scale = 1, transparency = 0.5,  pointstyle = "b")
-  lines3d(x = c(0,10), y = c(0,0), z = c(0,0), lwd = 3, col = "blue")
-  lines3d(x = c(0,0), y = c(0,10), z = c(0,0), lwd = 3, col = "blue")
-  lines3d(x = c(0,0), y = c(0,0), z = c(0,10), lwd = 3, col = "blue")
-  vrml.close()
-  print(paste(lcoord1D2D[[2]][1], lcoord1D2D[[2]][2], lcoord3D[[2]][1], sep = "%  "))
+  #vrml.open(file = "SpacePCAcombined.wrl", scale = 1,5)
+  #points3d(coordSpace, col = "white", scale = 1, transparency = 0.5,  pointstyle = "b")
+  #lines3d(x = c(0,10), y = c(0,0), z = c(0,0), lwd = 3, col = "blue")
+  #lines3d(x = c(0,0), y = c(0,10), z = c(0,0), lwd = 3, col = "blue")
+  #lines3d(x = c(0,0), y = c(0,0), z = c(0,10), lwd = 3, col = "blue")
+  #vrml.close()
+  #print(paste(lcoord1D2D[[2]][1], lcoord1D2D[[2]][2], lcoord3D[[2]][1], sep = "%  "))
   
     
 }
@@ -228,6 +228,13 @@ p3D = args[2]
 prout = args[3]
 valcor = as.double(args[4])
 maxquantile = as.integer(args[5])
+
+#p1D2D = "/home/borrela2/ChemMaps/data/DSSTox/1D2D.csv"
+#p3D = "/home/borrela2/ChemMaps/data/DSSTox/3D.csv"
+#prout = "/home/borrela2/ChemMaps/data/DSSTox/projection0.9-90/"
+#valcor = 0.9
+#maxquantile = 90
+
 
 #p1D2D = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/Desc/1D2D.csv"
 #p3D = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/Desc/3D.csv"
@@ -291,27 +298,27 @@ dglobal = cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])
 #####################################################
 #  Analyse descriptor correlation  and distribution #
 #####################################################
-cardMatrixCor(cor(cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "cor1D2DVS3D", sep = ""), 6)
+#cardMatrixCor(cor(cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "cor1D2DVS3D", sep = ""), 6)
 
 #plot histogram #
-histDataOne(data1 = d1D2D_data[vcompound,], paste(prout, "homodishist1D2D.pdf", sep = ""))
-histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf", sep = ""))
+#histDataOne(data1 = d1D2D_data[vcompound,], paste(prout, "homodishist1D2D.pdf", sep = ""))
+#histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf", sep = ""))
 
 
 #######################
 # analyse projection  #
 #######################
 # ICA
-generateICAcoords(dglobal, prout)
+#generateICAcoords(dglobal, prout)
 
 # PCA 2D
-PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
+#PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
 
 # PCA 3D
-PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
+#PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
 
 # PCA combined
-PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D", sep = ""))
+#PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D", sep = ""))
 generateCoordCombinedPCA(d1D2D_data[vcompound,], d3D_data[vcompound,], prout)
 
 # MDSglobal

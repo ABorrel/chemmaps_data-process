@@ -162,7 +162,7 @@ class chemical:
         self.smi = smiles
         self.psdf = psdf
         self.log = "Init => " + str(smiles) + "\n"
-
+        self.err = 0
         # generate smi?
 
         #smile = runExternalSoft.babelConvertSDFtoSMILE(self.compound["sdf"])
@@ -197,10 +197,12 @@ class chemical:
             try:
                 out = toolbox.timeFunction(normalize, mol)
                 if out == "ERROR":
+                    self.err = 1
                     self.log = self.log + "Normalize SMILES: ERROR DURING THE PROCESS\n"
                 else:
                     molstandardized = out
             except:
+                self.err = 1
                 self.log = self.log + "Normalize SMILES: ERROR INPUT SMI\n"
 
 
@@ -235,10 +237,12 @@ class chemical:
                         # 4. Fragments
                         # Case of fragment -> stock in log file, check after to control
                         self.log = self.log + "Fragments after standardization: " + smilesclean + "\n"
-                        return 0
+                        self.err = 1
+                        return 1
 
                 if smilesclean == "":
                     self.log = self.log + "SMILES empty after preparation\n"
+                    self.err = 1
                     return 1
 
                 else:
@@ -258,6 +262,8 @@ class chemical:
         self.prDesc1D2D = prDescbyChem
         # check if descriptors already computed
         pdes = prDescbyChem + self.name + ".txt"
+        if self.name == "":
+            return 1
         if path.exists(pdes) and path.getsize(pdes) > 10:
             filin = open(pdes, "r")
             llines = filin.readlines()
@@ -275,6 +281,7 @@ class chemical:
 
         if not "smiclean" in self.__dict__:
             self.log = self.log + "No smiles prepared\n"
+            self.err = 1
         else:
             self.mol = loader.ReadMolFromSmile(self.smiclean)
 
@@ -340,7 +347,7 @@ class chemical:
                 self.MOE = {}
 
             # combine all 1D2D
-            if not "allDesc" in dir(self):
+            if not "allDesc1D2D" in dir(self):
                 self.allDesc1D2D = dict()
             self.allDesc1D2D.update(deepcopy(self.consti))
             self.allDesc1D2D.update(deepcopy(self.compo))
@@ -362,6 +369,8 @@ class chemical:
 
         self.prDesc3D = pr3DDesc
         p3Ddesc = pr3DDesc + self.name + ".txt"
+        if self.name == "":
+            return 1
         # control already compute
         if path.exists(p3Ddesc)and path.getsize(p3Ddesc) > 10:
             filin = open(p3Ddesc, "r")
@@ -380,6 +389,8 @@ class chemical:
 
         else:
             if not "psdf3D" in self.__dict__:
+                self.log = self.log + "ERROR no 3D chemical file\n"
+                self.err = 1
                 return 1
 
             ddesc = descriptors3D.get3Ddesc(self.psdf3D)
@@ -491,7 +502,7 @@ class chemical:
         if path.exists(psdf3D):
             self.log = self.log + "3D already generated\n"
             self.psdf3D = psdf3D
-            return
+            self.err = 0
 
         if software == "ligprep":
 
@@ -507,6 +518,7 @@ class chemical:
             # case error in ligprep
             if not path.exists(psdf3Dtemp) or path.getsize(psdf3Dtemp) == 0:
                 self.log = self.log + "EROOR in ligPrep generation\n"
+                self.err=1
             else:
                 toolbox.selectMinimalEnergyLigPrep(psdfin=psdf3Dtemp,
                                                                psdfout=psdf3D)
@@ -514,52 +526,40 @@ class chemical:
                 pathFolder.cleanFolder(prtemp)
 
 
-        elif software == "Rdkit":
+        elif software == "RDKit":
             #generation using the method of Riniker and Landrum
 
-            mol = Chem.MolFromSmiles(self.smiclean)
-            molH = Chem.AddHs(mol)
-            err = AllChem.EmbedMolecule(molH, AllChem.ETKDG())
-            if err == 1:
-                self.log = self.log  + "ERROR in rdkit 3D generation"
+            if not "smiclean" in self.__dict__:
+                self.log = self.log + "ERROR in rdkit 3D generation not clean smiles\n"
+                self.err = 1
             else:
-                wmol = Chem.MolToMolBlock(molH)
-                pmol = psdf3D[0:-3] + "mol"
-                fmol3D = open(psdf3D[0:-3] + "mol", "w")
-                fmol3D.write(wmol)
-                fmol3D.close()
-
-                runExternalSoft.babelConvertMoltoSDF(pmol, psdf3D)
-
-                if path.exists(psdf3D) and path.getsize(psdf3D):
-                    self.psdf3D = psdf3D
-                    remove(pmol)
+                mol = Chem.MolFromSmiles(self.smiclean)
+                molH = Chem.AddHs(mol)
+                err = AllChem.EmbedMolecule(molH, AllChem.ETKDG())
+                if err == 1:
+                    self.log = self.log + "ERROR in rdkit 3D generation\n"
+                    self.err=0
                 else:
-                    self.log = self.log + "ERROR during the write process of sdf\n"
+                    wmol = Chem.MolToMolBlock(molH)
+                    pmol = psdf3D[0:-3] + "mol"
+                    fmol3D = open(psdf3D[0:-3] + "mol", "w")
+                    fmol3D.write(wmol)
+                    fmol3D.close()
 
+                    runExternalSoft.babelConvertMoltoSDF(pmol, psdf3D)
 
-
-
-
-
+                    if path.exists(psdf3D) and path.getsize(psdf3D):
+                        self.psdf3D = psdf3D
+                        remove(pmol)
+                    else:
+                        self.log = self.log + "ERROR during the write process of sdf\n"
 
 
 ######## not Use
 
 
-    def get_fingerprints(self):
-        # fingerprint
-        self.fingerAtomPairs = fingerprint.CalculateAtomPairsFingerprint(self.mol)
-        self.fingerDaylight = fingerprint.CalculateDaylightFingerprint(self.mol)
-        self.fingerEstate = fingerprint.CalculateEstateFingerprint(self.mol)
-        self.fingerFP4 = fingerprint.CalculateFP4Fingerprint(self.mol)
-        self.fingerMACCS = fingerprint.CalculateMACCSFingerprint(self.mol)
-        self.fingerMorgan = fingerprint.CalculateMorganFingerprint(self.mol)
-        self.fingerTorsion = fingerprint.CalculateTopologicalTorsionFingerprint(self.mol)
 
-
-
-    def generate3DFromSMILES(self, log):
+    def generate3DLigPrepFromSMILES(self, log):
         """
         Compute descriptors 3D from SMILES code and generate the 3D using ligprep
         :return: dictionary of descriptors in all3D

@@ -4,17 +4,18 @@ import pathFolder
 
 from os import path, remove
 
-def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0, namek="DATABASE_ID", soft3Dgeneration = "RDKit"):
+def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 1, Desc3D=1, control=0, namek="DATABASE_ID", soft3Dgeneration = "RDKit"):
 
     # folder
     dout = {}
     dout["1D2D"] = prdesc + "1D2D.csv"
     dout["3D"] = prdesc + "3D.csv"
 
-
     # shortcut
     if path.exists(prdesc + "3D.csv") and path.exists(prdesc + "1D2D.csv") and Desc3D == 0 and Desc1D2D == 0:
         return dout
+
+
 
     if control == 2:
         try:remove(dout["1D2D"])
@@ -40,7 +41,6 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
 
     if Desc3D == 1:
         ldesc3D = chemical.getLdesc("3D")
-        print len(ldesc3D)
         dout["3D"] = open(dout["3D"], "w")
         dout["3D"].write("ID\t" + "\t".join(ldesc3D) + "\n")
 
@@ -88,7 +88,7 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 0, Desc3D=1, control=0,
             prSDF3D = prdesc + "SDF3D/"
             pathFolder.createFolder(prSDF3D)
             if generation3D == 1:# generation from the SMILES
-                err = chem.generate3DFromSMILES(prSDF3D, software=soft3Dgeneration)
+                chem.generate3DFromSMILES(prSDF3D, software=soft3Dgeneration)
             else:
                 pSDF3D = prSDF3D + nameChem + ".sdf"
                 if path.exists(pSDF3D):
