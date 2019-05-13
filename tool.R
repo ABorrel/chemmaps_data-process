@@ -374,7 +374,7 @@ openData = function (pfilin, valcor, prout, vexclude){
   	print(dim(desc))
 
  	# remove col not well computed
-  	desc = t(delete.na(t(desc), 1000))
+  	desc = t(delete.na(t(desc), as.integer(0.1*dim(desc)[2])))
   	print(dim(desc))
   	#print(desc[2,])
 

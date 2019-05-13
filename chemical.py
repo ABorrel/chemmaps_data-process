@@ -18,7 +18,7 @@ import descriptors3D
 
 
 LSALTDEF="[Cl,Br,I]\n[Li,Na,K,Ca,Mg]\n[O,N]\n[N](=O)(O)O\n[P](=O)(O)(O)O\n[P](F)(F)(F)(F)(F)F\n[S](=O)(=O)(O)O\n[CH3][S](=O)(=O)(O)\nc1cc([CH3])ccc1[S](=O)(=O)(O)\n[CH3]C(=O)O\nFC(F)(F)C(=O)O\nOC(=O)C=CC(=O)O\nOC(=O)C(=O)O\nOC(=O)C(O)C(O)C(=O)O\nC1CCCCC1[NH]C1CCCCC1\n"
-LSALT="[Co]"
+LSALT="[Co]\n[Cd+2]\n"
 
 
 LSMILESREMOVE=["[C-]#N", "[Al+3]", "[Gd+3]", "[Pt+2]", "[Au+3]", "[Bi+3]", "[Al]", "[Si+4]", "[Fe]", "[Zn]", "[Fe+2]",
@@ -163,6 +163,7 @@ class chemical:
         self.psdf = psdf
         self.log = "Init => " + str(smiles) + "\n"
         self.err = 0
+        self.inchikey = ""
         # generate smi?
 
         #smile = runExternalSoft.babelConvertSDFtoSMILE(self.compound["sdf"])
@@ -253,6 +254,13 @@ class chemical:
                     fsmiclean.close()
 
                     self.smiclean = smilesclean
+
+                    # convert in inchikey
+                    molformat = Chem.MolFromSmiles(smilesclean)
+                    inchi = Chem.inchi.MolToInchi(molformat)
+                    inchikey = Chem.inchi.InchiToInchiKey(inchi)
+                    self.inchikey = inchikey
+
                     self.psmiclean = psmiclean
                     return 0
 
@@ -261,8 +269,10 @@ class chemical:
 
         self.prDesc1D2D = prDescbyChem
         # check if descriptors already computed
-        pdes = prDescbyChem + self.name + ".txt"
-        if self.name == "":
+        pdes = prDescbyChem + self.inchikey + ".txt"
+        if self.inchikey == "":
+            self.err = 1
+            self.log = self.log + "No clean SMILES\n"
             return 1
         if path.exists(pdes) and path.getsize(pdes) > 10:
             filin = open(pdes, "r")
@@ -368,8 +378,8 @@ class chemical:
     def compute3DDesc(self, pr3DDesc):
 
         self.prDesc3D = pr3DDesc
-        p3Ddesc = pr3DDesc + self.name + ".txt"
-        if self.name == "":
+        p3Ddesc = pr3DDesc + self.inchikey + ".txt"
+        if self.inchikey == "":
             return 1
         # control already compute
         if path.exists(p3Ddesc)and path.getsize(p3Ddesc) > 10:
@@ -448,10 +458,10 @@ class chemical:
         if typeDesc == "1D2D":
             if "allDesc1D2D" in self.__dict__:
 
-                ptable = prDescbyCAS + self.name + ".txt"
+                ptable = prDescbyCAS + self.inchikey + ".txt"
                 ftable = open(ptable, "w")
                 ftable.write("ID\t" + "\t".join(self.allDesc1D2D.keys()) + "\n")
-                ftable.write(self.name)
+                ftable.write(self.inchikey)
                 for desc in self.allDesc1D2D.keys():
                     if self.allDesc1D2D[desc] == "inf" or self.allDesc1D2D[desc] == "nan":
                         self.allDesc1D2D[desc] = "NA"
@@ -466,10 +476,10 @@ class chemical:
         if typeDesc == "3D":
             if "allDesc3D" in self.__dict__:
 
-                ptable = prDescbyCAS + self.name + ".txt"
+                ptable = prDescbyCAS + self.inchikey + ".txt"
                 ftable = open(ptable, "w")
                 ftable.write("ID\t" + "\t".join(self.allDesc3D.keys()) + "\n")
-                ftable.write(self.name)
+                ftable.write(self.inchikey)
                 for desc in self.allDesc3D.keys():
                     if self.allDesc3D[desc] == "inf" or self.allDesc3D[desc] == "nan":
                         self.allDesc3D[desc] = "NA"
@@ -548,7 +558,7 @@ class chemical:
 
                     runExternalSoft.babelConvertMoltoSDF(pmol, psdf3D)
 
-                    if path.exists(psdf3D) and path.getsize(psdf3D):
+                    if path.exists(psdf3D) and path.getsize(psdf3D) > 100:
                         self.psdf3D = psdf3D
                         remove(pmol)
                     else:

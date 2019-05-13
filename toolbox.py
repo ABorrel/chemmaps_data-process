@@ -280,4 +280,11 @@ def renameHeaderSDF(pfilin):
     filout.close()
 
 
+from rdkit import Chem
+def convertSMILEStoINCHIKEY(SMILESin):
+    molformat = Chem.MolFromSmiles(SMILESin)
+    inchi = Chem.inchi.MolToInchi(molformat)
+    inchikey = Chem.inchi.InchiToInchiKey(inchi)
+
+    return inchikey
 

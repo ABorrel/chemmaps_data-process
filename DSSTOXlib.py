@@ -3,25 +3,28 @@ import toolbox
 import chemical
 import runExternalSoft
 import loadDB
+import calculate
 
 from os import path, listdir
 from copy import deepcopy
 from math import sqrt
 from rdkit import Chem
 from re import search
+from random import shuffle
 
 
 class DSSTOX:
 
-    def __init__(self, plistChem, istart, iend, prout):
+    def __init__(self, plistChem, istart, iend, prDSSTox, prout):
 
         self.plistChem = plistChem
-        self.prDSSTOX = pathFolder.createFolder(prout)
         self.istart = istart
         self.iend = iend
-        self.prSMI = pathFolder.createFolder(self.prDSSTOX + "SMI/")
         self.plog = prout + "log.txt"
+        self.prDSSTox = prDSSTox
+        self.prSMI = pathFolder.createFolder(self.prDSSTox + "SMI/")
         self.prout = prout
+
 
 
     def loadlistChem(self):
@@ -32,9 +35,10 @@ class DSSTOX:
 
 
     def computeDesc2D3D (self, compute=1):
-        pr2D = pathFolder.createFolder(self.prDSSTOX + "2D/")
-        pr3D = pathFolder.createFolder(self.prDSSTOX + "3D/")
-        pr3Dsdf = pathFolder.createFolder(self.prDSSTOX + "3Dtemp/")
+
+        pr2D = pathFolder.createFolder(self.prDSSTox + "2D/")
+        pr3D = pathFolder.createFolder(self.prDSSTox + "3D/")
+        pr3Dsdf = pathFolder.createFolder(self.prDSSTox + "3Dtemp/")
 
         self.pr2D = pr2D
         self.pr3D = pr3D
@@ -56,18 +60,30 @@ class DSSTOX:
 
         dout = {}
         while i < iend:
-            InchIKey = self.dchem[lchemID[i]]["InChI Key_QSARr"]
-            DSSTOXid = self.dchem[lchemID[i]]["DSSTox_Structure_Id"]
-            smiles = self.dchem[lchemID[i]]["Original_SMILES"].split(" ")[0]
+            #if "InChI Key_QSARr" in self.dchem[lchemID[i]].keys():
+            #    InchIKey = self.dchem[lchemID[i]]["InChI Key_QSARr"]
+            #elif "INCHIKEY" in self.dchem[lchemID[i]].keys():
+            #    InchIKey = self.dchem[lchemID[i]]["INCHIKEY"]
+            
+            if "dsstox_substance_id" in self.dchem[lchemID[i]].keys():
+                DSSTOXid = self.dchem[lchemID[i]]["dsstox_substance_id"]
+            else:
+                DSSTOXid = self.dchem[lchemID[i]]["DTXSID"]
 
-            chem = chemical.chemical(InchIKey, smiles)
+            if "Original_SMILES" in self.dchem[lchemID[i]].keys():
+                smiles = self.dchem[lchemID[i]]["Original_SMILES"].split(" ")[0]
+            elif "ORIGINAL  SMILES" in self.dchem[lchemID[i]].keys():
+                smiles = self.dchem[lchemID[i]]["ORIGINAL  SMILES"]
+            else:
+                smiles = self.dchem[lchemID[i]]["SMILES"]
+
+            chem = chemical.chemical(DSSTOXid, smiles)
             chem.prepareChem(self.prSMI)
-
+            
             if compute == 1:
-                chem.generate3DFromSMILES(pr3Dsdf, "Rdkit")
+                chem.generate3DFromSMILES(pr3Dsdf, "RDKit")
                 chem.compute1D2DDesc(pr2D)
                 chem.compute3DDesc(pr3D)
-
             # control if all process is correct
             if chem.err == 1:
                 flog = open(self.plog, "a")
@@ -80,6 +96,7 @@ class DSSTOX:
                 chem.writeTablesDesc(pr3D, "3D")
 
                 #print chem.log
+                InchIKey = chem.inchikey
 
                 if not InchIKey in dout.keys():
                     dout[InchIKey] = {}
@@ -91,6 +108,29 @@ class DSSTOX:
             i = i + 1
 
         self.ddesc = dout
+
+
+    def computepng(self):
+
+        prPNG = self.prDSSTox + "PNG/"
+        pathFolder.createFolder(prPNG)
+
+        # draw from desc descriptors
+        prSMI = self.prDSSTox + "SMI/"
+        if not path.exists(prSMI):
+            print "ERROR: CREATE CLEAN SMI FIRST"
+            return
+        else:
+            lsmi = listdir(prSMI)
+            shuffle(lsmi)
+            # control if nSDF = nPNG
+            if len(lsmi) != len(listdir(prPNG)):
+                for smifile in lsmi:
+                    fSMILESin = open(prSMI + smifile, "r")
+                    SMILESin = fSMILESin.readlines()[0]
+                    fSMILESin.close()
+                    inchikey = toolbox.convertSMILEStoINCHIKEY(SMILESin)
+                    runExternalSoft.molconvert(prSMI + smifile, prPNG + inchikey + ".png")
 
 
     def writeDescMatrix(self, typeDesc):
@@ -151,7 +191,7 @@ class DSSTOX:
     def generateFileMap(self, corval, maxquantile):
 
         prmap = pathFolder.createFolder(self.prout + "map_" + str(corval) + "-" + str(maxquantile) + "/")
-        if listdir(prmap) > 0:
+        if len(listdir(prmap)) > 0:
             self.prmap = prmap
         else:
             runExternalSoft.RComputeMapFiles(self.pfdesc["1D2D"], self.pfdesc["3D"], prmap, corval, maxquantile)
@@ -186,7 +226,6 @@ class DSSTOX:
             minY = 0.0
 
             nbchem = len(d1D2D.keys())
-            nbbychem = int(nbchem / nbsplit)
 
             for chem in d1D2D.keys():
                 X = float(d1D2D[chem]["DIM1"])
@@ -260,11 +299,60 @@ class DSSTOX:
             print len(dmap[d]), d
 
 
+    def generateMapSplitFile(self):
 
-    def generateTableProp(self, prDSSTOXPred, pknownSDF, pLD50):
+        if not "prmaps" in self.__dict__:
+            print "Generate Maps first"
+            return
+
+        else:
+            lfmap = listdir(self.prmaps)
+            dCentroid = {}
+            lmap = []
+
+            pfileMapChem = self.prmap + "mapChem.csv"
+            fmapChem = open(pfileMapChem, "w")
+            fmapChem.write("ID\tMap\n")
+
+            for namefmap in lfmap:
+                map = namefmap.split("_")[0]
+
+                if map in lfmap or map == "":
+                    continue
+                else:
+                    pf1D2D = self.prmaps + map + "_map1D2D.csv"
+                    pf3D = self.prmaps + map + "_map3D.csv"
+
+                    d1D2D = toolbox.loadMatrixToDict(pf1D2D, sep=",")
+                    d3D = toolbox.loadMatrixToDict(pf3D, sep=",")
+
+                    dcoord = {}
+                    for chemID in d1D2D.keys():
+                        dcoord[chemID] = [d1D2D[chemID]["DIM1"], d1D2D[chemID]["DIM2"], d3D[chemID]["DIM1"]]
+                        fmapChem.write("%s\t%s\n"%(chemID, map))
+
+                    coordCentroid = calculate.centroid(dcoord)
+                    dCentroid[map] = coordCentroid
+
+                    lmap.append(map)
+
+            fmapChem.close()
+
+            pfmapCentroid = self.prmap + "MapCentroid.csv"
+            fmapCentroid = open(pfmapCentroid, "w")
+            fmapCentroid.write("Map\tX\tY\tZ\n")
+
+            for map in dCentroid.keys():
+                lcoord = [str(c) for c in dCentroid[map]]
+                fmapCentroid.write("%s\t%s\n"%(map, "\t".join(lcoord)))
+            fmapCentroid.close()
+
+
+
+    def generateTableProp(self, prDSSTOXPred, pknownSDF, pLD50, pDSSToxmapID=""):
 
         # list of descriptors to extract
-        ldesc = ["inchkey", "SMILES", "GHS_category", "EPA_category", "consensus_LD50", "LD50_mgkg", "MolWeight", "LogOH_pred", "CATMoS_VT_pred", "CATMoS_NT_pred", "CATMoS_EPA_pred",
+        ldesc = ["inchikey", "SMILES", "GHS_category", "EPA_category", "consensus_LD50", "LD50_mgkg", "MolWeight", "LogOH_pred", "CATMoS_VT_pred", "CATMoS_NT_pred", "CATMoS_EPA_pred",
                  "CATMoS_GHS_pred", "CATMoS_LD50_pred", "CERAPP_Ago_pred", "CERAPP_Anta_pred", "CERAPP_Bind_pred", "Clint_pred", "CoMPARA_Ago_pred", "CoMPARA_Anta_pred",
                  "CoMPARA_Bind_pred", "FUB_pred", "LogHL_pred", "LogKM_pred", "LogKOA_pred", "LogKoc_pred", "LogBCF_pred", "LogD55_pred", "LogP_pred", "MP_pred", "pKa_a_pred",
                  "pKa_b_pred", "ReadyBiodeg_pred", "RT_pred", "LogVP_pred", "LogWS_pred", "BioDeg_LogHalfLife_pred", "BP_pred", "nbLipinskiFailures"]
@@ -275,12 +363,20 @@ class DSSTOX:
             return
 
 
-        lpmaps = listdir(self.prmaps)
-        for pmaps in lpmaps:
-            if search("TableProp", pmaps):
-                print "Prop table already computed"
-                return
+        # check with DSStox ID in case of the inchikey not find
+        dDSSToxmap = toolbox.loadMatrixToDict(pDSSToxmapID, sep = ",")
+        print "Load map CID to XID"
 
+
+        # to bypass the file creation
+        #lpmaps = listdir(self.prmaps)
+        #for pmaps in lpmaps:
+        #    print pmaps
+        #    if search("TableProp", pmaps):
+        #        print "Prop table already computed"
+        #        return
+
+        # intialisation
         dDSSTOX = {}
 
         # load molecular coord file and update prop table
@@ -299,7 +395,7 @@ class DSSTOX:
         filinDesc2D.close()
         print "LOAD 2D desc"
 
-        # put in dict out
+        # put in dict out -> initialization to NA
         for IDchem in dSMILE.keys():
             dDSSTOX[IDchem] = {}
             for desc in ldesc:
@@ -311,26 +407,30 @@ class DSSTOX:
             chemMol = Chem.MolFromSmiles(dDSSTOX[IDchem]["SMILES"])
             inchi = Chem.inchi.MolToInchi(chemMol)
             inchikey = Chem.inchi.InchiToInchiKey(inchi)
-            dDSSTOX[IDchem]["inchkey"] = inchikey
+            dDSSTOX[IDchem]["inchikey"] = inchikey
 
         print "Dictionnary created"
-
 
         # load prediction and update table
         lppred = listdir(prDSSTOXPred)
         for ppred in lppred:
-            print ppred
+            print ppred, "Load file"
             if ppred[-3:] == "csv":
                 dtemp = toolbox.loadMatrixToDict(prDSSTOXPred + ppred, sep=",")
 
-                for chemID in dtemp.keys():
-                    for k in dtemp[chemID].keys():
-                        if k in ldesc:
-                            # if DSSTOX is not already in dict just continue
-                            try:
-                                dDSSTOX[chemID][k] = dtemp[chemID][k]
-                            except:
-                                continue
+                for chemIDtemp in dtemp.keys():
+                    if not chemIDtemp in dDSSTOX.keys():
+                        try:
+                            chemSID = dDSSToxmap[chemIDtemp]["dsstox_substance_id"]
+                            if chemSID in dDSSTOX.keys() and chemSID != "":
+                                for k in dtemp[chemIDtemp].keys():
+                                    if k in ldesc:
+                                        dDSSTOX[chemSID][k] = dtemp[chemIDtemp][k]
+                        except: pass
+                    else:
+                        for k in dtemp[chemIDtemp].keys():
+                            if k in ldesc:
+                                dDSSTOX[chemIDtemp][k] = dtemp[chemIDtemp][k]
 
 
         print "Prediction loaded"
@@ -343,8 +443,6 @@ class DSSTOX:
 
         #load LD50 file
         dLD50 = toolbox.loadMatrixToDict(pLD50)
-
-
         print "SDF and table LD50 loaded"
 
 
@@ -362,16 +460,16 @@ class DSSTOX:
                 filout.write("ID\t%s\n"%("\t".join(ldesc)))
 
                 for chemID in dcoords.keys():
-                    try: tempinchKey = dDSSTOX[chemID]["inchkey"]
+                    try: tempinchKey = dDSSTOX[chemID]["inchikey"]
                     except:continue
-                    # look sdf
+                    # look sdf -> map on the sdf
                     for dchemIDsdf in dsdf.lc:
                         if dchemIDsdf["InChI Key_QSARr"] == tempinchKey:
                             for ksdf in dchemIDsdf.keys():
                                 if ksdf in ldesc:
                                     dDSSTOX[chemID][ksdf] = dchemIDsdf[ksdf]
 
-                    # look in LD50 file
+                    # look in LD50 file -> map on the LD50
                     for chemIDLD50 in dLD50.keys():
                         if dLD50[chemIDLD50]["InChI Key_QSARr"] == tempinchKey:
                             for kLD50 in dLD50[chemIDLD50].keys():
@@ -442,82 +540,3 @@ class DSSTOX:
 
 
 
-"""
-
-def Run (psdf, pranalysis, kname, lkinfo=[], corval=0.8, maxquantile=80, control=1, Desc1D2D=1, generation3D = 1, Desc3D=1, projection=1, JS=1, drawPNG=1):
-
-    pathFolder.createFolder(pranalysis)
-
-    ###################################
-    # analysis and compute descriptor #
-    ###################################
-
-    db = loadDB.sdfDB(psdf, kname, pranalysis)
-    db.writeTable("TaleProp.csv")
-
-
-    # descriptor computation #
-    ##########################
-    prDesc = pranalysis + "Desc/"
-    pathFolder.createFolder(prDesc, clean=0)
-    dpfiledesc = computeDB.computeDesc(psdf, prDesc, control=control, Desc1D2D=Desc1D2D, generation3D=generation3D, Desc3D=Desc3D, namek=kname)
-    # analyse projection  and compute coordinate #
-    ##############################################
-    prproject = pathFolder.createFolder(pranalysis + "projection" + str(corval) + "-" + str(maxquantile) + "/")
-    if projection == 1:
-        print dpfiledesc["1D2D"], dpfiledesc["3D"], prproject, corval, maxquantile
-        runExternalSoft.RComputeCor(dpfiledesc["1D2D"], dpfiledesc["3D"], prproject, corval, maxquantile)
-
-    ###################
-    # for the website #
-    ###################
-
-
-    # 1. compute png #
-    ##################
-    if drawPNG == 1:
-        prpng = pranalysis + "cpdpng/"
-        pathFolder.createFolder(prpng)
-
-        # draw from desc descriptors
-        prSMI = prDesc + "SMI/"
-        if path.exists(prSMI):
-            lsmi = listdir(prSMI)
-            # control if nSDF = nPNG
-            if len(lsmi) != len(listdir(prpng)):
-                for smifile in lsmi:
-                    runExternalSoft.molconvert(prSMI + smifile, prpng + smifile.split(".")[0] + ".png")
-        else:
-            # case where considering only original map
-            db.drawMolecules(prpng)
-
-
-    ##################
-    # JS file update #
-    ##################
-    if JS == 1:
-        prforjsupdate = pranalysis + "JS" + str(corval) + "-" + str(maxquantile) + "/"
-        pathFolder.createFolder(prforjsupdate)
-        pfileDataJS = prforjsupdate + "data.js"
-
-        if path.exists(pfileDataJS):
-            remove(pfileDataJS)
-
-        # 2. update JS coords #
-        #######################
-        pcoordsCombine = prproject + "coordPCAcombined.csv"
-        if path.exists(pcoordsCombine):
-            createJS.formatCoordinates(pcoordsCombine, pfileDataJS)
-
-
-        # 3. update JS properties #
-        ###########################
-        createJS.formatInfo(db, dpfiledesc["1D2D"], lkinfo, pfileDataJS)
-
-
-        # 4. update neighborhood #
-        ##########################
-        createJS.extractCloseCompounds(pcoordsCombine, 20, pfileDataJS)
-
-
-"""
