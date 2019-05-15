@@ -5,7 +5,7 @@ import runExternalSoft
 import loadDB
 import calculate
 
-from os import path, listdir
+from os import path, listdir, remove
 from copy import deepcopy
 from math import sqrt
 from rdkit import Chem
@@ -43,12 +43,8 @@ class DSSTOX:
         self.pr2D = pr2D
         self.pr3D = pr3D
 
-        if compute == 0:
-            return
-
         if not "dchem" in self.__dict__:
             self.loadlistChem()
-
 
         lchemID = self.dchem.keys()
 
@@ -58,13 +54,9 @@ class DSSTOX:
         else:
             iend = self.iend
 
+
         dout = {}
         while i < iend:
-            #if "InChI Key_QSARr" in self.dchem[lchemID[i]].keys():
-            #    InchIKey = self.dchem[lchemID[i]]["InChI Key_QSARr"]
-            #elif "INCHIKEY" in self.dchem[lchemID[i]].keys():
-            #    InchIKey = self.dchem[lchemID[i]]["INCHIKEY"]
-            
             if "dsstox_substance_id" in self.dchem[lchemID[i]].keys():
                 DSSTOXid = self.dchem[lchemID[i]]["dsstox_substance_id"]
             else:
@@ -79,25 +71,34 @@ class DSSTOX:
 
             chem = chemical.chemical(DSSTOXid, smiles)
             chem.prepareChem(self.prSMI)
-            
-            if compute == 1:
-                chem.generate3DFromSMILES(pr3Dsdf, "RDKit")
-                chem.compute1D2DDesc(pr2D)
-                chem.compute3DDesc(pr3D)
-            # control if all process is correct
+
+
+            # skip error prep
             if chem.err == 1:
                 flog = open(self.plog, "a")
                 flog.write("\n" + str(DSSTOXid) + "\n")
                 flog.write(chem.log)
                 flog.close()
-            else:
-                # write table of desc
-                chem.writeTablesDesc(pr2D, "1D2D")
-                chem.writeTablesDesc(pr3D, "3D")
+                i = i + 1
+                continue
 
-                #print chem.log
-                InchIKey = chem.inchikey
+            if compute == 1:
+                chem.generate3DFromSMILES(pr3Dsdf, "RDKit")
+                chem.compute1D2DDesc(pr2D)
+                chem.compute3DDesc(pr3D)
+                # control if all process is correct
 
+                if chem.err == 0:
+                    # write table of desc
+                    chem.writeTablesDesc(pr2D, "1D2D")
+                    chem.writeTablesDesc(pr3D, "3D")
+                else:
+                    i = i + 1
+                    continue
+
+            # case of everything works
+            InchIKey = chem.inchikey
+            if path.exists(pr2D + InchIKey + ".txt") and path.exists(pr3D + InchIKey + ".txt"):
                 if not InchIKey in dout.keys():
                     dout[InchIKey] = {}
                     dout[InchIKey]["SMI"]=[]
@@ -112,25 +113,35 @@ class DSSTOX:
 
     def computepng(self):
 
-        prPNG = self.prDSSTox + "PNG/"
-        pathFolder.createFolder(prPNG)
-
         # draw from desc descriptors
+
         prSMI = self.prDSSTox + "SMI/"
         if not path.exists(prSMI):
             print "ERROR: CREATE CLEAN SMI FIRST"
             return
-        else:
-            lsmi = listdir(prSMI)
-            shuffle(lsmi)
-            # control if nSDF = nPNG
-            if len(lsmi) != len(listdir(prPNG)):
-                for smifile in lsmi:
-                    fSMILESin = open(prSMI + smifile, "r")
-                    SMILESin = fSMILESin.readlines()[0]
-                    fSMILESin.close()
-                    inchikey = toolbox.convertSMILEStoINCHIKEY(SMILESin)
-                    runExternalSoft.molconvert(prSMI + smifile, prPNG + inchikey + ".png")
+
+        prPNG = self.prDSSTox + "PNG/"
+        pathFolder.createFolder(prPNG)
+
+        if "ddesc" in self.__dict__:
+            linchikey = self.ddesc.keys()
+            shuffle(linchikey)
+            for inchikey in linchikey:
+                ppng = prPNG + inchikey + ".png"
+                if path.exists(ppng):
+                    continue
+                else:
+                    DSSTOXid = self.ddesc[inchikey]["DSSTOXid"][0]
+                    SMIclean = self.ddesc[inchikey]["SMI"][0]
+
+                    pSMIclean = prPNG + DSSTOXid + ".smi"
+                    fSMIcLean = open(pSMIclean, "w")
+                    fSMIcLean.write(SMIclean)
+                    fSMIcLean.close()
+
+                    runExternalSoft.molconvert(pSMIclean, ppng)
+                    remove(pSMIclean)
+
 
 
     def writeDescMatrix(self, typeDesc):
@@ -208,7 +219,7 @@ class DSSTOX:
             prout = pathFolder.createFolder(self.prmap + "split_" + str(nbsplit) + "/")
             self.prmaps = prout
 
-            if len(listdir(self.prmaps)) > 0:
+            if len(listdir(self.prmaps)) >= (nbsplit*2):
                 print "Maps already computed"
                 return
 
@@ -226,6 +237,7 @@ class DSSTOX:
             minY = 0.0
 
             nbchem = len(d1D2D.keys())
+            nbchembymap = int(nbchem/nbsplit)
 
             for chem in d1D2D.keys():
                 X = float(d1D2D[chem]["DIM1"])
@@ -240,41 +252,29 @@ class DSSTOX:
                 if Y < minY:
                     minY = Y
 
-            print minX, maxX
-            print minY, maxY
 
-            xi = (maxX - minX) / sqrt(nbsplit)
-            yi = (maxY - minY) / sqrt(nbsplit)
-
-            print xi,yi
             dmap = {}
             imap = 1
             dmap[imap] = []
-            y = minY
 
-
-            while y < maxY:
-                print imap
-                y = y + yi
-
-                x = minX
-                while x < maxX:
-                    x = x + 0.10
-                    if len(dmap[imap]) > 10000:
-                        imap = imap + 1
-                        dmap[imap] = []
-                    ichem = 0
-                    lchem = d1D2D.keys()
-                    nbchem = len(lchem)
-                    while ichem < nbchem:
-                        if float(d1D2D[lchem[ichem]]["DIM1"]) < x and float(d1D2D[lchem[ichem]]["DIM2"]) < y:
-                            dmap[imap].append(deepcopy(d1D2D[lchem[ichem]]))
-                            del d1D2D[lchem[ichem]]
-                            del lchem[ichem]
-                            nbchem = nbchem - 1
-                            continue
-                        else:
-                            ichem = ichem + 1
+            x = minX
+            while x < maxX:
+                x = x + 0.10
+                if len(dmap[imap]) > nbchembymap:
+                    imap = imap + 1
+                    dmap[imap] = []
+                ichem = 0
+                lchem = d1D2D.keys()
+                nbchem = len(lchem)
+                while ichem < nbchem:
+                    if float(d1D2D[lchem[ichem]]["DIM1"]) < x:
+                        dmap[imap].append(deepcopy(d1D2D[lchem[ichem]]))
+                        del d1D2D[lchem[ichem]]
+                        del lchem[ichem]
+                        nbchem = nbchem - 1
+                        continue
+                    else:
+                        ichem = ichem + 1
 
 
         d3D = toolbox.loadMatrixToDict(coord3D, sep = ",")
@@ -286,11 +286,11 @@ class DSSTOX:
             filout1D2D = open(pfilout1D2D, "w")
             filout3D = open(pfilout3D, "w")
             filout1D2D.write("\"\",\"DIM1\",\"DIM2\"\n")
-            filout3D.write("\"\",\"DIM1\",\"DIM2\"\n")
+            filout3D.write("\"\",\"DIM3\",\"DIM4\"\n")
 
             for chem in dmap[d]:
                 filout1D2D.write("\"%s\",%s,%s\n"%(chem[""], chem["DIM1"], chem["DIM2"]))
-                filout3D.write("\"%s\",%s,%s\n" % (chem[""], d3D[chem[""]]["DIM1"], d3D[chem[""]]["DIM2"]))
+                filout3D.write("\"%s\",%s,%s\n" % (chem[""], d3D[chem[""]]["DIM3"], d3D[chem[""]]["DIM4"]))
 
             filout1D2D.close()
             filout3D.close()
@@ -328,7 +328,7 @@ class DSSTOX:
 
                     dcoord = {}
                     for chemID in d1D2D.keys():
-                        dcoord[chemID] = [d1D2D[chemID]["DIM1"], d1D2D[chemID]["DIM2"], d3D[chemID]["DIM1"]]
+                        dcoord[chemID] = [d1D2D[chemID]["DIM1"], d1D2D[chemID]["DIM2"], d3D[chemID]["DIM3"]]
                         fmapChem.write("%s\t%s\n"%(chemID, map))
 
                     coordCentroid = calculate.centroid(dcoord)
@@ -507,7 +507,7 @@ class DSSTOX:
                     for chemID in d1D2D.keys():
                         x = d1D2D[chemID]["DIM1"]
                         y = d1D2D[chemID]["DIM2"]
-                        z = d3D[chemID]["DIM1"]
+                        z = d3D[chemID]["DIM3"]
                         dcor[chemID] = [float(x), float(y), float(z)]
 
                     ddist = {}

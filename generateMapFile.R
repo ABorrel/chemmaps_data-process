@@ -125,6 +125,6 @@ lcoord = generatePCAcoords(ld3Dscale[[1]])
 write.csv(lcoord[[3]], file=paste(prout, "CP3D.csv", sep = ""))
 # write coord
 dcoord = lcoord[[1]][,1:2]
-colnames(dcoord) = c("DIM1", "DIM2")
+colnames(dcoord) = c("DIM3", "DIM4")
 write.csv(dcoord, file=paste(prout, "coord3D.csv", sep = ""))
 

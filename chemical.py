@@ -176,21 +176,32 @@ class chemical:
 
 
         psmiclean = prSMIclean + self.name + ".smi"
+        if self.name == "":
+            self.err = 1
+            return 1
 
         # try if existing
         if path.exists(psmiclean):
             psmiclean = prSMIclean + self.name + ".smi"
+            #print psmiclean
             fsmiclean = open(psmiclean, "r")
-            smiclean = fsmiclean.readlines()
+            llsmiclean = fsmiclean.readlines()
             fsmiclean.close()
 
-            smiclean = smiclean[0].strip()
-            self.smiclean = smiclean
-            self.log = self.log + "Prep SMI :" + str(self.smi) + "\n"
-            self.log = self.log + "Prepared SMI :" + str(self.smiclean) + "\n"
+
+            lsmiclean = llsmiclean[0].strip().split("\t")
+            smiclean = lsmiclean[0]
+            if smiclean == "ERROR":
+                self.err = 1
+                self.log = self.log + "Normalize SMILES: file output ERROR\n"
+
+            else:
+                self.smiclean = smiclean
+                self.inchikey = lsmiclean[1]
+                self.log = self.log + "Prep SMI :" + str(self.smi) + "\n"
+                self.log = self.log + "Prepared SMI :" + str(self.smiclean) + "\n"
 
         else:
-            #self.mol = loader.ReadMolFromSmile(self.smi)
 
             s = Standardizer()
             mol = Chem.MolFromSmiles(self.smi)
@@ -200,11 +211,17 @@ class chemical:
                 if out == "ERROR":
                     self.err = 1
                     self.log = self.log + "Normalize SMILES: ERROR DURING THE PROCESS\n"
+                    fsmiclean = open(psmiclean, "w")
+                    fsmiclean.write("ERROR")
+                    fsmiclean.close()
                 else:
                     molstandardized = out
             except:
                 self.err = 1
                 self.log = self.log + "Normalize SMILES: ERROR INPUT SMI\n"
+                fsmiclean = open(psmiclean, "w")
+                fsmiclean.write("ERROR")
+                fsmiclean.close()
 
 
             if "molstandardized" in locals():
@@ -239,19 +256,21 @@ class chemical:
                         # Case of fragment -> stock in log file, check after to control
                         self.log = self.log + "Fragments after standardization: " + smilesclean + "\n"
                         self.err = 1
+                        fsmiclean = open(psmiclean, "w")
+                        fsmiclean.write("ERROR")
+                        fsmiclean.close()
                         return 1
 
                 if smilesclean == "":
                     self.log = self.log + "SMILES empty after preparation\n"
                     self.err = 1
+                    fsmiclean = open(psmiclean, "w")
+                    fsmiclean.write("ERROR")
+                    fsmiclean.close()
                     return 1
 
                 else:
                     self.log = self.log + "Prepared SMI :" + str(smilesclean) + "\n"
-
-                    fsmiclean = open(psmiclean, "w")
-                    fsmiclean.write(smilesclean)
-                    fsmiclean.close()
 
                     self.smiclean = smilesclean
 
@@ -260,8 +279,13 @@ class chemical:
                     inchi = Chem.inchi.MolToInchi(molformat)
                     inchikey = Chem.inchi.InchiToInchiKey(inchi)
                     self.inchikey = inchikey
-
                     self.psmiclean = psmiclean
+                    self.smiclean = smilesclean
+
+                    fsmiclean = open(psmiclean, "w")
+                    fsmiclean.write(smilesclean + "\t" + inchikey + "\t" + self.name)
+                    fsmiclean.close()
+
                     return 0
 
 
@@ -274,6 +298,7 @@ class chemical:
             self.err = 1
             self.log = self.log + "No clean SMILES\n"
             return 1
+
         if path.exists(pdes) and path.getsize(pdes) > 10:
             filin = open(pdes, "r")
             llines = filin.readlines()
@@ -548,7 +573,7 @@ class chemical:
                 err = AllChem.EmbedMolecule(molH, AllChem.ETKDG())
                 if err == 1:
                     self.log = self.log + "ERROR in rdkit 3D generation\n"
-                    self.err=0
+                    self.err = 1
                 else:
                     wmol = Chem.MolToMolBlock(molH)
                     pmol = psdf3D[0:-3] + "mol"
@@ -563,7 +588,7 @@ class chemical:
                         remove(pmol)
                     else:
                         self.log = self.log + "ERROR during the write process of sdf\n"
-
+                        self.err = 1
 
 ######## not Use
 
