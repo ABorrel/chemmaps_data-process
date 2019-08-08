@@ -49,14 +49,57 @@ class DSSTOX:
         lchemID = self.dchem.keys()
 
         i = self.istart
-        if self.iend == 0:
-            iend = len(lchemID)
+        imax = len(lchemID)
+        if self.iend == 0 or self.iend > imax:
+            iend = imax
         else:
             iend = self.iend
 
 
+        # just work with open file
+        if compute == 0:
+            dout = {}
+            while i < iend:
+                if i % 1000 == 0:
+                    print i
+                if "dsstox_substance_id" in self.dchem[lchemID[i]].keys():
+                    DSSTOXid = self.dchem[lchemID[i]]["dsstox_substance_id"]
+                    pSMI = self.prSMI + DSSTOXid + ".smi"
+                    if path.exists(pSMI):
+
+                        fSMI = open(pSMI, "r")
+                        llSMI = fSMI.readlines()
+                        fSMI.close()
+                        if len (llSMI) > 0:
+                            lSMI = llSMI[0].strip().split("\t")
+                            if len(lSMI) == 3:
+                                SMI = lSMI[0]
+                                inchikey = lSMI[1]
+
+                                pdesc2D = pr2D + inchikey + ".txt"
+                                pdesc3D = pr3D + inchikey + ".txt"
+
+                                if path.exists(pdesc2D) and path.exists(pdesc3D):
+                                    if not inchikey in dout.keys():
+                                        dout[inchikey] = {}
+                                        dout[inchikey]["SMI"] = [SMI]
+                                        dout[inchikey]["DSSTOXid"] = [DSSTOXid]
+                                    else:
+                                        dout[inchikey]["SMI"].append(SMI)
+                                        dout[inchikey]["DSSTOXid"].append(DSSTOXid)
+                            else:
+                                print pSMI
+                i = i + 1
+            self.ddesc = dout
+            return
+
+
+
+
         dout = {}
         while i < iend:
+            if i%1000 == 0:
+                print i
             if "dsstox_substance_id" in self.dchem[lchemID[i]].keys():
                 DSSTOXid = self.dchem[lchemID[i]]["dsstox_substance_id"]
             else:
@@ -155,7 +198,7 @@ class DSSTOX:
             pfilout = self.prout + "3D.csv"
 
 
-        if path.exists(pfilout):
+        if path.exists(pfilout) and path.getsize(pfilout) > 1000:
             if not "pfdesc" in self.__dict__:
                 self.pfdesc = {}
             self.pfdesc[typeDesc] = pfilout
@@ -206,17 +249,18 @@ class DSSTOX:
             self.prmap = prmap
         else:
             runExternalSoft.RComputeMapFiles(self.pfdesc["1D2D"], self.pfdesc["3D"], prmap, corval, maxquantile)
+
             self.prmap = prmap
 
 
-    def splitMap(self, nbsplit):
+    def splitMap(self, nbsplit, dim):
 
         if not "prmap" in self.__dict__:
             print "Generate the map files first"
             return
 
         else:
-            prout = pathFolder.createFolder(self.prmap + "split_" + str(nbsplit) + "/")
+            prout = pathFolder.createFolder(self.prmap + "split_" + str(nbsplit) + "_" + str(dim) + "/")
             self.prmaps = prout
 
             if len(listdir(self.prmaps)) >= (nbsplit*2):
@@ -228,38 +272,38 @@ class DSSTOX:
             coord3D = self.prmap + "coord3D.csv"
 
             d1D2D = toolbox.loadMatrixToDict(coord1D2D, sep = ",")
-
+            d3D = toolbox.loadMatrixToDict(coord3D, sep=",")
 
             # max and min 1D2D
-            maxX = 0.0
-            maxY = 0.0
-            minX = 0.0
-            minY = 0.0
+            maxDim = 0.0
+            minDim = 0.0
 
             nbchem = len(d1D2D.keys())
             nbchembymap = int(nbchem/nbsplit)
 
+            # calibrate max and min
             for chem in d1D2D.keys():
-                X = float(d1D2D[chem]["DIM1"])
-                Y = float(d1D2D[chem]["DIM2"])
-                if X > maxX:
-                    maxX = X
-                if X < minX:
-                    minX = X
 
-                if Y > maxY:
-                    maxY = Y
-                if Y < minY:
-                    minY = Y
+                if dim == 1:
+                    dimVal = float(d1D2D[chem]["DIM1"])
+                elif dim == 2:
+                    dimVal = float(d1D2D[chem]["DIM2"])
+                elif dim == 3:
+                    dimVal = float(d3D[chem]["DIM3"])
+
+                if dimVal > maxDim:
+                    maxDim = dimVal
+                if dimVal < minDim:
+                    minDim = dimVal
 
 
             dmap = {}
             imap = 1
             dmap[imap] = []
 
-            x = minX
-            while x < maxX:
-                x = x + 0.10
+            dimVal = minDim
+            while dimVal < maxDim:
+                dimVal = dimVal + 0.10
                 if len(dmap[imap]) > nbchembymap:
                     imap = imap + 1
                     dmap[imap] = []
@@ -267,7 +311,16 @@ class DSSTOX:
                 lchem = d1D2D.keys()
                 nbchem = len(lchem)
                 while ichem < nbchem:
-                    if float(d1D2D[lchem[ichem]]["DIM1"]) < x:
+
+                    if dim == 1:
+                        valtemp = float(d1D2D[lchem[ichem]]["DIM1"])
+                    elif dim == 2:
+                        valtemp = float(d1D2D[lchem[ichem]]["DIM2"])
+                    elif dim == 3:
+                        valtemp = float(d3D[lchem[ichem]]["DIM3"])
+
+
+                    if valtemp < dimVal:
                         dmap[imap].append(deepcopy(d1D2D[lchem[ichem]]))
                         del d1D2D[lchem[ichem]]
                         del lchem[ichem]
@@ -276,8 +329,6 @@ class DSSTOX:
                     else:
                         ichem = ichem + 1
 
-
-        d3D = toolbox.loadMatrixToDict(coord3D, sep = ",")
 
         for d in dmap.keys():
             pfilout1D2D = prout + str(d) + "_map1D2D.csv"
@@ -295,11 +346,10 @@ class DSSTOX:
             filout1D2D.close()
             filout3D.close()
 
-
             print len(dmap[d]), d
 
 
-    def generateMapSplitFile(self):
+    def generateMapSplitFile(self, dim):
 
         if not "prmaps" in self.__dict__:
             print "Generate Maps first"
@@ -310,7 +360,13 @@ class DSSTOX:
             dCentroid = {}
             lmap = []
 
-            pfileMapChem = self.prmap + "mapChem.csv"
+            pfileMapChem = self.prmap + str(dim) + "_mapChem.csv"
+            pfmapCentroid = self.prmap + str(dim) + "MapCentroid.csv"
+            if path.exists(pfileMapChem) and path.exists(pfmapCentroid):
+                print "Already computed"
+                return
+
+
             fmapChem = open(pfileMapChem, "w")
             fmapChem.write("ID\tMap\n")
 
@@ -338,7 +394,7 @@ class DSSTOX:
 
             fmapChem.close()
 
-            pfmapCentroid = self.prmap + "MapCentroid.csv"
+
             fmapCentroid = open(pfmapCentroid, "w")
             fmapCentroid.write("Map\tX\tY\tZ\n")
 
@@ -369,12 +425,12 @@ class DSSTOX:
 
 
         # to bypass the file creation
-        #lpmaps = listdir(self.prmaps)
-        #for pmaps in lpmaps:
-        #    print pmaps
-        #    if search("TableProp", pmaps):
-        #        print "Prop table already computed"
-        #        return
+        lpmaps = listdir(self.prmaps)
+        for pmaps in lpmaps:
+            print pmaps
+            if search("TableProp", pmaps):
+                print "Prop table already computed"
+                return
 
         # intialisation
         dDSSTOX = {}
@@ -419,19 +475,25 @@ class DSSTOX:
                 dtemp = toolbox.loadMatrixToDict(prDSSTOXPred + ppred, sep=",")
 
                 for chemIDtemp in dtemp.keys():
-                    if not chemIDtemp in dDSSTOX.keys():
+                    if search("DTXCID", chemIDtemp):
                         try:
                             chemSID = dDSSToxmap[chemIDtemp]["dsstox_substance_id"]
-                            if chemSID in dDSSTOX.keys() and chemSID != "":
+                            try:
                                 for k in dtemp[chemIDtemp].keys():
                                     if k in ldesc:
                                         dDSSTOX[chemSID][k] = dtemp[chemIDtemp][k]
-                        except: pass
-                    else:
-                        for k in dtemp[chemIDtemp].keys():
-                            if k in ldesc:
-                                dDSSTOX[chemIDtemp][k] = dtemp[chemIDtemp][k]
+                            except:
+                                pass
+                        except:
+                            pass
 
+                    else:
+                        try:
+                            for k in dtemp[chemIDtemp].keys():
+                                if k in ldesc:
+                                    dDSSTOX[chemIDtemp][k] = dtemp[chemIDtemp][k]
+                        except:
+                            pass
 
         print "Prediction loaded"
 
@@ -487,6 +549,15 @@ class DSSTOX:
         if not "prmaps" in self.__dict__:
             print "Generate map fist"
             return
+
+        # to bypass the file creation
+        lpmaps = listdir(self.prmaps)
+        for pmaps in lpmaps:
+            print pmaps
+            if search("TableNeighbors", pmaps):
+                print "Neighbors table already computed"
+                return
+
 
         lmaps = listdir(self.prmaps)
         lmapscompleted = []

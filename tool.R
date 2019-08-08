@@ -464,9 +464,8 @@ is.integer0 <- function(x)
 
 
 delnohomogeniousdistribution = function(din, cutoff = 80){
-
-  
   dwork = apply(din,2,as.double)
+  #print(dwork)
   
   countMax = dim(dwork)[1]*cutoff/100  
   
@@ -476,7 +475,6 @@ delnohomogeniousdistribution = function(din, cutoff = 80){
     #print (i)
     #print (dwork[,i])
     qt = hist(dwork[,i], breaks = 10, plot = FALSE)$counts
-      
     for (qtc in qt){
       if (qtc >= countMax){
         dwork = dwork[,-i]
@@ -487,6 +485,7 @@ delnohomogeniousdistribution = function(din, cutoff = 80){
     }
     i = i + 1
   }
+    
   rownames(dwork) = rownames(din)
   return(dwork)
 }

@@ -33,7 +33,7 @@ generatePCAcoords = function(dinScale){
 
 
 
-prepMatrixDesc = function(pin, valcor, maxquantile, vexclude){
+prepMatrixDesc = function(pin, valcor, maxquantile, vexclude, homo){
   
   #### 1D2D matrix ####
   #####################
@@ -45,7 +45,14 @@ prepMatrixDesc = function(pin, valcor, maxquantile, vexclude){
   
   # remove not well distributed descriptors #
   ###########################################
-  din_data = delnohomogeniousdistribution(din_data, maxquantile)
+  if(homo == 1){
+    din_data = delnohomogeniousdistribution(din_data, maxquantile)
+  }else{
+    din_temp = apply(din_data,2,as.double)
+    rownames(din_temp) = rownames(din_data)
+    din_data = din_temp
+  }
+  
   
   return(din_data)
   
@@ -81,8 +88,8 @@ maxquantile = as.integer(args[5])
 #maxquantile = 95
 #prout = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/Desc/map/"
 
-d1D2D = prepMatrixDesc(p1D2D, valcor, maxquantile, c(1,2))
-d3D = prepMatrixDesc(p3D, valcor, maxquantile, c(1,2))
+d1D2D = prepMatrixDesc(p1D2D, valcor, maxquantile, c(1,2), 1)
+d3D = prepMatrixDesc(p3D, valcor, maxquantile, c(1,2), 0)
 
 #################
 # merge dataset #

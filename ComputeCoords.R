@@ -168,7 +168,7 @@ generateCoordCombinedPCA = function(d1D2D, d3D, prout){
   colnames(coordSpace) = c("1D", "2D", "3D")
   rownames(coordSpace) = rownames(d1D2D)
   
-  write.csv(coordSpace, file = paste(prout, "coordPCAcombined.csv", sep = ""), row.names = TRUE, col.names = "TRUE")
+  #write.csv(coordSpace, file = paste(prout, "coordPCAcombined.csv", sep = ""), row.names = TRUE, col.names = "TRUE")
   
   variancePlane = c(lcoord1D2D[[2]][1], lcoord1D2D[[2]][2], lcoord3D[[2]][1])
   names(variancePlane) = c("1D", "2D", "3D")
@@ -229,9 +229,9 @@ prout = args[3]
 valcor = as.double(args[4])
 maxquantile = as.integer(args[5])
 
-#p1D2D = "/home/borrela2/ChemMaps/data/DSSTox/1D2D.csv"
-#p3D = "/home/borrela2/ChemMaps/data/DSSTox/3D.csv"
-#prout = "/home/borrela2/ChemMaps/data/DSSTox/projection0.9-90/"
+#p1D2D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/1D2D.csv"
+#p3D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/3D.csv"
+#prout = "/home/borrela2/ChemMaps/data_analysis/DSSTox/projection0.9-90/"
 #valcor = 0.9
 #maxquantile = 90
 
@@ -263,14 +263,19 @@ write.table(d1D2D_data, file = p1D2Dclean, row.names = TRUE, sep = "\t")
 
 ##### 3D matrix #####
 #####################
-d3D = openData(p3D, valcor, prout, c(1))
+d3D = openData(p3D, valcor, prout, c(1,2))
 d3D_data = d3D[[1]]
 rownames(d3D_data) = d3D_data[,1]
 d3D_data = d3D_data[,-1] # remove name
+d3D_data = d3D_data[,-1] # remove SMILES
+
 # remove not well distributed descriptors #
 ###########################################
 
-d3D_data = delnohomogeniousdistribution(d3D_data, maxquantile)
+d3D_temp = apply(d3D_data,2,as.double)
+rownames(d3D_temp) = rownames(d3D_data)
+d3D_data = d3D_temp
+#d3D_data = delnohomogeniousdistribution(d3D_data, maxquantile)
 
 #print(rownames(d3D_data))
 

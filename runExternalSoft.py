@@ -113,6 +113,7 @@ def molconvert(pfilin, pfilout= ""):
     if path.exists(pfilout):
         return pfilout
     cmdconvert = "molconvert \"png:w500,Q100,#00000000\" " + pfilin + " -o " + pfilout
+    print cmdconvert
     system(cmdconvert)
     return pfilout
 

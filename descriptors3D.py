@@ -302,38 +302,97 @@ def get3Ddesc(psdf, geometry=1, cpsa=1, rdf=1, morse=1, whim=1):
         ddesc['E2e'] = whim3D.GetWHIM11(CoordinateMatrix, AtomLabel, proname='En')
         ddesc['E3e'] = whim3D.GetWHIM12(CoordinateMatrix, AtomLabel, proname='En')
         ddesc['De'] = whim3D.GetWHIM13(CoordinateMatrix, AtomLabel, proname='En')
-        ddesc['L1v'] = whim3D.GetWHIM1(CoordinateMatrix, AtomLabel, proname='V')
+        try:ddesc['L1v'] = whim3D.GetWHIM1(CoordinateMatrix, AtomLabel, proname='V')
+        except:ddesc['L1v'] = "NA"
         try:ddesc['L2v'] = whim3D.GetWHIM2(CoordinateMatrix, AtomLabel, proname='V')
         except: ddesc['L2v']="NA"
-        ddesc['L3v'] = whim3D.GetWHIM3(CoordinateMatrix, AtomLabel, proname='V')
-        ddesc['Tv'] = whim3D.GetWHIM4(CoordinateMatrix, AtomLabel, proname='V')
-        ddesc['Av'] = whim3D.GetWHIM5(CoordinateMatrix, AtomLabel, proname='V')
-        ddesc['Vv'] = whim3D.GetWHIM6(CoordinateMatrix, AtomLabel, proname='V')
-        ddesc['P1v'] = whim3D.GetWHIM7(CoordinateMatrix, AtomLabel, proname='V')
-        ddesc['P2v'] = whim3D.GetWHIM8(CoordinateMatrix, AtomLabel, proname='V')
-        ddesc['Kv'] = whim3D.GetWHIM9(CoordinateMatrix, AtomLabel, proname='V')
-        ddesc['E1v'] = whim3D.GetWHIM10(CoordinateMatrix, AtomLabel, proname='V')
-        ddesc['E2v'] = whim3D.GetWHIM11(CoordinateMatrix, AtomLabel, proname='V')
-        ddesc['E3v'] = whim3D.GetWHIM12(CoordinateMatrix, AtomLabel, proname='V')
-        ddesc['Dv'] = whim3D.GetWHIM13(CoordinateMatrix, AtomLabel, proname='V')
-        ddesc['L1p'] = whim3D.GetWHIM1(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['L2p'] = whim3D.GetWHIM2(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['L3p'] = whim3D.GetWHIM3(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['Tp'] = whim3D.GetWHIM4(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['Ap'] = whim3D.GetWHIM5(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['Vp'] = whim3D.GetWHIM6(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['P1p'] = whim3D.GetWHIM7(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['P2p'] = whim3D.GetWHIM8(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['Kp'] = whim3D.GetWHIM9(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['E1p'] = whim3D.GetWHIM10(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['E2p'] = whim3D.GetWHIM11(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['E3p'] = whim3D.GetWHIM12(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['Dp'] = whim3D.GetWHIM13(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['P3p'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='alapha')
-        ddesc['P3u'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='u')
-        ddesc['P3m'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='m')
-        ddesc['P3e'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='En')
-        ddesc['P3v'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='V')
+        try:ddesc['L3v'] = whim3D.GetWHIM3(CoordinateMatrix, AtomLabel, proname='V')
+        except:
+            ddesc['L3v'] = "NA"
+        try:ddesc['Tv'] = whim3D.GetWHIM4(CoordinateMatrix, AtomLabel, proname='V')
+        except:
+            ddesc['Tv'] = "NA"
+        try:ddesc['Av'] = whim3D.GetWHIM5(CoordinateMatrix, AtomLabel, proname='V')
+        except:
+            ddesc['Av'] = "NA"
+        try:ddesc['Vv'] = whim3D.GetWHIM6(CoordinateMatrix, AtomLabel, proname='V')
+        except:
+            ddesc['Vv'] = "NA"
+        try:ddesc['P1v'] = whim3D.GetWHIM7(CoordinateMatrix, AtomLabel, proname='V')
+        except:
+            ddesc['P1v'] = "NA"
+        try:ddesc['P2v'] = whim3D.GetWHIM8(CoordinateMatrix, AtomLabel, proname='V')
+        except:
+            ddesc['P2v'] = "NA"
+        try:ddesc['Kv'] = whim3D.GetWHIM9(CoordinateMatrix, AtomLabel, proname='V')
+        except:
+            ddesc['Kv'] = "NA"
+        try:ddesc['E1v'] = whim3D.GetWHIM10(CoordinateMatrix, AtomLabel, proname='V')
+        except:
+            ddesc['E1v'] = "NA"
+        try:ddesc['E2v'] = whim3D.GetWHIM11(CoordinateMatrix, AtomLabel, proname='V')
+        except:
+            ddesc['E2v'] = "NA"
+        try:ddesc['E3v'] = whim3D.GetWHIM12(CoordinateMatrix, AtomLabel, proname='V')
+        except:
+            ddesc['E3v'] = "NA"
+        try:ddesc['Dv'] = whim3D.GetWHIM13(CoordinateMatrix, AtomLabel, proname='V')
+        except:
+            ddesc['Dv'] = "NA"
+        try:ddesc['L1p'] = whim3D.GetWHIM1(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['L1p'] = "NA"
+        try:ddesc['L2p'] = whim3D.GetWHIM2(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['L2p'] = "NA"
+        try:ddesc['L3p'] = whim3D.GetWHIM3(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['L3p'] = "NA"
+        try:ddesc['Tp'] = whim3D.GetWHIM4(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['Tp'] = "NA"
+        try:ddesc['Ap'] = whim3D.GetWHIM5(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['Ap'] = "NA"
+        try:ddesc['Vp'] = whim3D.GetWHIM6(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['Vp'] = "NA"
+        try:ddesc['P1p'] = whim3D.GetWHIM7(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['P1p'] = "NA"
+        try:ddesc['P2p'] = whim3D.GetWHIM8(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['P2p'] = "NA"
+        try:ddesc['Kp'] = whim3D.GetWHIM9(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['Kp'] = "NA"
+        try:ddesc['E1p'] = whim3D.GetWHIM10(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['E1p'] = "NA"
+        try:ddesc['E2p'] = whim3D.GetWHIM11(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['E2p'] = "NA"
+        try:ddesc['E3p'] = whim3D.GetWHIM12(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['E3p'] = "NA"
+        try:ddesc['Dp'] = whim3D.GetWHIM13(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['Dp'] = "NA"
+        try:ddesc['P3p'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='alapha')
+        except:
+            ddesc['P3p'] = "NA"
+        try:ddesc['P3u'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='u')
+        except:
+            ddesc['P3u'] = "NA"
+        try:ddesc['P3m'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='m')
+        except:
+            ddesc['P3m'] = "NA"
+        try:ddesc['P3e'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='En')
+        except:
+            ddesc['P3e'] = "NA"
+        try:ddesc['P3v'] = whim3D.GetWHIM14(CoordinateMatrix, AtomLabel, proname='V')
+        except:
+            ddesc['P3v'] = "NA"
 
     return ddesc
 

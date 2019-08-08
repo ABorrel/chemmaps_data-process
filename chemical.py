@@ -182,30 +182,38 @@ class chemical:
 
         # try if existing
         if path.exists(psmiclean):
-            psmiclean = prSMIclean + self.name + ".smi"
             #print psmiclean
             fsmiclean = open(psmiclean, "r")
             llsmiclean = fsmiclean.readlines()
             fsmiclean.close()
 
+            #print "Path exists", psmiclean
 
-            lsmiclean = llsmiclean[0].strip().split("\t")
-            smiclean = lsmiclean[0]
+            try:
+                lsmiclean = llsmiclean[0].strip().split("\t")
+                smiclean = lsmiclean[0]
+            except:
+                smiclean = "ERROR"
+
             if smiclean == "ERROR":
                 self.err = 1
                 self.log = self.log + "Normalize SMILES: file output ERROR\n"
 
             else:
-                self.smiclean = smiclean
-                self.inchikey = lsmiclean[1]
-                self.log = self.log + "Prep SMI :" + str(self.smi) + "\n"
-                self.log = self.log + "Prepared SMI :" + str(self.smiclean) + "\n"
+                if len(lsmiclean) < 3:
+                    smiclean == "ERROR"
+                    self.err = 1
+                    return 1
+                else:
+                    self.smiclean = smiclean
+                    self.inchikey = lsmiclean[1]
+                    self.psmiclean = psmiclean
+                    self.log = self.log + "Prep SMI :" + str(self.smi) + "\n"
+                    self.log = self.log + "Prepared SMI :" + str(self.smiclean) + "\n"
 
         else:
-
             s = Standardizer()
             mol = Chem.MolFromSmiles(self.smi)
-
             try:
                 out = toolbox.timeFunction(normalize, mol)
                 if out == "ERROR":
@@ -283,10 +291,16 @@ class chemical:
                     self.smiclean = smilesclean
 
                     fsmiclean = open(psmiclean, "w")
-                    fsmiclean.write(smilesclean + "\t" + inchikey + "\t" + self.name)
-                    fsmiclean.close()
+                    if inchikey != "" :
+                        fsmiclean.write(smilesclean + "\t" + inchikey + "\t" + self.name)
+                        fsmiclean.close()
+                        return 0
+                    else:
+                        fsmiclean.write("ERROR")
+                        self.err = 1
+                        fsmiclean.close()
+                        return 1
 
-                    return 0
 
 
     def compute1D2DDesc(self, prDescbyChem):
