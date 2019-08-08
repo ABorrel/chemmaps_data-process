@@ -49,7 +49,7 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 1, Desc3D=1, control=0,
     DB.parseAll()
     DB.renameHeader()# change first line of sdf to write the good name
 
-    print len(DB.lc)
+    print (len(DB.lc))
 
     # folder for the log
     prlog = prdesc + "log/"
@@ -59,7 +59,7 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 1, Desc3D=1, control=0,
     for compound in DB.lc:
         nameChem = compound[namek]
         smiles = compound["SMILES"]
-        print i, nameChem  # for verbose
+        print(i, nameChem)  # for verbose
 
         prSMIclean = prdesc + "SMIclean/"
         pathFolder.createFolder(prSMIclean)
@@ -100,7 +100,7 @@ def computeDesc(psdf, prdesc, Desc1D2D=1, generation3D = 1, Desc3D=1, control=0,
                     fSDF3D.close()
                     chem.psdf3D = pSDF3D
                 else:
-                    print "No 3D structure properly computed"
+                    print ("No 3D structure properly computed")
                     err = 1
 
             pr3DDesc = prdesc + "3DbyChem/"

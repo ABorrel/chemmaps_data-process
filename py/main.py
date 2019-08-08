@@ -17,7 +17,7 @@ import prepChemLib# to replace main
 def runPNG(prSMI, prPNG):
 
     if not path.exists(prSMI):
-        print "ERROR: CREATE CLEAN SMI FIRST"
+        print ("ERROR: CREATE CLEAN SMI FIRST")
         return
 
 
@@ -38,7 +38,7 @@ def runPNG(prSMI, prPNG):
             continue
         else:
             if len(lelem) < 3:
-                print prSMI + SMI
+                print (prSMI + SMI)
                 #remove(prSMI + SMI)
                 continue
             inchikey = lelem[1]

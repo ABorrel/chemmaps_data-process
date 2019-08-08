@@ -17,7 +17,7 @@ def runLigprep(psmilin, forcefield="OPLS3", stereoisoster=1):
 
     cmd = LIGPREP + " -ismi " + psmilin + " -osd " + psmilin[0:-4] + ".sdf" + " -bff " + str(bff) + " -epik -s " + str(stereoisoster) + " -WAIT -NJOBS 3"
 
-    print cmd
+    print (cmd)
     system(cmd)
 
     # control if file exist
@@ -39,7 +39,7 @@ def runPadel(prin=""):
         return "ERROR - Padel Input"
     else:
         cmd = "java -jar " + PADEL + " -maxruntime 10000 -3d -dir " + str(prin) + " -file " + prin + "tem.desc"
-        print cmd
+        print (cmd)
         system(cmd)
 
     return prin + "tem.desc"
@@ -90,7 +90,7 @@ def RComputeCor(pfilin1D2D, pfilin3D, prout, valcor = 0.9, maxquantile=80):
 
     cmdplotPCA = "./ComputeCoords.R " + str(pfilin1D2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(valcor) + " " + str(maxquantile)
 
-    print cmdplotPCA
+    print (cmdplotPCA)
     system(cmdplotPCA)
 
     return
@@ -101,7 +101,7 @@ def RComputeMapFiles(pfilin1D2D, pfilin3D, prout, corval, maxquantile):
 
 
     cmdMAP = "./generateMapFile.R " + str(pfilin1D2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(corval) + " " + str(maxquantile)
-    print cmdMAP
+    print (cmdMAP)
     system(cmdMAP)
 
 
@@ -113,7 +113,7 @@ def molconvert(pfilin, pfilout= ""):
     if path.exists(pfilout):
         return pfilout
     cmdconvert = "molconvert \"png:w500,Q100,#00000000\" " + pfilin + " -o " + pfilout
-    print cmdconvert
+    print(cmdconvert)
     system(cmdconvert)
     return pfilout
 

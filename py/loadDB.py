@@ -42,7 +42,7 @@ class sdfDB:
 
 
         self.lc=lout
-        print len(lout)
+        print (len(lout))
 
     def writeTable(self, filname):
 
