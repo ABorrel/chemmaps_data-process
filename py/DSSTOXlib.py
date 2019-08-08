@@ -1,6 +1,6 @@
 import pathFolder
 import toolbox
-import chemical
+#import chemical
 import runExternalSoft
 import loadDB
 import calculate
@@ -46,7 +46,7 @@ class DSSTOX:
         if not "dchem" in self.__dict__:
             self.loadlistChem()
 
-        lchemID = self.dchem.keys()
+        lchemID = list(self.dchem.keys())
 
         i = self.istart
         imax = len(lchemID)
@@ -61,8 +61,8 @@ class DSSTOX:
             dout = {}
             while i < iend:
                 if i % 1000 == 0:
-                    print i
-                if "dsstox_substance_id" in self.dchem[lchemID[i]].keys():
+                    print (i)
+                if "dsstox_substance_id" in list(self.dchem[lchemID[i]].keys()):
                     DSSTOXid = self.dchem[lchemID[i]]["dsstox_substance_id"]
                     pSMI = self.prSMI + DSSTOXid + ".smi"
                     if path.exists(pSMI):
@@ -80,7 +80,7 @@ class DSSTOX:
                                 pdesc3D = pr3D + inchikey + ".txt"
 
                                 if path.exists(pdesc2D) and path.exists(pdesc3D):
-                                    if not inchikey in dout.keys():
+                                    if not inchikey in list(dout.keys()):
                                         dout[inchikey] = {}
                                         dout[inchikey]["SMI"] = [SMI]
                                         dout[inchikey]["DSSTOXid"] = [DSSTOXid]
@@ -88,7 +88,7 @@ class DSSTOX:
                                         dout[inchikey]["SMI"].append(SMI)
                                         dout[inchikey]["DSSTOXid"].append(DSSTOXid)
                             else:
-                                print pSMI
+                                print (pSMI)
                 i = i + 1
             self.ddesc = dout
             return
@@ -99,15 +99,15 @@ class DSSTOX:
         dout = {}
         while i < iend:
             if i%1000 == 0:
-                print i
-            if "dsstox_substance_id" in self.dchem[lchemID[i]].keys():
+                print (i)
+            if "dsstox_substance_id" in list(self.dchem[lchemID[i]].keys()):
                 DSSTOXid = self.dchem[lchemID[i]]["dsstox_substance_id"]
             else:
                 DSSTOXid = self.dchem[lchemID[i]]["DTXSID"]
 
-            if "Original_SMILES" in self.dchem[lchemID[i]].keys():
+            if "Original_SMILES" in list(self.dchem[lchemID[i]].keys()):
                 smiles = self.dchem[lchemID[i]]["Original_SMILES"].split(" ")[0]
-            elif "ORIGINAL  SMILES" in self.dchem[lchemID[i]].keys():
+            elif "ORIGINAL  SMILES" in list(self.dchem[lchemID[i]].keys()):
                 smiles = self.dchem[lchemID[i]]["ORIGINAL  SMILES"]
             else:
                 smiles = self.dchem[lchemID[i]]["SMILES"]
@@ -142,7 +142,7 @@ class DSSTOX:
             # case of everything works
             InchIKey = chem.inchikey
             if path.exists(pr2D + InchIKey + ".txt") and path.exists(pr3D + InchIKey + ".txt"):
-                if not InchIKey in dout.keys():
+                if not InchIKey in list(dout.keys()):
                     dout[InchIKey] = {}
                     dout[InchIKey]["SMI"]=[]
                     dout[InchIKey]["DSSTOXid"] = []
@@ -160,14 +160,14 @@ class DSSTOX:
 
         prSMI = self.prDSSTox + "SMI/"
         if not path.exists(prSMI):
-            print "ERROR: CREATE CLEAN SMI FIRST"
+            print ("ERROR: CREATE CLEAN SMI FIRST")
             return
 
         prPNG = self.prDSSTox + "PNG/"
         pathFolder.createFolder(prPNG)
 
         if "ddesc" in self.__dict__:
-            linchikey = self.ddesc.keys()
+            linchikey = list(self.ddesc.keys())
             shuffle(linchikey)
             for inchikey in linchikey:
                 ppng = prPNG + inchikey + ".png"
@@ -213,7 +213,7 @@ class DSSTOX:
             if path.exists(pdesc):
                 dink = toolbox.loadMatrixToDict(pdesc, sep="\t")
                 if ldesc == []:
-                    ldesc = dink[ink].keys()
+                    ldesc = list(dink[ink].keys())
                     del ldesc[ldesc.index("ID")]
                     filout.write("ID\tSMILES\t" + "\t".join(ldesc) + "\n")
 
@@ -238,7 +238,7 @@ class DSSTOX:
     def projection(self, corval, maxquantile):
 
         prproject = pathFolder.createFolder(self.prout + "projection" + str(corval) + "-" + str(maxquantile) + "/")
-        print self.pfdesc["1D2D"], self.pfdesc["3D"], prproject, corval, maxquantile
+        print (self.pfdesc["1D2D"], self.pfdesc["3D"], prproject, corval, maxquantile)
         runExternalSoft.RComputeCor(self.pfdesc["1D2D"], self.pfdesc["3D"], prproject, corval, maxquantile)
 
 
@@ -256,7 +256,7 @@ class DSSTOX:
     def splitMap(self, nbsplit, dim):
 
         if not "prmap" in self.__dict__:
-            print "Generate the map files first"
+            print ("Generate the map files first")
             return
 
         else:
@@ -264,7 +264,7 @@ class DSSTOX:
             self.prmaps = prout
 
             if len(listdir(self.prmaps)) >= (nbsplit*2):
-                print "Maps already computed"
+                print ("Maps already computed")
                 return
 
 
@@ -278,7 +278,7 @@ class DSSTOX:
             maxDim = 0.0
             minDim = 0.0
 
-            nbchem = len(d1D2D.keys())
+            nbchem = len(list(d1D2D.keys()))
             nbchembymap = int(nbchem/nbsplit)
 
             # calibrate max and min
@@ -308,7 +308,7 @@ class DSSTOX:
                     imap = imap + 1
                     dmap[imap] = []
                 ichem = 0
-                lchem = d1D2D.keys()
+                lchem = list(d1D2D.keys())
                 nbchem = len(lchem)
                 while ichem < nbchem:
 
@@ -346,13 +346,13 @@ class DSSTOX:
             filout1D2D.close()
             filout3D.close()
 
-            print len(dmap[d]), d
+            print (len(dmap[d]), d)
 
 
     def generateMapSplitFile(self, dim):
 
         if not "prmaps" in self.__dict__:
-            print "Generate Maps first"
+            print ("Generate Maps first")
             return
 
         else:
@@ -363,7 +363,7 @@ class DSSTOX:
             pfileMapChem = self.prmap + str(dim) + "_mapChem.csv"
             pfmapCentroid = self.prmap + str(dim) + "MapCentroid.csv"
             if path.exists(pfileMapChem) and path.exists(pfmapCentroid):
-                print "Already computed"
+                print ("Already computed")
                 return
 
 
@@ -415,21 +415,21 @@ class DSSTOX:
 
 
         if not "prmaps" in self.__dict__:
-            print "Generate map fist"
+            print ("Generate map fist")
             return
 
 
         # check with DSStox ID in case of the inchikey not find
         dDSSToxmap = toolbox.loadMatrixToDict(pDSSToxmapID, sep = ",")
-        print "Load map CID to XID"
+        print ("Load map CID to XID")
 
 
         # to bypass the file creation
         lpmaps = listdir(self.prmaps)
         for pmaps in lpmaps:
-            print pmaps
+            print (pmaps)
             if search("TableProp", pmaps):
-                print "Prop table already computed"
+                print ("Prop table already computed")
                 return
 
         # intialisation
@@ -449,7 +449,7 @@ class DSSTOX:
             except:
                 flag = 1
         filinDesc2D.close()
-        print "LOAD 2D desc"
+        print ("LOAD 2D desc")
 
         # put in dict out -> initialization to NA
         for IDchem in dSMILE.keys():
@@ -465,12 +465,12 @@ class DSSTOX:
             inchikey = Chem.inchi.InchiToInchiKey(inchi)
             dDSSTOX[IDchem]["inchikey"] = inchikey
 
-        print "Dictionnary created"
+        print ("Dictionnary created")
 
         # load prediction and update table
         lppred = listdir(prDSSTOXPred)
         for ppred in lppred:
-            print ppred, "Load file"
+            print (ppred, "Load file")
             if ppred[-3:] == "csv":
                 dtemp = toolbox.loadMatrixToDict(prDSSTOXPred + ppred, sep=",")
 
@@ -495,7 +495,7 @@ class DSSTOX:
                         except:
                             pass
 
-        print "Prediction loaded"
+        print ("Prediction loaded")
 
 
         #load sdf
@@ -505,7 +505,7 @@ class DSSTOX:
 
         #load LD50 file
         dLD50 = toolbox.loadMatrixToDict(pLD50)
-        print "SDF and table LD50 loaded"
+        print ("SDF and table LD50 loaded")
 
 
         # load MAP
@@ -515,7 +515,7 @@ class DSSTOX:
             nmap = pmap.split("_")[0]
             if not nmap in lmapscompleted:
                 lmapscompleted.append(nmap)
-                print nmap
+                print (nmap)
                 dcoords = toolbox.loadMatrixToDict(self.prmaps + pmap, sep=",")
                 pfilout = self.prmaps + str(nmap) + "_TableProp.csv"
                 filout = open(pfilout, "w")
@@ -547,15 +547,15 @@ class DSSTOX:
     def generateNeighborMatrix(self, nneighbor):
 
         if not "prmaps" in self.__dict__:
-            print "Generate map fist"
+            print ("Generate map fist")
             return
 
         # to bypass the file creation
         lpmaps = listdir(self.prmaps)
         for pmaps in lpmaps:
-            print pmaps
+            print (pmaps)
             if search("TableNeighbors", pmaps):
-                print "Neighbors table already computed"
+                print ("Neighbors table already computed")
                 return
 
 
@@ -566,7 +566,7 @@ class DSSTOX:
                 nmap = pmap.split("_")[0]
                 if not nmap in lmapscompleted:
                     lmapscompleted.append(nmap)
-                    print nmap
+                    print (nmap)
                     pcoord1D2D = self.prmaps + str(nmap) + "_map1D2D.csv"
                     pcoord3D = self.prmaps + str(nmap) + "_map3D.csv"
 

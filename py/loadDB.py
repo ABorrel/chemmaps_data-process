@@ -37,7 +37,7 @@ class sdfDB:
                     valuek = llines[i+1].strip()
                     dcompound[kin] = valuek
                 i += 1
-            if self.name in dcompound.keys():
+            if self.name in list(dcompound.keys()):
                 lout.append(dcompound)
 
 
@@ -66,7 +66,7 @@ class sdfDB:
             except:
                 continue
             for h in lheader[1:]:
-                if h in compound.keys():
+                if h in list(compound.keys()):
                     filout.write("\t" + str(compound[h]))
                 else:
                     filout.write("\tNA")
@@ -142,7 +142,7 @@ class sdfDB:
             except: continue
             lwrite = []
             for kin in lkin:
-                if kin in compound.keys():
+                if kin in list(compound.keys()):
                     if kin == "SYNONYMS":
                         lwrite.append(str(compound[kin]).lower())
                     else:

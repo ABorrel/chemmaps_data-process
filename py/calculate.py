@@ -12,7 +12,7 @@ def centroid(dcoord):
         Cz = Cz + float(dcoord[chemID][2])
 
 
-    nbchem = len(dcoord.keys())
+    nbchem = len(list(dcoord.keys()))
 
     lout = [Cx/nbchem, Cy/nbchem, Cz/nbchem]
     return lout

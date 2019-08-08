@@ -29,12 +29,12 @@ def loadMatrixToDict(pmatrixIn, sep ="\t"):
         dout[kin] = {}
         j = 0
         if len(lvalues) != len(lheaders):
-            print lineMat
-            print llinesMat[i]
-            print lvalues
-            print "Error => nb element", i
-            print len(lvalues)
-            print len(lheaders)
+            print (lineMat)
+            print (llinesMat[i])
+            print (lvalues)
+            print ("Error => nb element", i)
+            print (len(lvalues))
+            print (len(lheaders))
             ddd
 
         jmax = len(lheaders)
@@ -114,12 +114,12 @@ def selectMinimalEnergyLigPrep(psdfin, psdfout):
         lenergy = []
         for sdfin in lsdf:
             energy = sdfin.split("> <r_lp_Energy>\n")[-1].split("\n")[0]
-            print energy
+            print (energy)
             lenergy.append(float(energy))
 
         # take minimal energy
         ibest = lenergy.index(min(lenergy))
-        print ibest
+        print (ibest)
         filout = open(psdfout, "w")
         filout.write(lsdf[ibest] + "$$$$\n")
         filout.close()

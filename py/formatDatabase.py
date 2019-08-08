@@ -34,7 +34,7 @@ class drugbank:
                 i += 1
             lout.append(dcompound)
         self.lc=lout
-        print len(lout)
+        print (len(lout))
 
     def clean(self):
         """TO DO"""

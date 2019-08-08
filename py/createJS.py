@@ -60,12 +60,12 @@ def formatInfo(db, pdesc, lkinfo, pjs, prout):
         namecpd = cpd[db.name]
         linfo = []
         for kinfo in lkinfo:
-            if kinfo in cpd.keys():
+            if kinfo in list(cpd.keys()):
                 if cpd[kinfo] != "":
                     linfo.append("\"" + str(cpd[kinfo]) + "\"")
                 else:
                     linfo.append("\"NA\"")
-            elif namecpd in ddesc.keys() and kinfo in ddesc[namecpd].keys():
+            elif namecpd in list(ddesc.keys()) and kinfo in list(ddesc[namecpd].keys()):
                 if ddesc[namecpd][kinfo] != "":
                     linfo.append("\"" + str(ddesc[namecpd][kinfo]) + "\"")
                 else:
@@ -89,12 +89,12 @@ def formatInfo(db, pdesc, lkinfo, pjs, prout):
         namecpd = cpd[db.name]
         linfo = []
         for kinfo in lkinfo:
-            if kinfo in cpd.keys():
+            if kinfo in list(cpd.keys()):
                 if cpd[kinfo] != "":
                     linfo.append(str(cpd[kinfo]))
                 else:
                     linfo.append("NA")
-            elif namecpd in ddesc.keys() and kinfo in ddesc[namecpd].keys():
+            elif namecpd in list(ddesc.keys()) and kinfo in list(ddesc[namecpd].keys()):
                 if ddesc[namecpd][kinfo] != "":
                     linfo.append(str(ddesc[namecpd][kinfo]))
                 else:

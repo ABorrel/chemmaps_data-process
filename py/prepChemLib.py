@@ -4,7 +4,7 @@ import computeDB
 import runExternalSoft
 import toolbox
 import createJS
-import chemical
+#import chemical
 
 from os import path, remove, listdir
 import math
@@ -66,7 +66,7 @@ def Run (psdf, pranalysis, kname, corval=0.8, maxquantile=80, control=1, Desc1D2
         if path.exists(prSMI):
             lsmi = listdir(prSMI)
             shuffle(lsmi)
-            print "ddd"
+            print ("ddd")
             # control if nSDF = nPNG
             if len(lsmi) != len(listdir(prpng)):
                 for smifile in lsmi:
@@ -96,7 +96,7 @@ def Run (psdf, pranalysis, kname, corval=0.8, maxquantile=80, control=1, Desc1D2
         pcoordDim3Dim4 = prmap + "coord3D.csv"
 
         if not path.exists(pcoordDim1Dim2) or not path.exists(pcoordDim3Dim4):
-            print "ERROR file map"
+            print ("ERROR file map")
             return
 
         # 2. write properties #
@@ -223,7 +223,7 @@ def writeDescMatrix(typeDesc, pr2D, pr3D, prSMI, prout):
             dink = toolbox.loadMatrixToDict(pdesc, sep="\t")
 
             if ldesc == []:
-                ldesc = dink[DBID].keys()
+                ldesc = list(dink[DBID].keys())
                 del ldesc[ldesc.index("ID")]
                 filout.write("ID\tSMILES\t" + "\t".join(ldesc) + "\n")
 
