@@ -5,7 +5,7 @@ import pathFolder
 import runExternalSoft
 
 
-class sdfDB:
+class parseSDF:
 
     def __init__(self, psdf, kname, prout):
         self.psdf = psdf
@@ -126,14 +126,10 @@ class sdfDB:
             self.parseAll()
 
         pfilout = self.prout + nametable + ".csv"
-        pfiloutjs = self.prout + "JS/" + nametable + ".js"
         filout = open(pfilout, "w")
-        filoutjs = open(pfiloutjs, "w")
 
         # header table
         filout.write("ID" + "\t" + "\t".join(lkin) + "\n")
-
-        lwritejs = []
 
         for compound in self.lc:
             try:
@@ -151,32 +147,7 @@ class sdfDB:
                     lwrite.append("NA")
 
             filout.write("\t".join(lwrite) + "\n")
-            linejs = linejs + "[" + ",".join(["\"" + i + "\"" for i in lwrite]) + "]"
-            lwritejs.append(linejs)
-
-        filoutjs.write("{" + ",".join(lwritejs) + "}")
         filout.close()
-        filoutjs.close()
-
-
-    def writeNameforJS(self, pfilout, keysforsearch=["DRUGBANK_ID", "GENERIC_NAME"]):
-
-
-        if not "lc" in dir(self):
-            self.parseAll()
-
-        filout = open(pfilout, "w")
-        filout.write("var lsearch = [")
-
-        lwrite = []
-        for keyforsearch in keysforsearch:
-            ltemp = [str("\"") + compound[keyforsearch] + str("\"") for compound in self.lc]
-            lwrite = lwrite + ltemp
-
-        filout.write(",".join(lwrite) + "]")
-        filout.close()
-
-
 
 
 

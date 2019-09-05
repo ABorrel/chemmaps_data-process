@@ -1,18 +1,93 @@
 import pathFolder
-import loadDB
-import computeDB
-import runExternalSoft
+import parseSDF
 import toolbox
-import createJS
-#import chemical
 
-from os import path, remove, listdir
-import math
+#=> to import ToxCast librairy
+import sys
+sys.path.insert(0, "/home/borrela2/development/descriptor/")
+import Chemical
+
+from os import path
 from random import shuffle
 
-from formatDatabase import drugbank
-from rdkit import Chem
 
+class DrugBank:
+    def __init__(self, pDBsdf, prDesc, prAnalysis):
+
+        self.pSDF = pDBsdf
+        self.prDesc = prDesc
+        self.prout = prAnalysis
+
+
+    def parseSDFDB (self):
+
+        prForDB = pathFolder.createFolder(self.prout + "forDB/")
+
+        cSDF = parseSDF.parseSDF(self.pSDF, "DATABASE_ID", self.prout)
+        cSDF.parseAll()
+
+        pfilout = prForDB + "db.csv"
+
+        if path.exists(pfilout):
+            dchem = toolbox.loadMatrixToDict(pfilout)
+        else:
+            filout = open(pfilout, "w")
+            filout.write("drugbank_id\tsmiles_origin\tsmiles_clean\tinchikey\tqsar_ready\tprop\n")
+
+            dchem = {}
+            for chem in cSDF.lc:
+                drugbank_id = chem["DATABASE_ID"]
+                SMILES_origin = chem["SMILES"]
+
+                dchem[drugbank_id] = {}
+                dchem[drugbank_id]["drugbank_id"] = drugbank_id
+                dchem[drugbank_id]["smiles_origin"] = SMILES_origin
+
+                # prepare ligand
+                chem = Chemical.Chemical(SMILES_origin, self.prDesc)
+                chem.prepChem()
+                if chem.err == 1:
+                    qsar_ready = 0
+                    cleanSMILES = "NA"
+                    inchikey = "NA"
+                else:
+                    qsar_ready = 1
+                    cleanSMILES = chem.smi
+                    inchikey = chem.generateInchiKey()
+                    chem.writeSMIClean()
+
+                dchem[drugbank_id]["smiles_clean"] = cleanSMILES
+                dchem[drugbank_id]["inchikey"] = inchikey
+                dchem[drugbank_id]["qsar_ready"] = qsar_ready
+
+                filout.write("%s\t%s\t%s\t%s\t%s\n" % (drugbank_id, SMILES_origin, cleanSMILES, inchikey, qsar_ready))
+            filout.close()
+        self.dchem = dchem
+
+
+    def computeDesc(self):
+
+        if not "dchem" in self.__dict__:
+            self.parseSDFDB()
+
+        lchemID = list(self.dchem.keys())
+        shuffle(lchemID)
+
+        for chemID in lchemID:
+            SMILESClean = self.dchem[chemID]["smiles_clean"]
+            cChem = Chemical.Chemical(SMILESClean, self.prDesc)
+            cChem.prepChem()
+            if cChem.err == 0:
+                cChem.computeAll2D(update=0)
+                cChem.writeMatrix("2D")
+                cChem.set3DChemical()
+                cChem.computeAll3D(update=0)
+                cChem.writeMatrix("3D")
+
+
+    def computeCoords(self):
+
+        return
 
 
 def Run (psdf, pranalysis, kname, corval=0.8, maxquantile=80, control=1, Desc1D2D=0, generation3D = 1, Desc3D=0, projection=1, map=1, drawPNG=1):
@@ -158,39 +233,6 @@ def Run (psdf, pranalysis, kname, corval=0.8, maxquantile=80, control=1, Desc1D2
         # 4. update neighborhood #
         ##########################
         #createJS.extractCloseCompounds(pcoordsCombine, 20, pfileDataJS, pranalysis)
-
-
-
-def SDFDrugBanktoDB(psdf, prdesc, prout):
-
-    pfilout = prout + "forDB.csv"
-    filout = open(pfilout, "w")
-    filout.write("drugbank_id\tsmiles_origin\tsmiles_clean\tinchikey\tqsar_ready\n")
-
-    db = loadDB.sdfDB(psdf, "DATABASE_ID", prout)
-    db.parseAll()
-
-    for chem in db.lc:
-        drugbank_id = chem["DATABASE_ID"]
-        SMILES_origin = chem["SMILES"]
-
-        # clean SMILES
-        prSMIclean = prdesc + "SMIclean/"
-        pathFolder.createFolder(prSMIclean)
-
-        # prepare ligand
-        chem = chemical.chemical(drugbank_id, SMILES_origin)
-        err = chem.prepareChem(prSMIclean)
-        if err == 1:
-            qsar_ready = 0
-            cleanSMILES = "NA"
-            inchikey = "NA"
-        else:
-            qsar_ready = 1
-            cleanSMILES = chem.smiclean
-            inchikey = chem.inchikey
-        filout.write("%s\t%s\t%s\t%s\t%s\n"%(drugbank_id, SMILES_origin, cleanSMILES, inchikey, qsar_ready))
-    filout.close()
 
 
 
