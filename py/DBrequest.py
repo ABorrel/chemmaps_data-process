@@ -37,28 +37,70 @@ class DBrequest:
             self.conn.close()
             if self.verbose == 1: print('Database connection closed.')
 
-    def execCMD(self, cmd):
 
+    def addElement(self, nameTable, lcoloumn, lval):
+        sqlCMD = "INSERT INTO %s(%s) VALUES(%s);"%(nameTable, ",".join(lcoloumn), ",".join(["\'%s\'"%(val) for val in lval]))
+        if self.verbose == 1: print(sqlCMD)
+        if self.conn != None:
+            try:
+                cur = self.conn.cursor()
+                cur.execute(sqlCMD)
+                self.conn.commit()
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+        else:
+            print("Open connection first")
+
+    def extractColoumn(self, nameTable, coloumn):
+        sqlCMD = "SELECT %s FROM %s LIMIT(10);" % (coloumn, nameTable)
+        if self.verbose == 1: print(sqlCMD)
+        if self.conn != None:
+            try:
+                cur = self.conn.cursor()
+                cur.execute(sqlCMD)
+                out = cur.fetchall()
+                if self.verbose == 1: print(out)
+                return out
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+                return "ERROR: " + error
+        else:
+            print("Open connection first")
+            return "ERROR: open DB"
+
+
+    def execCMD(self, cmd):
+        sqlCMD = "INSERT INTO %s(%s) VALUES(%s);" % (
+        nameTable, ",".join(lcoloumn), ",".join(["\'%s\'" % (val) for val in lval]))
+        if self.verbose == 1: print(sqlCMD)
         if self.conn != None:
             try:
                 cur = self.conn.cursor()
                 cur.execute(cmd)
-                print(cur)
+                #self.conn.commit()
+                # print(cur)
                 out = cur.fetchall()
                 if self.verbose == 1: print(out)
             except (Exception, psycopg2.DatabaseError) as error:
                 print(error)
         else:
             print("Open connection first")
+        return
 
 
 
-cmd = 'select * from drugbank_chemicals  limit(10)'
+#cmd = 'select * from drugbank_chemicals  limit(10)'
 
-cmd = 'INSERT INTO drugbank_chemicals (drugbank_id, smiles_origin, smiles_clean, inchikey, qsar_ready)\n VALUES ("test1", "test2", "test3", "test4", false); '
+#cmd = """INSERT INTO chemmaps_test(dbid, test) VALUES ('test3', 'test6')"""
 
 dbr = DBrequest()
 dbr.connOpen()
-dbr.execCMD(cmd)
+#dbr.addElement("chemmaps_test", ["dbid", "test"], ["tt2", "fff5"])
+out = dbr.extractColoumn("chemmap_1d2d_arr", "data_arr")
+#dbr.execCMD(cmd)
 dbr.connClose()
+
+
+print(out[0][0][4])
+
 

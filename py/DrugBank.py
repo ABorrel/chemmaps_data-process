@@ -4,11 +4,23 @@ import toolbox
 
 #=> to import ToxCast librairy
 import sys
-sys.path.insert(0, "/home/borrela2/development/descriptor/")
+#sys.path.insert(0, "/home/borrela2/development/descriptor/")
+sys.path.insert(0, "C:\\Users\\borrela2\\development\\molecular-descriptors\\")
 import Chemical
 
-from os import path
+from os import path, remove
 from random import shuffle
+
+
+LPROP = ['JCHEM_ROTATABLE_BOND_COUNT', 'JCHEM_POLAR_SURFACE_AREA', 'MOLECULAR_WEIGHT',
+                 'JCHEM_PHYSIOLOGICAL_CHARGE', 'SYNONYMS', 'JCHEM_RULE_OF_FIVE', 'JCHEM_VEBER_RULE', 'FORMULA',
+                 'JCHEM_GHOSE_FILTER', 'GENERIC_NAME', 'JCHEM_TRADITIONAL_IUPAC', 'ALOGPS_SOLUBILITY',
+                 'JCHEM_MDDR_LIKE_RULE', 'SECONDARY_ACCESSION_NUMBERS', 'DRUG_GROUPS', 'PRODUCTS',
+                 'JCHEM_IUPAC', 'ALOGPS_LOGP', 'ALOGPS_LOGS', 'JCHEM_PKA_STRONGEST_BASIC',
+                 'JCHEM_NUMBER_OF_RINGS', 'JCHEM_PKA', 'JCHEM_ACCEPTOR_COUNT',
+                 'JCHEM_PKA_STRONGEST_ACIDIC', 'ORIGINAL_SOURCE', 'EXACT_MASS', 'JCHEM_DONOR_COUNT',
+                 'INTERNATIONAL_BRANDS', 'JCHEM_AVERAGE_POLARIZABILITY', 'JCHEM_BIOAVAILABILITY',
+                 'JCHEM_REFRACTIVITY', 'JCHEM_LOGP', 'JCHEM_FORMAL_CHARGE', 'SALTS']
 
 
 class DrugBank:
@@ -27,41 +39,55 @@ class DrugBank:
         cSDF.parseAll()
 
         pfilout = prForDB + "db.csv"
-
+        try:remove(pfilout)
+        except:pass
+        print(pfilout)
         if path.exists(pfilout):
             dchem = toolbox.loadMatrixToDict(pfilout)
         else:
-            filout = open(pfilout, "w")
-            filout.write("drugbank_id\tsmiles_origin\tsmiles_clean\tinchikey\tqsar_ready\tprop\n")
+
 
             dchem = {}
-            for chem in cSDF.lc:
-                drugbank_id = chem["DATABASE_ID"]
-                SMILES_origin = chem["SMILES"]
+            for chemSDF in cSDF.lc[:100]:
+                drugbank_id = chemSDF["DATABASE_ID"]
+                SMILES_origin = chemSDF["SMILES"]
+
+                print(list(chemSDF.keys()))
 
                 dchem[drugbank_id] = {}
                 dchem[drugbank_id]["drugbank_id"] = drugbank_id
                 dchem[drugbank_id]["smiles_origin"] = SMILES_origin
 
                 # prepare ligand
-                chem = Chemical.Chemical(SMILES_origin, self.prDesc)
-                chem.prepChem()
-                if chem.err == 1:
+                cchem = Chemical.Chemical(SMILES_origin, self.prDesc)
+                cchem.prepChem()
+                if cchem.err == 1:
                     qsar_ready = 0
                     cleanSMILES = "NA"
                     inchikey = "NA"
                 else:
                     qsar_ready = 1
-                    cleanSMILES = chem.smi
-                    inchikey = chem.generateInchiKey()
-                    chem.writeSMIClean()
+                    cleanSMILES = cchem.smi
+                    inchikey = cchem.generateInchiKey()
+                    cchem.writeSMIClean()
 
                 dchem[drugbank_id]["smiles_clean"] = cleanSMILES
                 dchem[drugbank_id]["inchikey"] = inchikey
                 dchem[drugbank_id]["qsar_ready"] = qsar_ready
+                db_prop = []
+                for PROP in LPROP:
+                    if PROP in list(chemSDF.keys()):
+                        db_prop.append(chemSDF[PROP])
+                    else:
+                        db_prop.append("NA")
+                dchem[drugbank_id]["DB_prop"] = db_prop
 
-                filout.write("%s\t%s\t%s\t%s\t%s\n" % (drugbank_id, SMILES_origin, cleanSMILES, inchikey, qsar_ready))
-            filout.close()
+        # write table for control -> after open and put in the DB
+        filout = open(pfilout, "w", encoding="utf8")
+        filout.write("drugbank_id\tsmiles_origin\tsmiles_clean\tinchikey\tqsar_ready\tDB_prop\n")
+        for chem in dchem.keys():
+            filout.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (chem, dchem[chem]["smiles_origin"], dchem[chem]["smiles_clean"], dchem[chem]["inchikey"], dchem[chem]["qsar_ready"], "___".join(dchem[chem]["DB_prop"])))
+        filout.close()
         self.dchem = dchem
 
 

@@ -6,7 +6,7 @@ from copy import deepcopy
 
 def loadMatrixToDict(pmatrixIn, sep ="\t"):
 
-    filin = open(pmatrixIn, "r")
+    filin = open(pmatrixIn, "r", encoding="utf8")
     llinesMat = filin.readlines()
     filin.close()
 

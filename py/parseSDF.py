@@ -17,7 +17,7 @@ class parseSDF:
 
         lout = []
 
-        filin = open(self.psdf, "r")
+        filin = open(self.psdf, "r", encoding="utf8")
         handle_read = filin.read()
         filin.close()
         #print handle_read

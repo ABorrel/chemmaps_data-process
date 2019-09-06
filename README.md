@@ -10,3 +10,4 @@ Scripts used to compute map coordinate and manage database used for ChemMaps
 
 - 09-04-2019: Update for the new DrugBank and remove descriptors scripts, used the library developed to generalize the descriptor computation
 - 09-05-2019: Clean source for drugbank and dell sources for descriptor computation, part of the generalisation protocol
+- 09-06-2019: Add SQL class to interact with the database

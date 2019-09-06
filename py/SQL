@@ -1,0 +1,5 @@
+ALTER TABLE chemmaps_test ALTER COLUMN testar TYPE NUMERIC[] // chang colomn type
+
+INSERT INTO %s(%s) VALUES(%s);
+
+INSERT INTO chemmaps_test(dbid, test, testar) VALUES('t1', 't2', '{6.33, 6.88}');
