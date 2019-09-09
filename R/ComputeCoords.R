@@ -60,7 +60,7 @@ PCAcombined2plans = function(d1D, d2D, pfilout){
   
   print(paste(lcoord1D[[2]][1], lcoord1D[[2]][2], lcoord3D[[2]][1], sep = "%  "))
   
-  #gifGeneration(paste(pfilout, "PCA3D2plan", sep = ""), coordSpace)
+  gifGeneration(paste(pfilout, "PCA3D2plan", sep = ""), coordSpace)
   
   
 }
@@ -251,7 +251,6 @@ d1D2D = openData(p1D2D, valcor, prout, c(1,2))
 d1D2D_data = d1D2D[[1]]
 rownames(d1D2D_data) = d1D2D_data[,1]
 d1D2D_data = d1D2D_data[,-1] # remove name
-d1D2D_data = d1D2D_data[,-1] # remove SMILES
 
 # remove not well distributed descriptors #
 ###########################################
@@ -267,7 +266,6 @@ d3D = openData(p3D, valcor, prout, c(1,2))
 d3D_data = d3D[[1]]
 rownames(d3D_data) = d3D_data[,1]
 d3D_data = d3D_data[,-1] # remove name
-d3D_data = d3D_data[,-1] # remove SMILES
 
 # remove not well distributed descriptors #
 ###########################################
@@ -275,9 +273,8 @@ d3D_data = d3D_data[,-1] # remove SMILES
 d3D_temp = apply(d3D_data,2,as.double)
 rownames(d3D_temp) = rownames(d3D_data)
 d3D_data = d3D_temp
-#d3D_data = delnohomogeniousdistribution(d3D_data, maxquantile)
+d3D_data = delnohomogeniousdistribution(d3D_data, maxquantile)
 
-#print(rownames(d3D_data))
 
 # write selected descriptors
 p3Dclean = paste(prout, "3D_clean.csv", sep = "")
@@ -306,8 +303,8 @@ dglobal = cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])
 #cardMatrixCor(cor(cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "cor1D2DVS3D", sep = ""), 6)
 
 #plot histogram #
-#histDataOne(data1 = d1D2D_data[vcompound,], paste(prout, "homodishist1D2D.pdf", sep = ""))
-#histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf", sep = ""))
+histDataOne(data1 = d1D2D_data[vcompound,], paste(prout, "homodishist1D2D.pdf", sep = ""))
+histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf", sep = ""))
 
 
 #######################
@@ -323,7 +320,7 @@ dglobal = cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])
 #PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
 
 # PCA combined
-#PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D", sep = ""))
+PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D", sep = ""))
 generateCoordCombinedPCA(d1D2D_data[vcompound,], d3D_data[vcompound,], prout)
 
 # MDSglobal

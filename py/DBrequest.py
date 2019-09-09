@@ -39,6 +39,7 @@ class DBrequest:
 
 
     def addElement(self, nameTable, lcoloumn, lval):
+        self.connOpen()
         sqlCMD = "INSERT INTO %s(%s) VALUES(%s);"%(nameTable, ",".join(lcoloumn), ",".join(["\'%s\'"%(val) for val in lval]))
         if self.verbose == 1: print(sqlCMD)
         if self.conn != None:
@@ -46,8 +47,10 @@ class DBrequest:
                 cur = self.conn.cursor()
                 cur.execute(sqlCMD)
                 self.conn.commit()
+                self.connClose()
             except (Exception, psycopg2.DatabaseError) as error:
                 print(error)
+                self.connClose()
         else:
             print("Open connection first")
 
@@ -67,6 +70,29 @@ class DBrequest:
         else:
             print("Open connection first")
             return "ERROR: open DB"
+
+
+
+    def getRow(self, table, condition):
+
+        self.connOpen()
+        sqlCMD = "SELECT * FROM %s WHERE %s;" % (table, condition)
+        if self.verbose == 1: print(sqlCMD)
+        if self.conn != None:
+            try:
+                cur = self.conn.cursor()
+                cur.execute(sqlCMD)
+                out = cur.fetchall()
+                if self.verbose == 1: print(out)
+                self.connClose()
+                return out
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+                self.connClose()
+                return error
+        else:
+            print("Open connection first")
+
 
 
     def execCMD(self, cmd):

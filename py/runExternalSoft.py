@@ -1,9 +1,17 @@
-from os import system, path, remove
+from os import system, path, remove, chdir
 from re import search
 from time import sleep
 
 LIGPREP = "/opt/schrodinger2017-3/ligprep"
 PADEL = "/home/aborrel/softwares/padel/PaDEL-Descriptor.jar"
+
+
+def runRCMD(cmd):
+
+    chdir("./../R/")
+    print(cmd)
+    system(cmd)
+    chdir("./../py/")
 
 
 def runLigprep(psmilin, forcefield="OPLS3", stereoisoster=1):
@@ -87,22 +95,14 @@ def babelConvertMoltoSDF(pmolin, psdfout):
 
 
 def RComputeCor(pfilin1D2D, pfilin3D, prout, valcor = 0.9, maxquantile=80):
-
     cmdplotPCA = "./ComputeCoords.R " + str(pfilin1D2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(valcor) + " " + str(maxquantile)
-
-    print (cmdplotPCA)
-    system(cmdplotPCA)
-
-    return
+    runRCMD(cmdplotPCA)
 
 
 
 def RComputeMapFiles(pfilin1D2D, pfilin3D, prout, corval, maxquantile):
-
-
     cmdMAP = "./generateMapFile.R " + str(pfilin1D2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(corval) + " " + str(maxquantile)
-    print (cmdMAP)
-    system(cmdMAP)
+    runRCMD(cmdMAP)
 
 
 def molconvert(pfilin, pfilout= ""):

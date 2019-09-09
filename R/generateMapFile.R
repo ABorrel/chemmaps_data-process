@@ -41,7 +41,6 @@ prepMatrixDesc = function(pin, valcor, maxquantile, vexclude, homo){
   din_data = din[[1]]
   rownames(din_data) = din_data[,1]
   din_data = din_data[,-1] # remove name
-  din_data = din_data[,-1] # remove SMILES
   
   # remove not well distributed descriptors #
   ###########################################
@@ -116,22 +115,20 @@ write.csv(ld3Dscale[[2]], file = paste(prout, "3Dscaling.csv", sep = ""))
 
 # generate PCA -1D2D
 lcoord = generatePCAcoords(ld1D2Dscale[[1]])
-
 # write cp
 write.csv(lcoord[[3]], file=paste(prout, "CP1D2D.csv", sep = ""))
 # write coord
-dcoord = lcoord[[1]][,1:2]
-colnames(dcoord) = c("DIM1", "DIM2")
+dcoord = lcoord[[1]]
+colnames(dcoord) = paste("DIM", seq(1,dim(dcoord)[2]), sep = "")
 write.csv(dcoord, file=paste(prout, "coord1D2D.csv", sep = ""))
-
+write.csv(lcoord[[2]], file=paste(prout, "VarPlan1D2D.csv", sep = ""))
 
 # generate PCA -3D
 lcoord = generatePCAcoords(ld3Dscale[[1]])
-
 # write cp
 write.csv(lcoord[[3]], file=paste(prout, "CP3D.csv", sep = ""))
 # write coord
-dcoord = lcoord[[1]][,1:2]
-colnames(dcoord) = c("DIM3", "DIM4")
+dcoord = lcoord[[1]]
+colnames(dcoord) = paste("DIM3-", seq(1,dim(dcoord)[2]), sep = "")
 write.csv(dcoord, file=paste(prout, "coord3D.csv", sep = ""))
-
+write.csv(lcoord[[2]], file=paste(prout, "VarPlan3D.csv", sep = ""))
