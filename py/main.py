@@ -19,6 +19,8 @@ maxquantile = 90
 
 cDrugBank = DrugBank.DrugBank(psdf, prDESC, pranalysis)
 cDrugBank.parseSDFDB()
+cDrugBank.pushChemInDB()
+ddd
 cDrugBank.computeDesc()
 
 

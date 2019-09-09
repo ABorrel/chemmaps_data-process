@@ -1,6 +1,7 @@
 import pathFolder
 import parseSDF
 import toolbox
+import DBrequest
 
 #=> to import ToxCast librairy
 import sys
@@ -52,8 +53,6 @@ class DrugBank:
                 drugbank_id = chemSDF["DATABASE_ID"]
                 SMILES_origin = chemSDF["SMILES"]
 
-                print(list(chemSDF.keys()))
-
                 dchem[drugbank_id] = {}
                 dchem[drugbank_id]["drugbank_id"] = drugbank_id
                 dchem[drugbank_id]["smiles_origin"] = SMILES_origin
@@ -89,6 +88,24 @@ class DrugBank:
             filout.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (chem, dchem[chem]["smiles_origin"], dchem[chem]["smiles_clean"], dchem[chem]["inchikey"], dchem[chem]["qsar_ready"], "___".join(dchem[chem]["DB_prop"])))
         filout.close()
         self.dchem = dchem
+
+
+    def pushChemInDB(self):
+
+        if not "dchem" in self.__dict__:
+            self.parseSDFDB()
+
+        cDB = DBrequest.DBrequest()
+        cDB.connOpen()
+        for chem in self.dchem.keys():
+            lprop = self.dchem[chem]["DB_prop"]
+            wprop = "{" + ",".join([ "\"%s\"" % (prop.replace("\'", "").replace("\"", "")) for prop in lprop]) + "}"
+            cDB.connOpen()
+            cDB.addElement("drugbank", ["drugbank_id", "smiles_origin", "smiles_clean", "inchikey", "qsar_ready", "DB_prop"],
+                                 [self.dchem[chem]["drugbank_id"], self.dchem[chem]["smiles_origin"], self.dchem[chem]["smiles_clean"],
+                                  self.dchem[chem]["inchikey"], self.dchem[chem]["qsar_ready"], wprop])
+            cDB.connClose()
+
 
 
     def computeDesc(self):

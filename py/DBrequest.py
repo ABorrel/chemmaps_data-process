@@ -93,14 +93,14 @@ class DBrequest:
 
 #cmd = """INSERT INTO chemmaps_test(dbid, test) VALUES ('test3', 'test6')"""
 
-dbr = DBrequest()
-dbr.connOpen()
+#dbr = DBrequest()
+#dbr.connOpen()
 #dbr.addElement("chemmaps_test", ["dbid", "test"], ["tt2", "fff5"])
-out = dbr.extractColoumn("chemmap_1d2d_arr", "data_arr")
+#out = dbr.extractColoumn("chemmap_1d2d_arr", "data_arr")
 #dbr.execCMD(cmd)
-dbr.connClose()
+#dbr.connClose()
 
 
-print(out[0][0][4])
+#print(out[0][0][4])
 
 
