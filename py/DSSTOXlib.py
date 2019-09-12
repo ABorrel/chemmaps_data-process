@@ -1,9 +1,16 @@
 import pathFolder
 import toolbox
-#import chemical
 import runExternalSoft
-import loadDB
+import DBrequest
 import calculate
+
+#=> to import ToxCast librairy
+import sys
+sys.path.insert(0, "/home/borrela2/development/descriptor/")
+#sys.path.insert(0, "C:\\Users\\borrela2\\development\\molecular-descriptors\\")
+import Chemical
+
+
 
 from os import path, listdir, remove
 from copy import deepcopy
@@ -15,143 +22,174 @@ from random import shuffle
 
 class DSSTOX:
 
-    def __init__(self, plistChem, istart, iend, prDSSTox, prout):
+    def __init__(self, plistChem, istart, iend, prDesc, prout):
 
         self.plistChem = plistChem
         self.istart = istart
         self.iend = iend
         self.plog = prout + "log.txt"
-        self.prDSSTox = prDSSTox
-        self.prSMI = pathFolder.createFolder(self.prDSSTox + "SMI/")
+        self.prDesc = prDesc
         self.prout = prout
 
 
 
     def loadlistChem(self):
 
-        dchem = toolbox.loadMatrixToDict(self.plistChem, sep=",")
+        prForDB = pathFolder.createFolder(self.prout + "forDB/")
+        pfilout = prForDB + "db.csv"
+        # try:remove(pfilout)
+        # except:pass
+        # print(pfilout)
+        if path.exists(pfilout):
+            dchem = toolbox.loadMatrixToDict(pfilout, sep="\t")
+        else:
+            dchem = {}
+            dchemIn = toolbox.loadMatrixToDict(self.plistChem, sep=",") #rewrtie pfas and tox21 with comma
+            for chemIn in dchemIn.keys():
+                if "SMILES" in list(dchemIn[chemIn].keys()):
+                    SMILES_origin = dchemIn[chemIn]["SMILES"]
+                    DTXSID = dchemIn[chemIn]["DTXSID"]
+                elif "Original_SMILES" in list(dchemIn[chemIn].keys()):
+                    SMILES_origin = dchemIn[chemIn]["Original_SMILES"]
+                    DTXSID = dchemIn[chemIn]["dsstox_substance_id"]
+                else:
+                    print("ERROR")
+                    return
+
+
+                dchem[DTXSID] = {}
+                dchem[DTXSID]["DTXSID"] = DTXSID
+                dchem[DTXSID]["smiles_origin"] = SMILES_origin
+
+                # prepare ligand
+                cchem = Chemical.Chemical(SMILES_origin, self.prDesc)
+                cchem.prepChem()
+                if cchem.err == 1:
+                    qsar_ready = 0
+                    cleanSMILES = "NA"
+                    inchikey = "NA"
+                else:
+                    qsar_ready = 1
+                    cleanSMILES = cchem.smi
+                    inchikey = cchem.generateInchiKey()
+                    cchem.writeSMIClean()
+
+                dchem[DTXSID]["smiles_clean"] = cleanSMILES
+                dchem[DTXSID]["inchikey"] = inchikey
+                dchem[DTXSID]["qsar_ready"] = qsar_ready
+
+
+            # write table for control -> after open and put in the DB
+            filout = open(pfilout, "w", encoding="utf8")
+            filout.write("DTXSID\tsmiles_origin\tsmiles_clean\tinchikey\tqsar_ready\n")
+            for chem in dchem.keys():
+                filout.write("%s\t%s\t%s\t%s\t%s\n" % (
+                chem, dchem[chem]["smiles_origin"], dchem[chem]["smiles_clean"], dchem[chem]["inchikey"],
+                dchem[chem]["qsar_ready"]))
+            filout.close()
         self.dchem = dchem
 
 
-
-    def computeDesc2D3D (self, compute=1):
-
-        pr2D = pathFolder.createFolder(self.prDSSTox + "2D/")
-        pr3D = pathFolder.createFolder(self.prDSSTox + "3D/")
-        pr3Dsdf = pathFolder.createFolder(self.prDSSTox + "3Dtemp/")
-
-        self.pr2D = pr2D
-        self.pr3D = pr3D
+    def computeDesc (self, insertDB =0, w=0):
 
         if not "dchem" in self.__dict__:
             self.loadlistChem()
 
-        lchemID = list(self.dchem.keys())
+        lchemID = list(self.dchem.keys()) # can be shuffle
+        if len(lchemID) < 50000 and self.iend == 0:
+            shuffle(lchemID)
 
-        i = self.istart
         imax = len(lchemID)
         if self.iend == 0 or self.iend > imax:
             iend = imax
         else:
             iend = self.iend
 
+        lchemID = lchemID[self.istart:iend]
+        shuffle(lchemID)
 
-        # just work with open file
-        if compute == 0:
-            dout = {}
-            while i < iend:
-                if i % 1000 == 0:
-                    print (i)
-                if "dsstox_substance_id" in list(self.dchem[lchemID[i]].keys()):
-                    DSSTOXid = self.dchem[lchemID[i]]["dsstox_substance_id"]
-                    pSMI = self.prSMI + DSSTOXid + ".smi"
-                    if path.exists(pSMI):
+        if insertDB == 1:
+            cDB = DBrequest.DBrequest()
 
-                        fSMI = open(pSMI, "r")
-                        llSMI = fSMI.readlines()
-                        fSMI.close()
-                        if len (llSMI) > 0:
-                            lSMI = llSMI[0].strip().split("\t")
-                            if len(lSMI) == 3:
-                                SMI = lSMI[0]
-                                inchikey = lSMI[1]
+        pfilout1D2D = self.prout + "1D2D.csv"
+        pfilout3D = self.prout + "3D.csv"
 
-                                pdesc2D = pr2D + inchikey + ".txt"
-                                pdesc3D = pr3D + inchikey + ".txt"
+        if w == 1:
 
-                                if path.exists(pdesc2D) and path.exists(pdesc3D):
-                                    if not inchikey in list(dout.keys()):
-                                        dout[inchikey] = {}
-                                        dout[inchikey]["SMI"] = [SMI]
-                                        dout[inchikey]["DSSTOXid"] = [DSSTOXid]
-                                    else:
-                                        dout[inchikey]["SMI"].append(SMI)
-                                        dout[inchikey]["DSSTOXid"].append(DSSTOXid)
-                            else:
-                                print (pSMI)
-                i = i + 1
-            self.ddesc = dout
-            return
+            ldesc1D2D = Chemical.getLdesc("1D2D")
+            ldesc3D = Chemical.getLdesc("3D")
 
+            filout1D2D = open(pfilout1D2D, "w")
+            filout1D2D.write("inchikey\t" + "\t".join(ldesc1D2D) + "\n")
 
+            filout3D = open(pfilout3D, "w")
+            filout3D.write("inchikey\t" + "\t".join(ldesc3D) + "\n")
 
-
-        dout = {}
-        while i < iend:
+        i = 0
+        imax = len(lchemID)
+        while i < imax:
             if i%1000 == 0:
                 print (i)
-            if "dsstox_substance_id" in list(self.dchem[lchemID[i]].keys()):
-                DSSTOXid = self.dchem[lchemID[i]]["dsstox_substance_id"]
-            else:
-                DSSTOXid = self.dchem[lchemID[i]]["DTXSID"]
 
-            if "Original_SMILES" in list(self.dchem[lchemID[i]].keys()):
-                smiles = self.dchem[lchemID[i]]["Original_SMILES"].split(" ")[0]
-            elif "ORIGINAL  SMILES" in list(self.dchem[lchemID[i]].keys()):
-                smiles = self.dchem[lchemID[i]]["ORIGINAL  SMILES"]
-            else:
-                smiles = self.dchem[lchemID[i]]["SMILES"]
-
-            chem = chemical.chemical(DSSTOXid, smiles)
-            chem.prepareChem(self.prSMI)
-
-
-            # skip error prep
-            if chem.err == 1:
-                flog = open(self.plog, "a")
-                flog.write("\n" + str(DSSTOXid) + "\n")
-                flog.write(chem.log)
-                flog.close()
+            SMILESClean = self.dchem[lchemID[i]]["smiles_clean"]
+            if SMILESClean == "NA":
                 i = i + 1
                 continue
+            cChem = Chemical.Chemical(SMILESClean, self.prDesc)
+            cChem.prepChem()
 
-            if compute == 1:
-                chem.generate3DFromSMILES(pr3Dsdf, "RDKit")
-                chem.compute1D2DDesc(pr2D)
-                chem.compute3DDesc(pr3D)
-                # control if all process is correct
-
-                if chem.err == 0:
-                    # write table of desc
-                    chem.writeTablesDesc(pr2D, "1D2D")
-                    chem.writeTablesDesc(pr3D, "3D")
-                else:
+            # print(SMILESClean)
+            if cChem.err == 0:
+                # 2D descriptors
+                cChem.computeAll2D(update=0)
+                if cChem.err == 1:
                     i = i + 1
                     continue
+                cChem.writeMatrix("2D")
+                if w == 1:
+                    filout1D2D.write(
+                        "%s\t%s\n" % (cChem.inchikey, "\t".join([str(cChem.all2D[desc]) for desc in ldesc1D2D])))
 
-            # case of everything works
-            InchIKey = chem.inchikey
-            if path.exists(pr2D + InchIKey + ".txt") and path.exists(pr3D + InchIKey + ".txt"):
-                if not InchIKey in list(dout.keys()):
-                    dout[InchIKey] = {}
-                    dout[InchIKey]["SMI"]=[]
-                    dout[InchIKey]["DSSTOXid"] = []
-                dout[InchIKey]["SMI"].append(chem.smiclean)
-                dout[InchIKey]["DSSTOXid"].append(DSSTOXid)
+                # insert in DB
+                if insertDB == 1:
+                    cDB.verbose = 0
+                    out1D2D = cDB.getRow("desc_1d2d", "inchikey='%s'" % (cChem.inchikey))
+                    if out1D2D == []:
+                        w1D2D = "{" + ",".join(["\"%s\"" % (cChem.all2D[desc1D2D]) for desc1D2D in ldesc1D2D]) + "}"
+                        cDB.addElement("desc_1d2d", ["inchikey", "desc_value"], [cChem.inchikey, w1D2D])
 
+                # 3D descriptors
+                cChem.set3DChemical()
+                # control if 3D generated
+                if cChem.err == 0:
+                    cChem.computeAll3D(update=0)
+                    cChem.writeMatrix("3D")
+
+                    if cChem.err == 1:
+                        i = i + 1
+                        continue
+                    # write master table
+                    if w == 1:
+                        filout3D.write(
+                            "%s\t%s\n" % (cChem.inchikey, "\t".join([str(cChem.all3D[desc]) for desc in ldesc3D])))
+
+                    # put in table descriptors
+                    if insertDB == 1:
+                        out3D = cDB.getRow("desc_3d", "inchikey='%s'" % (cChem.inchikey))
+                        if out3D == []:
+                            w3D = "{" + ",".join(["\"%s\"" % (cChem.all3D[desc3D]) for desc3D in ldesc3D]) + "}"
+                            cDB.addElement("desc_3d", ["inchikey", "desc_value"], [cChem.inchikey, w3D])
             i = i + 1
 
-        self.ddesc = dout
+        if w == 1:
+            filout1D2D.close()
+            filout3D.close()
+
+        self.p1D2D = pfilout1D2D
+        self.p3D = pfilout3D
+
+
+
 
 
     def computepng(self):
@@ -187,70 +225,56 @@ class DSSTOX:
 
 
 
-    def writeDescMatrix(self, typeDesc):
 
-        # write 2D
-        if typeDesc == "1D2D" or typeDesc == "1D" or typeDesc == "2D" :
-            prin = self.pr2D
-            pfilout = self.prout + "1D2D.csv"
-        elif typeDesc == "3D":
-            prin = self.pr3D
-            pfilout = self.prout + "3D.csv"
+    def computeCoords(self, corVal, distributionVal, insertDB=1):
 
 
-        if path.exists(pfilout) and path.getsize(pfilout) > 1000:
-            if not "pfdesc" in self.__dict__:
-                self.pfdesc = {}
-            self.pfdesc[typeDesc] = pfilout
-            return pfilout
+        if not "p1D2D" in self.__dict__ and not "p3D" in self.__dict__:
+            self.computeDesc(insertDB=0, w=1)
+
+        # create coords
+        prmap = pathFolder.createFolder(self.prout + "map_" + str(corVal) + "-" + str(distributionVal) + "/")
+        self.prmap = prmap
+
+        pcoordDim1Dim2 = prmap + "coord1D2D.csv"
+        pcoordDim3D = prmap + "coord3D.csv"
+        if not path.exists(pcoordDim1Dim2) or not path.exists(pcoordDim3D):
+            runExternalSoft.RComputeMapFiles(self.p1D2D, self.p3D, prmap, corVal, distributionVal)
+
+        if not path.exists(pcoordDim1Dim2) or not path.exists(pcoordDim3D):
+            print("ERROR file map")
+            return
         else:
-            filout = open(pfilout, "w")
+            self.pcoords1D2D = pcoordDim1Dim2
+            self.pcoords3D = pcoordDim3D
+
+        if insertDB == 1:
+            dcoord1D2D = toolbox.loadMatrixToDict(pcoordDim1Dim2, sep = ",")
+            dcoord3D = toolbox.loadMatrixToDict(pcoordDim3D, sep = ",")
+            cDB = DBrequest.DBrequest()
+            cDB.verbose = 0
+            for chem in dcoord1D2D.keys():
+                print(chem)
+                out1D2D = cDB.getRow("drugbank_coords", "inchikey='%s'" % (chem))
+                if out1D2D == []:
+                    nbdim1d2d = len(dcoord1D2D[chem].keys()) - 1
+                    nbdim3d = len(dcoord3D[chem].keys()) - 1
+
+                    w1D2D = "{" + ",".join(["\"%s\"" % (dcoord1D2D[chem]["DIM" + str(i)]) for i in range(1, nbdim1d2d + 1)]) + "}"
+                    w3D = "{" + ",".join(["\"%s\"" % (dcoord3D[chem]["DIM3-" + str(i)]) for i in range(1, nbdim3d + 1)]) + "}"
+                    cDB.addElement("drugbank_coords", ["inchikey", "dim1d2d", "dim3d", "origin"], [chem, w1D2D, w3D, "1"])
 
 
-        ldesc = []
-        for ink in self.ddesc.keys():
-            pdesc = prin + ink + ".txt"
-            if path.exists(pdesc):
-                dink = toolbox.loadMatrixToDict(pdesc, sep="\t")
-                if ldesc == []:
-                    ldesc = list(dink[ink].keys())
-                    del ldesc[ldesc.index("ID")]
-                    filout.write("ID\tSMILES\t" + "\t".join(ldesc) + "\n")
+    def runRprojection(self, corVal, distributionVal):
 
-                # put back DSSTOX
-                dink[ink]["ID"] = self.ddesc[ink]["DSSTOXid"][0]
-                dink[ink]["SMILES"] = self.ddesc[ink]["SMI"][0]
-                filout.write("%s\t%s"%(dink[ink]["ID"],  dink[ink]["SMILES"]))
-                for desc in ldesc:
-                    try: filout.write("\t%s"%(str(dink[ink][desc])))
-                    except: filout.write("\tNA")
-                filout.write("\n")
-        filout.close()
+        if not "p1D2D" in self.__dict__ and not "p3D" in self.__dict__:
+            self.computeDesc(insertDB=0)
 
-        if not "pfdesc" in self.__dict__:
-            self.pfdesc = {}
-        self.pfdesc[typeDesc] = pfilout
-        return pfilout
+        # create coords
+        prproj = pathFolder.createFolder(self.prout + "proj_" + str(corVal) + "-" + str(distributionVal) + "/")
+        runExternalSoft.RComputeCor(self.p1D2D, self.p3D, prproj, corVal, distributionVal)
 
 
-
-
-    def projection(self, corval, maxquantile):
-
-        prproject = pathFolder.createFolder(self.prout + "projection" + str(corval) + "-" + str(maxquantile) + "/")
-        print (self.pfdesc["1D2D"], self.pfdesc["3D"], prproject, corval, maxquantile)
-        runExternalSoft.RComputeCor(self.pfdesc["1D2D"], self.pfdesc["3D"], prproject, corval, maxquantile)
-
-
-    def generateFileMap(self, corval, maxquantile):
-
-        prmap = pathFolder.createFolder(self.prout + "map_" + str(corval) + "-" + str(maxquantile) + "/")
-        if len(listdir(prmap)) > 0:
-            self.prmap = prmap
-        else:
-            runExternalSoft.RComputeMapFiles(self.pfdesc["1D2D"], self.pfdesc["3D"], prmap, corval, maxquantile)
-
-            self.prmap = prmap
 
 
     def splitMap(self, nbsplit, dim):

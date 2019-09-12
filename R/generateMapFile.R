@@ -27,6 +27,7 @@ generatePCAcoords = function(dinScale){
   rownames (cp) = colnames (dinScale)
   colnames (cp) = colnames (dinScale)
   data_plot = as.matrix(dinScale)%*%cp
+  rownames(data_plot) = rownames(dinScale)
   
   return(list(data_plot, var_cap, cp))
 }
@@ -78,8 +79,6 @@ maxquantile = as.integer(args[5])
 #maxquantile = 90
 
 
-
-
 # drugmap
 #p3D = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/Desc/3D.csv"
 #p1D2D = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/Desc/1D2D.csv"
@@ -87,8 +86,8 @@ maxquantile = as.integer(args[5])
 #maxquantile = 95
 #prout = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/Desc/map/"
 
-d1D2D = prepMatrixDesc(p1D2D, valcor, maxquantile, c(1,2), 1)
-d3D = prepMatrixDesc(p3D, valcor, maxquantile, c(1,2), 0)
+d1D2D = prepMatrixDesc(p1D2D, valcor, maxquantile, c(1), 1)
+d3D = prepMatrixDesc(p3D, valcor, maxquantile, c(1), 1)
 
 #################
 # merge dataset #
@@ -100,7 +99,8 @@ vcompound = intersect(vcompound,rownames(d3D))
 d1D2D = d1D2D[vcompound,]
 d3D = d3D[vcompound,]
 
-
+d1D2D = delSDnull(d1D2D)
+d3D = delSDnull(d3D)
 #########################
 #  generate coordinates #
 #########################
@@ -122,6 +122,8 @@ dcoord = lcoord[[1]]
 colnames(dcoord) = paste("DIM", seq(1,dim(dcoord)[2]), sep = "")
 write.csv(dcoord, file=paste(prout, "coord1D2D.csv", sep = ""))
 write.csv(lcoord[[2]], file=paste(prout, "VarPlan1D2D.csv", sep = ""))
+
+
 
 # generate PCA -3D
 lcoord = generatePCAcoords(ld3Dscale[[1]])

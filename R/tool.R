@@ -425,6 +425,21 @@ openData = function (pfilin, valcor, prout, vexclude){
 }
 
 
+#remove SD = 0
+delSDnull = function(desc){
+  
+  sd_desc = apply (desc[,1:(dim(desc)[2])], 2, sd)
+  sd_0 = which (sd_desc == 0)
+  
+  if ( !is.integer0(sd_0)){
+    desc=subset(desc,select=-sd_0)
+  }
+  descout = apply(desc,2,as.double)
+  rownames(descout) = rownames(desc)
+  return(desc) 
+}
+
+
 delete.na = function(DF, n=0) {
   #print(which(rowSums(is.na(DF)) <= n))
   DF = DF[which(rowSums(is.na(DF)) <= n),]
