@@ -115,7 +115,8 @@ class DrugBank:
             cDB.addElement("drugbank_chem", ["drugbank_id", "smiles_origin", "smiles_clean", "inchikey", "qsar_ready"],
                                  [self.dchem[chem]["drugbank_id"], self.dchem[chem]["smiles_origin"], self.dchem[chem]["smiles_clean"],
                                   self.dchem[chem]["inchikey"], self.dchem[chem]["qsar_ready"]])
-            ddd
+
+        # error have to be fix!!!!!!
 
 
     def pushPropInDB(self):
@@ -127,8 +128,6 @@ class DrugBank:
         for chem in self.dchem.keys():
             lprop = self.dchem[chem]["DB_prop"]
             wprop = "{" + ",".join(["\"%s\"" % (prop.replace("\'", "").replace("\"", "")) for prop in lprop]) + "}"
-            print(wprop)
-            fff
             cDB.addElement("drugbank_prop", ["drugbank_id", "prop_value"], [self.dchem[chem]["drugbank_id"], wprop])
 
         return

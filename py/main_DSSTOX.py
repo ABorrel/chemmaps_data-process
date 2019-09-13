@@ -15,8 +15,8 @@ def generateCoordFromEPAlist(plist, prout, computeDesc, computePNG, corval=0.9, 
     db = DSSTOXlib.DSSTOX(plist, istart, iend, prDESC, prout)
     db.loadlistChem()
     db.computeDesc(insertDB =0, w=1)
-    db.runRprojection(corval, maxquantile)
-    db.computeCoords(corval, maxquantile, insertDB=0)
+    #db.runRprojection(corval, maxquantile)
+    #db.computeCoords(corval, maxquantile, insertDB=0)
 
 
     #db.writeDescMatrix("1D2D")
@@ -69,7 +69,7 @@ pDSSTOX = "/home/borrela2/ChemMaps/data/DSSTox_QSAR-r_1-15.csv"
 prDSSTOX = "/home/borrela2/ChemMaps/data_analysis/DSSTox/"
 
 #generateCoordFromEPAlist(pDSSTOX, prDSSTOX, computeDesc=0, computePNG=0, corval=0.9, maxquantile=90, splitMap=100, istart=0, iend=0)
-generateCoordFromEPAlist(pDSSTOX, prDSSTOX, computeDesc=1, computePNG=1, corval=0.9, maxquantile=90, splitMap=1, istart=0, iend=20000)
+generateCoordFromEPAlist(pDSSTOX, prDSSTOX, computeDesc=1, computePNG=1, corval=0.9, maxquantile=90, splitMap=1, istart=100000, iend=300000)
 #generateCoordFromEPAlist(pDSSTOX, prDSSTOX, computeDesc=1, computePNG=1, corval=0.9, maxquantile=90, splitMap=1, istart=100000, iend=150000)
 #generateCoordFromEPAlist(pDSSTOX, prDSSTOX, computeDesc=1, computePNG=1, corval=0.9, maxquantile=90, splitMap=1, istart=150000, iend=200000)
 #generateCoordFromEPAlist(pDSSTOX, prDSSTOX, computeDesc=1, computePNG=1, corval=0.9, maxquantile=90, splitMap=1, istart=200000, iend=250000)
