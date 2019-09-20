@@ -50,6 +50,7 @@ class DrugBank:
 
         cSDF = parseSDF.parseSDF(self.pSDF, "DATABASE_ID", self.prout)
         cSDF.parseAll()
+        cSDF.writeTableSpecific(LPROP, "Table_prop")
 
         pfilout = prForDB + "db.csv"
         #try:remove(pfilout)
@@ -57,6 +58,8 @@ class DrugBank:
         #print(pfilout)
         if path.exists(pfilout):
             dchem = toolbox.loadMatrixToDict(pfilout, sep = "\t")
+            for chem in dchem.keys():
+                dchem[chem]["DB_prop"] = dchem[chem]["DB_prop"].split("___")
         else:
             dchem = {}
             for chemSDF in cSDF.lc:
@@ -112,11 +115,10 @@ class DrugBank:
 
         cDB = DBrequest.DBrequest()
         for chem in self.dchem.keys():
-            cDB.addElement("drugbank_chem", ["drugbank_id", "smiles_origin", "smiles_clean", "inchikey", "qsar_ready"],
+            cDB.addElement("drugbank_chem", ["db_id", "smiles_origin", "smiles_clean", "inchikey", "qsar_ready"],
                                  [self.dchem[chem]["drugbank_id"], self.dchem[chem]["smiles_origin"], self.dchem[chem]["smiles_clean"],
                                   self.dchem[chem]["inchikey"], self.dchem[chem]["qsar_ready"]])
 
-        # error have to be fix!!!!!!
 
 
     def pushPropInDB(self):
@@ -152,7 +154,7 @@ class DrugBank:
         pfilout1D2D = self.prout + "1D2D.csv"
         pfilout3D = self.prout + "3D.csv"
 
-        if update == 0 and path.exists(pfilout3D) and path.exists(pfilout1D2D):
+        if update == 0 and path.exists(pfilout3D) and path.exists(pfilout1D2D) and insertDB == 0:
             self.p1D2D = pfilout1D2D
             self.p3D = pfilout3D
             return
@@ -196,7 +198,10 @@ class DrugBank:
                     cDB.verbose = 0
                     out1D2D = cDB.getRow("desc_1d2d", "inchikey='%s'" % (cChem.inchikey))
                     if out1D2D == []:
-                        w1D2D = "{" + ",".join(["\"%s\"" % (cChem.all2D[desc1D2D]) for desc1D2D in ldesc1D2D]) + "}"
+                        valDesc = [cChem.all2D[desc1D2D] for desc1D2D in ldesc1D2D]
+                        valDesc = ['-9999' if desc == "NA" else desc for desc in valDesc]
+
+                        w1D2D = "{" + ",".join(["\"%s\"" % (desc) for desc in valDesc]) + "}"
                         cDB.addElement("desc_1d2d", ["inchikey", "desc_value"], [cChem.inchikey, w1D2D])
 
 
@@ -214,7 +219,10 @@ class DrugBank:
                     if insertDB == 1:
                         out3D = cDB.getRow("desc_3d", "inchikey='%s'" % (cChem.inchikey))
                         if out3D == []:
-                            w3D = "{" + ",".join(["\"%s\"" % (cChem.all3D[desc3D]) for desc3D in ldesc3D]) + "}"
+                            valDesc = [cChem.all3D[desc3D] for desc3D in ldesc3D]
+                            valDesc = ['-9999' if desc == "NA" else desc for desc in valDesc]
+
+                            w3D = "{" + ",".join(["\"%s\"" % (desc) for desc in valDesc]) + "}"
                             cDB.addElement("desc_3d", ["inchikey", "desc_value"], [cChem.inchikey, w3D])
 
         filout1D2D.close()
@@ -231,6 +239,7 @@ class DrugBank:
         if not "p1D2D" in self.__dict__ and not "p3D" in self.__dict__:
             self.computeDesc(insertDB=0)
 
+        err = 0
         # create coords
         prmap = pathFolder.createFolder(self.prout + "map_" + str(corVal) + "-" + str(distributionVal) + "/")
         pcoordDim1Dim2 = prmap + "coord1D2D.csv"
@@ -238,33 +247,33 @@ class DrugBank:
         if path.exists(pcoordDim1Dim2) and path.exists(pcoordDim3D):
             self.pcoords1D2D = pcoordDim1Dim2
             self.pcoords3D = pcoordDim3D
-            return
 
-        if not path.exists(pcoordDim1Dim2) or not path.exists(pcoordDim3D):
+        elif not path.exists(pcoordDim1Dim2) or not path.exists(pcoordDim3D):
             runExternalSoft.RComputeMapFiles(self.p1D2D, self.p3D, prmap, corVal, distributionVal)
-        if not path.exists(pcoordDim1Dim2) or not path.exists(pcoordDim3D):
+        elif not path.exists(pcoordDim1Dim2) or not path.exists(pcoordDim3D):
             print("ERROR file map")
-            return
+            err = 1
 
         self.pcoords1D2D = pcoordDim1Dim2
         self.pcoords3D = pcoordDim3D
 
 
-        if insertDB == 1:
+        if insertDB == 1 and err ==0:
             dcoord1D2D = toolbox.loadMatrixToDict(pcoordDim1Dim2, sep = ",")
             dcoord3D = toolbox.loadMatrixToDict(pcoordDim3D, sep = ",")
             cDB = DBrequest.DBrequest()
             cDB.verbose = 0
             for chem in dcoord1D2D.keys():
-                print(chem)
-                out1D2D = cDB.getRow("drugbank_coords", "inchikey='%s'" % (chem))
+                #print(chem)
+                #out1D2D = cDB.getRow("drugbank_coords", "inchikey='%s'" % (chem))
+                out1D2D = []
                 if out1D2D == []:
                     nbdim1d2d = len(dcoord1D2D[chem].keys()) - 1
                     nbdim3d = len(dcoord3D[chem].keys()) - 1
 
                     w1D2D = "{" + ",".join(["\"%s\"" % (dcoord1D2D[chem]["DIM" + str(i)]) for i in range(1, nbdim1d2d + 1)]) + "}"
                     w3D = "{" + ",".join(["\"%s\"" % (dcoord3D[chem]["DIM3-" + str(i)]) for i in range(1, nbdim3d + 1)]) + "}"
-                    cDB.addElement("drugbank_coords", ["inchikey", "dim1d2d", "dim3d", "origin"], [chem, w1D2D, w3D, "1"])
+                    cDB.addElement("drugbank_coords", ["inchikey", "dim1d2d", "dim3d", "indrugbank"], [chem, w1D2D, w3D, "True"])
 
 
     def runRprojection(self, corVal, distributionVal):
@@ -277,58 +286,82 @@ class DrugBank:
         runExternalSoft.RComputeCor(self.p1D2D, self.p3D, prproj, corVal, distributionVal)
 
 
-    def neighbormatrix(self, nbNeighbor, lnDim, insertDB=0):
+    def neighbormatrix(self, nbNeighbor, lnDim):
 
         if not "pcoords1D2D" in self.__dict__:
             print("Compute Coord first")
             return 1
         else:
             prNeighbor = pathFolder.createFolder(self.prout + "Neighbors/")
-
-            dDim1D2D = toolbox.loadMatrixToDict(self.pcoords1D2D, sep = ",")
-            dDim3D = toolbox.loadMatrixToDict(self.pcoords3D, sep=",")
-
-            # compute all dimension
-            if lnDim ==[]:
-                chem1 = list(dDim1D2D.keys())[0]
-                n1D2D = len(list(dDim1D2D[chem1].keys())) - 1
-                n3D = len(list(dDim3D[chem1].keys())) - 1
-                lnDim = [n1D2D, n3D]
-
-
-            dcor = {}
-            # from 1D2D coord
-            for inch in dDim1D2D.keys():
-                dcor[inch] = []
-
-                i = 1
-                while i <= lnDim[0]:
-                    dcor[inch].append(float(dDim1D2D[inch]["DIM" + str(i)]))
-                    i = i + 1
-
-                i = 1
-                while i <= lnDim[1]:
-                    dcor[inch].append(float(dDim3D[inch]["DIM3-" + str(i)]))
-                    i = i + 1
-
-            ddist = {}
-            for ID in dcor.keys():
-                ddist[ID] = {}
-                for ID2 in dcor.keys():
-                    if ID != ID2:
-                        ddist[ID][ID2] = sqrt(sum([(xi - yi) ** 2 for xi, yi in zip(dcor[ID], dcor[ID2])]))
-
-                lID = [i[0] for i in sorted(ddist[ID].items(), key=lambda x: x[1])][:nbNeighbor]
-                ddist[ID] = lID
-
-            # write in table
             pfilout = prNeighbor + "Table_DIM1D2D-" + str(lnDim[0]) + "_" + str(lnDim[1]) + ".csv"
-            ftable = open(pfilout, "w")
-            ftable.write("ID\tNeighbors\n")
-            for ID in ddist.keys():
-                ftable.write("%s\t%s\n" % (ID, " ".join(ddist[ID])))
-            ftable.close()
+            if path.exists(pfilout):
+                ddist = toolbox.loadMatrixToDictp(pfilout)
+                for chem in ddist.keys():
+                    ddist[chem] = ddist[chem].split(" ")
+            else:
+                dDim1D2D = toolbox.loadMatrixToDict(self.pcoords1D2D, sep = ",")
+                dDim3D = toolbox.loadMatrixToDict(self.pcoords3D, sep=",")
+
+                # compute all dimension
+                if lnDim ==[]:
+                    chem1 = list(dDim1D2D.keys())[0]
+                    n1D2D = len(list(dDim1D2D[chem1].keys())) - 1
+                    n3D = len(list(dDim3D[chem1].keys())) - 1
+                    lnDim = [n1D2D, n3D]
 
 
+                dcor = {}
+                # from 1D2D coord
+                for inch in dDim1D2D.keys():
+                    dcor[inch] = []
+
+                    i = 1
+                    while i <= lnDim[0]:
+                        dcor[inch].append(float(dDim1D2D[inch]["DIM" + str(i)]))
+                        i = i + 1
+
+                    i = 1
+                    while i <= lnDim[1]:
+                        dcor[inch].append(float(dDim3D[inch]["DIM3-" + str(i)]))
+                        i = i + 1
+
+                ddist = {}
+                for ID in dcor.keys():
+                    ddist[ID] = {}
+                    for ID2 in dcor.keys():
+                        if ID != ID2:
+                            ddist[ID][ID2] = sqrt(sum([(xi - yi) ** 2 for xi, yi in zip(dcor[ID], dcor[ID2])]))
+
+                    lID = [i[0] for i in sorted(ddist[ID].items(), key=lambda x: x[1])][:nbNeighbor]
+                    ddist[ID] = lID
+
+                # write in table
+                ftable = open(pfilout, "w")
+                ftable.write("ID\tNeighbors\n")
+                for ID in ddist.keys():
+                    ftable.write("%s\t%s\n" % (ID, " ".join(ddist[ID])))
+                ftable.close()
+
+    def pushNeighbors(self):
+        prneighbor = pathFolder.createFolder(self.prout + "Neighbors/")
+        ptable3Dim = prneighbor + "Table_DIM1D2D-2_1.csv"
+        ptableNDim = prneighbor + "Table_DIM1D2D-120_164.csv"
+        if path.exists(ptable3Dim) and path.exists(ptableNDim):
+            ddist3D = toolbox.loadMatrixToDict(ptable3Dim)
+            for chem in ddist3D.keys():
+                ddist3D[chem] = ddist3D[chem]["Neighbors"].split(" ")
+            ddistND = toolbox.loadMatrixToDict(ptableNDim)
+            for chem in ddistND.keys():
+                ddistND[chem] = ddistND[chem]["Neighbors"].split(" ")
+
+            cDB = DBrequest.DBrequest()
+            cDB.verbose = 0
+            for chem in ddist3D.keys():
+                # print(chem)
+                out1D2D = cDB.getRow("drugbank_neighbors", "inchikey='%s'" % (chem))
+                if out1D2D == []:
+                    w3D = "{" + ",".join(["\"%s\"" % (neighbor) for neighbor in ddist3D[chem]]) + "}"
+                    wND = "{" + ",".join(["\"%s\"" % (neighbor) for neighbor in ddistND[chem]]) + "}"
+                    cDB.addElement("drugbank_neighbors", ["inchikey", "neighbors_dim3", "neighbors_dimn"], [chem, w3D, wND])
 
 

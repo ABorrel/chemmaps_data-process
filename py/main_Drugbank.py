@@ -19,19 +19,19 @@ maxquantile = 90
 
 
 cDrugBank = DrugBank.DrugBank(psdf, prDESC, pranalysis)
-cDrugBank.parseSDFDB()
+#cDrugBank.parseSDFDB()
 #cDrugBank.pushChemInDB()
 #cDrugBank.pushDrugBankNamePropInDB()
 cDrugBank.pushPropInDB()
-#cDrugBank.computeDesc(insertDB=0)
-
+#cDrugBank.computeDesc(insertDB=1)
 #cDrugBank.pushDescNameInDB("1D2D")
 #cDrugBank.pushDescNameInDB("3D")
 #cDrugBank.runRprojection(corval, maxquantile)
-#cDrugBank.computeCoords(corval, maxquantile, insertDB=0)
+cDrugBank.computeCoords(corval, maxquantile, insertDB=1)
 
 
 #nbNeighbor = 20
 #lnDim = [2,1] # dimension in the space with 1D2D desc and
 #lnDim = []
-#cDrugBank.neighbormatrix(nbNeighbor, lnDim, insertDB=0)
+#cDrugBank.neighbormatrix(nbNeighbor, lnDim, insertDB=1)
+cDrugBank.pushNeighbors()

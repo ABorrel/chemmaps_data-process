@@ -1,6 +1,7 @@
 import psycopg2
 from configparser import ConfigParser
 
+from os import path
 
 class DBrequest:
     def __init__(self, verbose=1):
@@ -91,27 +92,29 @@ class DBrequest:
                 self.connClose()
                 return error
         else:
+            self.connClose()
             print("Open connection first")
 
 
 
-    def execCMD(self, cmd):
-        sqlCMD = "INSERT INTO %s(%s) VALUES(%s);" % (
-        nameTable, ",".join(lcoloumn), ",".join(["\'%s\'" % (val) for val in lval]))
-        if self.verbose == 1: print(sqlCMD)
+    def execCMD(self, cmdSQL):
+        if self.verbose == 1: print(cmdSQL)
+        self.connOpen()
         if self.conn != None:
             try:
                 cur = self.conn.cursor()
-                cur.execute(cmd)
+                cur.execute(cmdSQL)
                 #self.conn.commit()
                 # print(cur)
                 out = cur.fetchall()
                 if self.verbose == 1: print(out)
             except (Exception, psycopg2.DatabaseError) as error:
+                self.connClose()
                 print(error)
+                return "Error"
         else:
             print("Open connection first")
-        return
+        self.connClose()
 
 
 
@@ -120,6 +123,8 @@ class DBrequest:
 #cmd = """INSERT INTO chemmaps_test(dbid, test) VALUES ('test3', 'test6')"""
 
 #dbr = DBrequest()
+#dbr.connOpen()
+#dbr.connClose()
 #dbr.connOpen()
 #dbr.addElement("chemmaps_test", ["dbid", "test"], ["tt2", "fff5"])
 #out = dbr.extractColoumn("chemmap_1d2d_arr", "data_arr")
