@@ -6,14 +6,22 @@
 import DSSTOXlib
 def generateCoordFromEPAlist(plist, prout, nameMap, computeDesc, computePNG, corval=0.9, maxquantile=90, splitMap=1, istart=0, iend=0, project = 0):
 
-    prDSSTOXPred = "/home/borrela2/ChemMaps/data/DSSTOX_pred/"
-    pknownSDF = "/home/borrela2/ChemMaps/data/ToxTrainTest_3D.sdf"
-    pLD50 = "/home/borrela2/ChemMaps/data/LD50_data.csv"
-    pDSTOXIDmap = "/home/borrela2/ChemMaps/data/DSSTox_Identifiers_Map.csv"
+    #prDSSTOXPred = "/home/borrela2/ChemMaps/data/DSSTOX_pred/"
+    #pknownSDF = "/home/borrela2/ChemMaps/data/ToxTrainTest_3D.sdf"
+    #pLD50 = "/home/borrela2/ChemMaps/data/LD50_data.csv"
+    #pDSTOXIDmap = "/home/borrela2/ChemMaps/data/DSSTox_Identifiers_Map.csv"
+    
+    prDSSTOXPred = "C:\\Users\\borrela2\\development\\trash\\DSSTOX_pred\\"
+    pknownSDF = "C:\\Users\\borrela2\\development\\trash\\ToxTrainTest_3D.sdf"
+    pLD50 = "C:\\Users\\borrela2\\development\\trash\\LD50_data.csv"
+    pDSTOXIDmap = "C:\\Users\\borrela2\\development\\trash\\DSSTox_Identifiers_Map.csv"
+
     prDESC = "/home/borrela2/ChemMaps/data_analysis/DESC/"
 
     db = DSSTOXlib.DSSTOX(plist, nameMap, istart, iend, prDESC, prout)
     db.loadlistChem()
+    db.generateTablePropAllDSSTOX(prDSSTOXPred, pknownSDF, pLD50, pDSTOXIDmap, insertDB=0)
+    ddd
     #db.pushChemInDB()
     #db.computeDesc(insertDB=1, w=1)
     if project == 1:
@@ -25,7 +33,7 @@ def generateCoordFromEPAlist(plist, prout, nameMap, computeDesc, computePNG, cor
         #db.generateNeighborMatrix(20, [])
         #db.pushNeighbors()
         #db.pushDssToxNamePropInDB()
-        db.generateTableProp(prDSSTOXPred, pknownSDF, pLD50, pDSTOXIDmap)
+        db.updateTableProp(nameMap)
     else:
         print("*")
 
@@ -56,10 +64,9 @@ def generateCoordFromEPAlist(plist, prout, nameMap, computeDesc, computePNG, cor
 #############
 # prep PFAS #
 #############
-pPFAS = "/home/borrela2/ChemMaps/data/PFAS/list_chemicals-2019-09-12-10-05-50.csv"
-prPFAS = "/home/borrela2/ChemMaps/data_analysis/PFAS/"
-generateCoordFromEPAlist(pPFAS, prPFAS, "pfas", computeDesc=0, computePNG=0, corval=0.9, maxquantile=90, splitMap=1, istart=0, iend=0)
-ddd
+#pPFAS = "/home/borrela2/ChemMaps/data/PFAS/list_chemicals-2019-09-12-10-05-50.csv"
+#prPFAS = "/home/borrela2/ChemMaps/data_analysis/PFAS/"
+#generateCoordFromEPAlist(pPFAS, prPFAS, "pfas", computeDesc=0, computePNG=0, corval=0.9, maxquantile=90, splitMap=1, istart=0, iend=0)
 
 
 ################
@@ -77,8 +84,10 @@ ddd
 #################
 pDSSTOX = "/home/borrela2/ChemMaps/data/DSSTox_QSAR-r_1-15.csv"
 prDSSTOX = "/home/borrela2/ChemMaps/data_analysis/DSSTox/"
+pDSSTOX = "C:/Users/borrela2/development/trash/DSSTox_QSAR-r_1-15.csv"
+prDSSTOX = "C:/Users/borrela2/development/trash/"
 
-#generateCoordFromEPAlist(pDSSTOX, prDSSTOX, "dsstox", computeDesc=0, computePNG=0, corval=0.9, maxquantile=90, splitMap=100, istart=0, iend=0)
+generateCoordFromEPAlist(pDSSTOX, prDSSTOX, "dsstox", computeDesc=0, computePNG=0, corval=0.9, maxquantile=90, splitMap=100, istart=0, iend=0)
 #generateCoordFromEPAlist(pDSSTOX, prDSSTOX, computeDesc=1, computePNG=1, corval=0.9, maxquantile=90, splitMap=1, istart=600000, iend=0)
 #generateCoordFromEPAlist(pDSSTOX, prDSSTOX, computeDesc=1, computePNG=1, corval=0.9, maxquantile=90, splitMap=1, istart=100000, iend=150000)
 #generateCoordFromEPAlist(pDSSTOX, prDSSTOX, computeDesc=1, computePNG=1, corval=0.9, maxquantile=90, splitMap=1, istart=150000, iend=200000)

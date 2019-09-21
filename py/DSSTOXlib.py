@@ -3,11 +3,12 @@ import toolbox
 import runExternalSoft
 import DBrequest
 import calculate
+import parseSDF
 
 #=> to import ToxCast librairy
 import sys
-sys.path.insert(0, "/home/borrela2/development/descriptor/")
-#sys.path.insert(0, "C:\\Users\\borrela2\\development\\molecular-descriptors\\")
+#sys.path.insert(0, "/home/borrela2/development/descriptor/")
+sys.path.insert(0, "C:\\Users\\borrela2\\development\\molecular-descriptors\\")
 import Chemical
 
 
@@ -20,7 +21,7 @@ from re import search
 from random import shuffle
 
 
-LPROP = ["inchikey", "SMILES", "GHS_category", "EPA_category", "consensus_LD50", "LD50_mgkg", "MolWeight", "LogOH_pred", "CATMoS_VT_pred", "CATMoS_NT_pred", "CATMoS_EPA_pred",
+LPROP = ["inchikey", "SMILES", "preferred_name", "GHS_category", "EPA_category", "consensus_LD50", "LD50_mgkg", "MolWeight", "LogOH_pred", "CATMoS_VT_pred", "CATMoS_NT_pred", "CATMoS_EPA_pred",
                  "CATMoS_GHS_pred", "CATMoS_LD50_pred", "CERAPP_Ago_pred", "CERAPP_Anta_pred", "CERAPP_Bind_pred", "Clint_pred", "CoMPARA_Ago_pred", "CoMPARA_Anta_pred",
                  "CoMPARA_Bind_pred", "FUB_pred", "LogHL_pred", "LogKM_pred", "LogKOA_pred", "LogKoc_pred", "LogBCF_pred", "LogD55_pred", "LogP_pred", "MP_pred", "pKa_a_pred",
                  "pKa_b_pred", "ReadyBiodeg_pred", "RT_pred", "LogVP_pred", "LogWS_pred", "BioDeg_LogHalfLife_pred", "BP_pred", "nbLipinskiFailures"]
@@ -114,8 +115,6 @@ class DSSTOX:
             cDB.addElement("dsstox_chem", ["db_id", "smiles_origin", "smiles_clean", "inchikey", "qsar_ready", self.nameMap],
                                  [self.dchem[chem]["db_id"], self.dchem[chem]["smiles_origin"], self.dchem[chem]["smiles_clean"],
                                   self.dchem[chem]["inchikey"], self.dchem[chem]["qsar_ready"], 1])
-
-
 
 
 
@@ -472,69 +471,49 @@ class DSSTOX:
             cDB.addElement("dsstox_prop_name", ["id", "name"], [i, PROP])
             i = i + 1
 
-    def generateTablePropAllDSSTOX(self, prDSSTOXPred, pknownSDF, pLD50, pDSSToxmapID=""):
+    def generateTablePropAllDSSTOX(self, prDSSTOXPred, pknownSDF, pLD50, pDSSTOXMapOnCID, insertDB=0):
 
         
-        pTableinfo = self.prout + "tableProp.csv"
-        if path.exists(pTableinfo):
-            return
-        else:
-            #######finish here
-        if not 
-
-        if not "prmaps" in self.__dict__:
-            print ("Generate map first")
+        pTableinfo = self.prout + "tablePropForDB.csv"
+        if path.exists(pTableinfo) and insertDB == 0:
             return
 
+        print ("LOAD INFO FROM DCHEM")
+        if not "dchem" in self.__dict__:
+            self.loadlistChem()
 
-        # check with DSStox ID in case of the inchikey not find
-        dDSSToxmap = toolbox.loadMatrixToDict(pDSSToxmapID, sep = ",")
-        print ("Load map CID to XID")
-
-
-        # to bypass the file creation
-        lpmaps = listdir(self.prmaps)
-        for pmaps in lpmaps:
-            print (pmaps)
-            if search("TableProp", pmaps):
-                print ("Prop table already computed")
-                return
-
-        # intialisation
+        # intialisation ful dictionnary
         dDSSTOX = {}
 
-        # load molecular coord file and update prop table
-        dSMILE = {}
-        filinDesc2D = open(self.pfdesc["1D2D"], "r")
-        filinDesc2D.readline()
-        flag = 0
-        while flag == 0:
+        print ("LOAD INFO MAP SID to CID")
+        filMap = open(pDSSTOXMapOnCID, "w")
+        lhead = filMap.readline()
+        lhead = lhead.strip().split(",")
+        iDSSSID = lhead.index("dsstox_substance_id")
+        iDSSCID = lhead.index("DSSTox_Structure_Id")
+        iname = lhead.index("preferred_name")
+        line = filMap.readline()
+        while line :
+            lelem = line.replace("\"", "").strip().split(",")
             try:
-                l = filinDesc2D.readline().split("\t")
-                ID = l[0]
-                SMILES = l[1]
-                dSMILE[ID] = SMILES
+                dDSSTOX[lelem[iDSSSID]] = {}
+                dDSSTOX[lelem[iDSSSID]]["preferred_name"] = lelem[iname]
+                dDSSTOX[lelem[iDSSSID]]["SMILES"] = self.dchem[lelem[iDSSSID]]["smiles_clean"]
+                dDSSTOX[lelem[iDSSSID]]["inchikey"] = self.dchem[lelem[iDSSSID]]["inchikey"]
             except:
-                flag = 1
-        filinDesc2D.close()
-        print ("LOAD 2D desc")
+                line = filMap.readline()
+                continue 
+        filMap.close()
 
+        print("INIT DICTIONNARY")
         # put in dict out -> initialization to NA
-        for IDchem in dSMILE.keys():
-            dDSSTOX[IDchem] = {}
-            for desc in ldesc:
-                dDSSTOX[IDchem][desc] = "NA"
-            dDSSTOX[IDchem]["SMILES"] = dSMILE[IDchem]
+        for chem in self.dchem.keys():
+            for PROP in LPROP[3:]:
+                try: dDSSTOX[chem][PROP] = "NA"
+                except: break
 
 
-            # generate inchkey
-            chemMol = Chem.MolFromSmiles(dDSSTOX[IDchem]["SMILES"])
-            inchi = Chem.inchi.MolToInchi(chemMol)
-            inchikey = Chem.inchi.InchiToInchiKey(inchi)
-            dDSSTOX[IDchem]["inchikey"] = inchikey
-
-        print ("Dictionnary created")
-
+        print("LOAD PRED")
         # load prediction and update table
         lppred = listdir(prDSSTOXPred)
         for ppred in lppred:
@@ -548,7 +527,7 @@ class DSSTOX:
                             chemSID = dDSSToxmap[chemIDtemp]["dsstox_substance_id"]
                             try:
                                 for k in dtemp[chemIDtemp].keys():
-                                    if k in ldesc:
+                                    if k in LPROP[3:]:
                                         dDSSTOX[chemSID][k] = dtemp[chemIDtemp][k]
                             except:
                                 pass
@@ -558,16 +537,16 @@ class DSSTOX:
                     else:
                         try:
                             for k in dtemp[chemIDtemp].keys():
-                                if k in ldesc:
+                                if k in LPROP[3:]:
                                     dDSSTOX[chemIDtemp][k] = dtemp[chemIDtemp][k]
                         except:
                             pass
 
-        print ("Prediction loaded")
+        print ("PRED LOAD")
 
-
+        print("LOAD SDF AND LD50")
         #load sdf
-        dsdf = loadDB.sdfDB(pknownSDF, "InChI Key_QSARr", self.prmaps)
+        dsdf = parseSDF.parseSDF(pknownSDF, "InChI Key_QSARr", self.prout)
         dsdf.parseAll()
 
 
@@ -575,41 +554,34 @@ class DSSTOX:
         dLD50 = toolbox.loadMatrixToDict(pLD50)
         print ("SDF and table LD50 loaded")
 
+        
+        
+        for chem in dDSSTOX.keys():
+            tempinchKey = dDSSTOX[chem]["inchikey"]
+            # look sdf -> map on the sdf
+            for dchemIDsdf in dsdf.lc:
+                if dchemIDsdf["InChI Key_QSARr"] == tempinchKey:
+                    for ksdf in dchemIDsdf.keys():
+                        if ksdf in LPROP[3:]:
+                            dDSSTOX[chem][ksdf] = dchemIDsdf[ksdf]
 
+            # look in LD50 file -> map on the LD50
+            for chemIDLD50 in dLD50.keys():
+                if dLD50[chemIDLD50]["InChI Key_QSARr"] == tempinchKey:
+                    for kLD50 in dLD50[chemIDLD50].keys():
+                        if kLD50 in LPROP[3:]:
+                            dDSSTOX[chem][kLD50] = dLD50[chemIDLD50][kLD50]
+
+
+
+        print("WRITE TABLE")
         # load MAP
-        lmaps = listdir(self.prmaps)
-        lmapscompleted = []
-        for pmap in lmaps:
-            nmap = pmap.split("_")[0]
-            if not nmap in lmapscompleted:
-                lmapscompleted.append(nmap)
-                print (nmap)
-                dcoords = toolbox.loadMatrixToDict(self.prmaps + pmap, sep=",")
-                pfilout = self.prmaps + str(nmap) + "_TableProp.csv"
-                filout = open(pfilout, "w")
-                filout.write("ID\t%s\n"%("\t".join(ldesc)))
 
-                for chemID in dcoords.keys():
-                    try: tempinchKey = dDSSTOX[chemID]["inchikey"]
-                    except:continue
-                    # look sdf -> map on the sdf
-                    for dchemIDsdf in dsdf.lc:
-                        if dchemIDsdf["InChI Key_QSARr"] == tempinchKey:
-                            for ksdf in dchemIDsdf.keys():
-                                if ksdf in ldesc:
-                                    dDSSTOX[chemID][ksdf] = dchemIDsdf[ksdf]
-
-                    # look in LD50 file -> map on the LD50
-                    for chemIDLD50 in dLD50.keys():
-                        if dLD50[chemIDLD50]["InChI Key_QSARr"] == tempinchKey:
-                            for kLD50 in dLD50[chemIDLD50].keys():
-                                if kLD50 in ldesc:
-                                    dDSSTOX[chemID][kLD50] = dLD50[chemIDLD50][kLD50]
-
-                    filout.write("%s\t%s\n"%(chemID, "\t".join([dDSSTOX[chemID][k] for k in ldesc])))
-                filout.close()
-
-
+        filout = open(pTableinfo, "w")
+        filout.write("ID\t%s\n"%("\t".join(LPROP)))
+        for chem in dDSSTOX.keys():
+            filout.write("%s\t%s"% (chem, "\t".join([str(dDSSTOX[chem][prop]) for prop in LPROP])))
+        filout.close()
 
 
     def generateNeighborMatrix(self, nbNeighbor, lnDim):
