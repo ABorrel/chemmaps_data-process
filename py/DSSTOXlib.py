@@ -7,8 +7,8 @@ import parseSDF
 
 #=> to import ToxCast librairy
 import sys
-#sys.path.insert(0, "/home/borrela2/development/descriptor/")
-sys.path.insert(0, "C:\\Users\\borrela2\\development\\molecular-descriptors\\")
+sys.path.insert(0, "/home/borrela2/development/descriptor/")
+#sys.path.insert(0, "C:\\Users\\borrela2\\development\\molecular-descriptors\\")
 import Chemical
 
 
@@ -486,24 +486,32 @@ class DSSTOX:
         dDSSTOX = {}
 
         print ("LOAD INFO MAP SID to CID")
-        filMap = open(pDSSTOXMapOnCID, "w")
-        lhead = filMap.readline()
+
+        filMap = open(pDSSTOXMapOnCID, "r", encoding="utf8", errors="ignore")
+        llines = filMap.readlines()
+        filMap.close()
+        
+        lhead = llines[0].replace("\"", "")
         lhead = lhead.strip().split(",")
+        #print(lhead)
         iDSSSID = lhead.index("dsstox_substance_id")
         iDSSCID = lhead.index("DSSTox_Structure_Id")
         iname = lhead.index("preferred_name")
-        line = filMap.readline()
-        while line :
-            lelem = line.replace("\"", "").strip().split(",")
+        i = 1
+        imax = len(llines)
+        while i < imax:
+            lineClean = toolbox.formatLine(llines[i])
+            lelem = lineClean.strip().split(",")
             try:
                 dDSSTOX[lelem[iDSSSID]] = {}
                 dDSSTOX[lelem[iDSSSID]]["preferred_name"] = lelem[iname]
                 dDSSTOX[lelem[iDSSSID]]["SMILES"] = self.dchem[lelem[iDSSSID]]["smiles_clean"]
                 dDSSTOX[lelem[iDSSSID]]["inchikey"] = self.dchem[lelem[iDSSSID]]["inchikey"]
             except:
-                line = filMap.readline()
-                continue 
+                pass
+            i = i + 1
         filMap.close()
+
 
         print("INIT DICTIONNARY")
         # put in dict out -> initialization to NA
@@ -516,7 +524,7 @@ class DSSTOX:
         print("LOAD PRED")
         # load prediction and update table
         lppred = listdir(prDSSTOXPred)
-        for ppred in lppred:
+        for ppred in lppred:##########################################
             print (ppred, "Load file")
             if ppred[-3:] == "csv":
                 dtemp = toolbox.loadMatrixToDict(prDSSTOXPred + ppred, sep=",")
@@ -555,7 +563,6 @@ class DSSTOX:
         print ("SDF and table LD50 loaded")
 
         
-        
         for chem in dDSSTOX.keys():
             tempinchKey = dDSSTOX[chem]["inchikey"]
             # look sdf -> map on the sdf
@@ -580,7 +587,7 @@ class DSSTOX:
         filout = open(pTableinfo, "w")
         filout.write("ID\t%s\n"%("\t".join(LPROP)))
         for chem in dDSSTOX.keys():
-            filout.write("%s\t%s"% (chem, "\t".join([str(dDSSTOX[chem][prop]) for prop in LPROP])))
+            filout.write("%s\t%s\n"% (chem, "\t".join([str(dDSSTOX[chem][prop]) for prop in LPROP])))
         filout.close()
 
 
