@@ -110,12 +110,17 @@ class DSSTOX:
         if not "dchem" in self.__dict__:
             self.loadlistChem()
 
-        cDB = DBrequest.DBrequest()
-        for chem in self.dchem.keys():
-            cDB.addElement("dsstox_chem", ["db_id", "smiles_origin", "smiles_clean", "inchikey", "qsar_ready", self.nameMap],
-                                 [self.dchem[chem]["db_id"], self.dchem[chem]["smiles_origin"], self.dchem[chem]["smiles_clean"],
-                                  self.dchem[chem]["inchikey"], self.dchem[chem]["qsar_ready"], 1])
-
+        if self.nameMap == "dsstox":
+            cDB = DBrequest.DBrequest()
+            cDB.verbose = 0
+            for chem in self.dchem.keys():
+                cDB.addElement("dsstox_chem", ["db_id", "smiles_origin", "smiles_clean", "inchikey", "qsar_ready"],
+                                    [chem, self.dchem[chem]["smiles_origin"], self.dchem[chem]["smiles_clean"],
+                                    self.dchem[chem]["inchikey"], self.dchem[chem]["qsar_ready"]])
+        else:
+            cDB = DBrequest.DBrequest()
+            ddd
+            # have to be wrtie
 
 
     def computeDesc (self, insertDB =0, w=0):
@@ -144,16 +149,13 @@ class DSSTOX:
 
         lchemID = lchemID[self.istart:iend]
         shuffle(lchemID)
+        ldesc1D2D = Chemical.getLdesc("1D2D")
+        ldesc3D = Chemical.getLdesc("3D")
 
         if insertDB == 1:
             cDB = DBrequest.DBrequest()
 
         if w == 1:
-
-
-            ldesc1D2D = Chemical.getLdesc("1D2D")
-            ldesc3D = Chemical.getLdesc("3D")
-
             filout1D2D = open(pfilout1D2D, "w")
             filout1D2D.write("inchikey\t" + "\t".join(ldesc1D2D) + "\n")
 
@@ -190,7 +192,10 @@ class DSSTOX:
                     cDB.verbose = 0
                     out1D2D = cDB.getRow("desc_1d2d", "inchikey='%s'" % (cChem.inchikey))
                     if out1D2D == []:
-                        w1D2D = "{" + ",".join(["\"%s\"" % (cChem.all2D[desc1D2D]) for desc1D2D in ldesc1D2D]) + "}"
+                        valDesc = [cChem.all2D[desc1D2D] for desc1D2D in ldesc1D2D]
+                        valDesc = ['-9999' if desc == "NA" else desc for desc in valDesc]
+
+                        w1D2D = "{" + ",".join(["\"%s\"" % (desc) for desc in valDesc]) + "}"
                         cDB.addElement("desc_1d2d", ["inchikey", "desc_value"], [cChem.inchikey, w1D2D])
 
                 # 3D descriptors
@@ -212,7 +217,10 @@ class DSSTOX:
                     if insertDB == 1:
                         out3D = cDB.getRow("desc_3d", "inchikey='%s'" % (cChem.inchikey))
                         if out3D == []:
-                            w3D = "{" + ",".join(["\"%s\"" % (cChem.all3D[desc3D]) for desc3D in ldesc3D]) + "}"
+                            valDesc = [cChem.all3D[desc3D] for desc3D in ldesc3D]
+                            valDesc = ['-9999' if desc == "NA" else desc for desc in valDesc]
+
+                            w3D = "{" + ",".join(["\"%s\"" % (desc) for desc in valDesc]) + "}"
                             cDB.addElement("desc_3d", ["inchikey", "desc_value"], [cChem.inchikey, w3D])
             i = i + 1
 
@@ -289,13 +297,15 @@ class DSSTOX:
             cDB = DBrequest.DBrequest()
             cDB.verbose = 0
             for chem in dcoord1D2D.keys():
-                out1D2D = cDB.getRow("%s_coords"%(self.nameMap), "inchikey='%s'" % (chem))
-                if out1D2D == []:
+                #out1D2D = cDB.getRow("%s_coords"%(self.nameMap), "inchikey='%s'" % (chem))
+                #if out1D2D == []:
                     nbdim1d2d = len(dcoord1D2D[chem].keys()) - 1
                     nbdim3d = len(dcoord3D[chem].keys()) - 1
 
                     w1D2D = "{" + ",".join(["\"%s\"" % (dcoord1D2D[chem]["DIM" + str(i)]) for i in range(1, nbdim1d2d + 1)]) + "}"
                     w3D = "{" + ",".join(["\"%s\"" % (dcoord3D[chem]["DIM3-" + str(i)]) for i in range(1, nbdim3d + 1)]) + "}"
+                    print(w1D2D)
+                    ddd
                     cDB.addElement("%s_coords"%(self.nameMap), ["inchikey", "dim1d2d", "dim3d", "in_db"], [chem, w1D2D, w3D, "1"])
 
 
@@ -318,42 +328,55 @@ class DSSTOX:
             return
 
         else:
-            prout = pathFolder.createFolder(self.prmap + "split_" + str(nbsplit) + "_" + str(dim) + "/")
+            prout = pathFolder.createFolder(self.prmap + "split_" + str(nbsplit) + "/")
             self.prmaps = prout
 
-            if len(listdir(self.prmaps)) >= (nbsplit*2):
-                print ("Maps already computed")
-                return
+            if not "psplitMap" in self.__dict__:
+                self.psplitMap = {}
 
+            # generate only one file with chem and map
+            if dim == 1:
+                pfilout = prout + "mapx_split.csv"
+                
+            elif dim == 2: 
+                pfilout = prout + "mapy_split.csv"
+
+            else:
+                pfilout = prout + "mapz_split.csv"
+
+            self.psplitMap[dim] = pfilout
+            if path.exists(pfilout):
+                return
 
             coord1D2D = self.prmap + "coord1D2D.csv"
             coord3D = self.prmap + "coord3D.csv"
 
-            d1D2D = toolbox.loadMatrixToDict(coord1D2D, sep = ",")
-            d3D = toolbox.loadMatrixToDict(coord3D, sep=",")
+            if dim == 1 or dim == 2:
+                din = toolbox.loadMatrixCoords(coord1D2D)
+            else:
+                din = toolbox.loadMatrixCoords(coord3D)
 
             # max and min 1D2D
             maxDim = 0.0
             minDim = 0.0
 
-            nbchem = len(list(d1D2D.keys()))
+            nbchem = len(list(din.keys()))
             nbchembymap = int(nbchem/nbsplit)
 
             # calibrate max and min
-            for chem in d1D2D.keys():
+            print("== Initiate calibration ==")
+            for chem in din.keys():
 
-                if dim == 1:
-                    dimVal = float(d1D2D[chem]["DIM1"])
+                if dim == 1 or dim == 3:
+                    dimVal = din[chem][0]
                 elif dim == 2:
-                    dimVal = float(d1D2D[chem]["DIM2"])
-                elif dim == 3:
-                    dimVal = float(d3D[chem]["DIM3"])
+                    dimVal = din[chem][1]
 
                 if dimVal > maxDim:
                     maxDim = dimVal
                 if dimVal < minDim:
                     minDim = dimVal
-
+            print("== End calibration ==")
 
             dmap = {}
             imap = 1
@@ -366,100 +389,99 @@ class DSSTOX:
                     imap = imap + 1
                     dmap[imap] = []
                 ichem = 0
-                lchem = list(d1D2D.keys())
+                lchem = list(din.keys())
                 nbchem = len(lchem)
                 while ichem < nbchem:
 
-                    if dim == 1:
-                        valtemp = float(d1D2D[lchem[ichem]]["DIM1"])
+                    if dim == 1 or dim == 3:
+                        valtemp = din[lchem[ichem]][0]
                     elif dim == 2:
-                        valtemp = float(d1D2D[lchem[ichem]]["DIM2"])
-                    elif dim == 3:
-                        valtemp = float(d3D[lchem[ichem]]["DIM3"])
+                        valtemp = din[lchem[ichem]][1]
 
 
                     if valtemp < dimVal:
-                        dmap[imap].append(deepcopy(d1D2D[lchem[ichem]]))
-                        del d1D2D[lchem[ichem]]
+
+                        dmap[imap].append(deepcopy(lchem[ichem]))
+                        del din[lchem[ichem]]
                         del lchem[ichem]
                         nbchem = nbchem - 1
                         continue
                     else:
                         ichem = ichem + 1
 
-
+        print("==== Write output ====")
+        filout = open(pfilout, "w")
+        filout.write("inchikey\tmap\n")
+        
+        
         for d in dmap.keys():
-            pfilout1D2D = prout + str(d) + "_map1D2D.csv"
-            pfilout3D = prout + str(d) + "_map3D.csv"
-
-            filout1D2D = open(pfilout1D2D, "w")
-            filout3D = open(pfilout3D, "w")
-            filout1D2D.write("\"\",\"DIM1\",\"DIM2\"\n")
-            filout3D.write("\"\",\"DIM3\",\"DIM4\"\n")
+            #pfilout1D2D = prout + "coord_" + str(d) + ".csv"
+            #filout1D2D = open(pfilout1D2D, "w")
+            #filout1D2D.write("inchikey\tDIM1\tDIM2\tDIM3\n")
 
             for chem in dmap[d]:
-                filout1D2D.write("\"%s\",%s,%s\n"%(chem[""], chem["DIM1"], chem["DIM2"]))
-                filout3D.write("\"%s\",%s,%s\n" % (chem[""], d3D[chem[""]]["DIM3"], d3D[chem[""]]["DIM4"]))
+                filout.write("%s\t%s\n"%(chem, d))
+                #filout1D2D.write("%s\t%s\t%s\t%s\n"%(chem[""], chem["DIM1"], chem["DIM2"], d3D[chem[""]]["DIM3"]))
+            #filout1D2D.close()
+            #print (len(dmap[d]), d)
+                
+        filout.close()
 
-            filout1D2D.close()
-            filout3D.close()
 
-            print (len(dmap[d]), d)
-
-
-    def generateMapSplitFile(self, dim):
+    # have to be optimize
+    def generateCentroidFile(self):
 
         if not "prmaps" in self.__dict__:
             print ("Generate Maps first")
             return
 
+        if not "psplitMap" in self.__dict__:
+            print("Generate the split map first")
+            return
+
         else:
-            lfmap = listdir(self.prmaps)
-            dCentroid = {}
-            lmap = []
+            lpfmap = self.psplitMap
 
-            pfileMapChem = self.prmap + str(dim) + "_mapChem.csv"
-            pfmapCentroid = self.prmap + str(dim) + "MapCentroid.csv"
-            if path.exists(pfileMapChem) and path.exists(pfmapCentroid):
-                print ("Already computed")
-                return
+            pfilout = self.prmaps + "centroids.csv"
+            if path.exists(pfilout):
+                return 
+            
+            coord1D2D = self.prmap + "coord1D2D.csv"
+            coord3D = self.prmap + "coord3D.csv"
 
-
-            fmapChem = open(pfileMapChem, "w")
-            fmapChem.write("ID\tMap\n")
-
-            for namefmap in lfmap:
-                map = namefmap.split("_")[0]
-
-                if map in lfmap or map == "":
-                    continue
-                else:
-                    pf1D2D = self.prmaps + map + "_map1D2D.csv"
-                    pf3D = self.prmaps + map + "_map3D.csv"
-
-                    d1D2D = toolbox.loadMatrixToDict(pf1D2D, sep=",")
-                    d3D = toolbox.loadMatrixToDict(pf3D, sep=",")
-
-                    dcoord = {}
-                    for chemID in d1D2D.keys():
-                        dcoord[chemID] = [d1D2D[chemID]["DIM1"], d1D2D[chemID]["DIM2"], d3D[chemID]["DIM3"]]
-                        fmapChem.write("%s\t%s\n"%(chemID, map))
-
-                    coordCentroid = calculate.centroid(dcoord)
-                    dCentroid[map] = coordCentroid
-
-                    lmap.append(map)
-
-            fmapChem.close()
+            if dim == 1 or dim == 2:
+                din = toolbox.loadMatrixCoords(coord1D2D)
+            else:
+                din = toolbox.loadMatrixCoords(coord3D)
 
 
-            fmapCentroid = open(pfmapCentroid, "w")
-            fmapCentroid.write("Map\tX\tY\tZ\n")
+            
+            dout = {}
+            for pmap in lpfmap:
+                nameMap = pmap.split("/")[-1].split("_")[0]
+                dmap = toolbox.loadMatrixToDict(pmap)
 
-            for map in dCentroid.keys():
-                lcoord = [str(c) for c in dCentroid[map]]
-                fmapCentroid.write("%s\t%s\n"%(map, "\t".join(lcoord)))
-            fmapCentroid.close()
+                dout = nameMap
+                i = 1
+                lcoords = []
+                while lcoords:
+                    for chem in coord1D2D:
+                        if int(dmap[chem]["map"]) == i :
+                            lcoords.append(coord1D2D[chem][0], coord1D2D[chem][1], coord3D[chem][0])
+                    if lcoords == []:
+                        break
+                    else:
+                        coordCentroid = calculate.centroid(lcoords)
+                        dout[nameMap + "_" + str(i)] = coordCentroid
+                    i = i + 1
+
+
+            filout = open(pfilout, "w")
+            filout.write("map\tx\ty\tz\n")
+            for map in dout.keys():
+                filout.write("%s\t%s\t%s\t%s\n"%(map, dout[map][0], dout[map][1], dout[map][2]))
+            filout.close()
+
 
 
     def pushDssToxNamePropInDB(self):
@@ -476,15 +498,16 @@ class DSSTOX:
         
         pTableinfo = self.prout + "tablePropForDB.csv"
         if path.exists(pTableinfo) and insertDB == 0:
+            self.pTableInAll = pTableinfo
             return
 
-        print ("LOAD INFO FROM DCHEM")
-        if not "dchem" in self.__dict__:
-            self.loadlistChem()
+        #print ("LOAD INFO FROM DCHEM")
+        #if not "dchem" in self.__dict__:
+        #    self.loadlistChem()
 
         # intialisation ful dictionnary
         dDSSTOX = {}
-
+        dmapCIDtoSID = {}
         print ("LOAD INFO MAP SID to CID")
 
         filMap = open(pDSSTOXMapOnCID, "r", encoding="utf8", errors="ignore")
@@ -499,7 +522,7 @@ class DSSTOX:
         iname = lhead.index("preferred_name")
         i = 1
         imax = len(llines)
-        while i < imax:
+        while i < imax:#####################################
             lineClean = toolbox.formatLine(llines[i])
             lelem = lineClean.strip().split(",")
             try:
@@ -507,6 +530,7 @@ class DSSTOX:
                 dDSSTOX[lelem[iDSSSID]]["preferred_name"] = lelem[iname]
                 dDSSTOX[lelem[iDSSSID]]["SMILES"] = self.dchem[lelem[iDSSSID]]["smiles_clean"]
                 dDSSTOX[lelem[iDSSSID]]["inchikey"] = self.dchem[lelem[iDSSSID]]["inchikey"]
+                dmapCIDtoSID[lelem[iDSSCID]] = lelem[iDSSSID]
             except:
                 pass
             i = i + 1
@@ -515,7 +539,7 @@ class DSSTOX:
 
         print("INIT DICTIONNARY")
         # put in dict out -> initialization to NA
-        for chem in self.dchem.keys():
+        for chem in dDSSTOX.keys():
             for PROP in LPROP[3:]:
                 try: dDSSTOX[chem][PROP] = "NA"
                 except: break
@@ -525,30 +549,19 @@ class DSSTOX:
         # load prediction and update table
         lppred = listdir(prDSSTOXPred)
         for ppred in lppred:##########################################
-            print (ppred, "Load file")
             if ppred[-3:] == "csv":
+                print (ppred, "Load file")
                 dtemp = toolbox.loadMatrixToDict(prDSSTOXPred + ppred, sep=",")
-
+                k1 = list(dtemp.keys())[0]
+                #print(dtemp[k1])
+                #dddd
                 for chemIDtemp in dtemp.keys():
-                    if search("DTXCID", chemIDtemp):
-                        try:
-                            chemSID = dDSSToxmap[chemIDtemp]["dsstox_substance_id"]
-                            try:
-                                for k in dtemp[chemIDtemp].keys():
-                                    if k in LPROP[3:]:
-                                        dDSSTOX[chemSID][k] = dtemp[chemIDtemp][k]
-                            except:
-                                pass
-                        except:
-                            pass
-
-                    else:
-                        try:
-                            for k in dtemp[chemIDtemp].keys():
-                                if k in LPROP[3:]:
-                                    dDSSTOX[chemIDtemp][k] = dtemp[chemIDtemp][k]
-                        except:
-                            pass
+                    DTXCID = dtemp[chemIDtemp]["MoleculeID"]
+                    try: DTXSID = dmapCIDtoSID[DTXCID]
+                    except: continue
+                    for k in dtemp[chemIDtemp].keys():
+                        if k in LPROP[3:]:
+                            dDSSTOX[DTXSID][k] = dtemp[chemIDtemp][k]
 
         print ("PRED LOAD")
 
@@ -589,6 +602,34 @@ class DSSTOX:
         for chem in dDSSTOX.keys():
             filout.write("%s\t%s\n"% (chem, "\t".join([str(dDSSTOX[chem][prop]) for prop in LPROP])))
         filout.close()
+
+        self.pTableInAll = pTableinfo
+
+
+    def pushTablePropAllInDB(self):
+
+        if not "pTableInAll" in self.__dict__:
+            print ("GENERATE TABLE FIRST")
+
+        dtopush = toolbox.loadMatrixToDict(self.pTableInAll)
+        cDB = DBrequest.DBrequest()
+        cDB.verbose = 0
+        i = 0
+        i = 500000
+        lchem = list(dtopush.keys())
+        imax = len(lchem)
+        while i < imax:
+        #for chem in dtopush.keys():
+            chem = lchem[i]
+            outChem = cDB.getRow("dsstox_prop", "db_id='%s'" % (chem))
+            if outChem == []:
+                wprop = "{" + ",".join(["\"%s\"" % (dtopush[chem][PROP].replace("'", "")) for PROP in LPROP]) + "}"
+                cDB.addElement("dsstox_prop", ["db_id", "prop_value"], [chem, wprop])
+            i = i + 1
+        return 
+
+
+
 
 
     def generateNeighborMatrix(self, nbNeighbor, lnDim):

@@ -3,6 +3,17 @@ from shutil import copy
 from copy import deepcopy
 
 
+def loadMatrixCoords(pccord):
+
+    dout = {}
+    filin = open(pccord, "r")
+    line = filin.readline()# header
+    line = filin.readline()
+    while line:
+        lelem = line.split(",")
+        dout[lelem[0]] = [float(lelem[1]), float(lelem[2])]
+        line = filin.readline()
+    return dout
 
 def loadMatrixToDict(pmatrixIn, sep ="\t"):
 

@@ -13,7 +13,10 @@ Scripts used to compute map coordinate and manage database used for ChemMaps
 - 09-06-2019: Add SQL class to interact with the database
 - 09-12-2019: Add SQL sequence in the drugbank class and optimize run on the DSSTOX
 - 09-20-2019: Update DSSTOX lib for pfas and Tox21
+- 09-24-2019: connect to DB for transfer
+- 09-26-2019: compte the map split ans centroid, optimize fonction split and add function to load only first coords
 
 
 # Todo list
 - 09-20-2019: finish to upload prop table in the DSSTOX table
+- 09-26-2019: compute the neighbor for DSSTOX

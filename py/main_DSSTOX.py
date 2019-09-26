@@ -9,7 +9,6 @@ def generateCoordFromEPAlist(plist, prout, nameMap, computeDesc, computePNG, cor
     prDSSTOXPred = "/home/borrela2/ChemMaps/data/DSSTOX_pred/"
     pknownSDF = "/home/borrela2/ChemMaps/data/ToxTrainTest_3D.sdf"
     pLD50 = "/home/borrela2/ChemMaps/data/LD50_data.csv"
-    #pDSTOXIDmap = "/home/borrela2/ChemMaps/data/DSSTox_Identifiers_Map.csv"
     
     #prDSSTOXPred = "C:\\Users\\borrela2\\development\\trash\\DSSTOX_pred\\"
     #pknownSDF = "C:\\Users\\borrela2\\development\\trash\\ToxTrainTest_3D.sdf"
@@ -19,22 +18,27 @@ def generateCoordFromEPAlist(plist, prout, nameMap, computeDesc, computePNG, cor
     prDESC = "/home/borrela2/ChemMaps/data_analysis/DESC/"
 
     db = DSSTOXlib.DSSTOX(plist, nameMap, istart, iend, prDESC, prout)
-    db.loadlistChem()
-    db.generateTablePropAllDSSTOX(prDSSTOXPred, pknownSDF, pLD50, plist, insertDB=0)
-    ddd
+    #db.loadlistChem()
     #db.pushChemInDB()
-    #db.computeDesc(insertDB=1, w=1)
+    #db.generateTablePropAllDSSTOX(prDSSTOXPred, pknownSDF, pLD50, plist, insertDB=0)
+    #db.pushTablePropAllInDB()
+    #db.computeDesc(insertDB=1, w=0)
     if project == 1:
         if nameMap != "dsstox":
             db.runRprojection(corval, maxquantile)
     if nameMap != "dsstox":
-        #db.computeCoords(corval, maxquantile, insertDB=0)
+        db.computeCoords(corval, maxquantile, insertDB=0)
         #db.generateNeighborMatrix(20, [2,1])
         #db.generateNeighborMatrix(20, [])
         #db.pushNeighbors()
         #db.pushDssToxNamePropInDB()
-        db.updateTableProp(nameMap)
+        #db.updateTableProp(nameMap)
     else:
+        db.computeCoords(corval, maxquantile, insertDB=0)
+        db.splitMap(splitMap, 1)
+        db.splitMap(splitMap, 2)
+        db.splitMap(splitMap, 3)
+        db.generateCentroidFile()
         print("*")
 
 
@@ -103,7 +107,6 @@ generateCoordFromEPAlist(pDSSTOX, prDSSTOX, "dsstox", computeDesc=0, computePNG=
 #generateCoordFromEPAlist(pDSSTOX, prDSSTOX, computeDesc=1, computePNG=1, corval=0.9, maxquantile=90, splitMap=1, istart=650000, iend=700000)
 #generateCoordFromEPAlist(pDSSTOX, prDSSTOX, computeDesc=1, computePNG=1, corval=0.9, maxquantile=90, splitMap=1, istart=61100, iend=900000)
 
-Fh
 
 # do witj
 #runPNG("/home/borrela2/ChemMaps/data_analysis/DESC/SMI/", "/home/borrela2/ChemMaps/data_analysis/DESC/PNG/")

@@ -370,11 +370,11 @@ openData = function (pfilin, valcor, prout, vexclude){
   	print(dim(desc))
 	
   	# remove chemical with only NA
-  	desc = delete.na(desc, dim(desc)[2]-20)
+  	desc = delete.na(desc, as.integer(0.8*dim(desc)[2]))
   	print(dim(desc))
 
  	# remove col not well computed
-  	desc = t(delete.na(t(desc), as.integer(0.1*dim(desc)[2])))
+  	desc = t(delete.na(t(desc), as.integer(0.8*dim(desc)[1])))
   	print(dim(desc))
   	#print(desc[2,])
 
@@ -419,7 +419,7 @@ openData = function (pfilin, valcor, prout, vexclude){
 		descriptor = colnames (desc) [descriptor]
 		desc = desc[,descriptor]
 	}
-	
+	print(dim(desc))
   desc = cbind(cexclude, desc)
 	return (list((desc),colnames (desc)))
 }
@@ -436,7 +436,7 @@ delSDnull = function(desc){
   }
   descout = apply(desc,2,as.double)
   rownames(descout) = rownames(desc)
-  return(desc) 
+  return(descout) 
 }
 
 
@@ -492,9 +492,9 @@ delnohomogeniousdistribution = function(din, cutoff = 80){
     qt = hist(dwork[,i], breaks = 10, plot = FALSE)$counts
     for (qtc in qt){
       if (qtc >= countMax){
-        dwork = dwork[,-i]
-        imax = imax - 1
-        i = i - 1
+        #dwork = dwork[,-i]
+        #imax = imax - 1
+        #i = i - 1
         break()
       }
     }

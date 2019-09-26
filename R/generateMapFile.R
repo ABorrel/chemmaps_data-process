@@ -52,7 +52,7 @@ prepMatrixDesc = function(pin, valcor, maxquantile, vexclude, homo){
     rownames(din_temp) = rownames(din_data)
     din_data = din_temp
   }
-  
+  din_data = na.omit(din_data)
   
   return(din_data)
   
@@ -72,9 +72,9 @@ valcor = as.double(args[4])
 maxquantile = as.integer(args[5])
 
 # dsstoxmap
-#p1D2D = "/home/borrela2/ChemMaps/data/DSSTox/1D2D.csv"
-#p3D = "/home/borrela2/ChemMaps/data/DSSTox/3D.csv"
-#prout = "/home/borrela2/ChemMaps/data/DSSTox/projection0.9-90/"
+#p1D2D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/1D2D.csv"
+#p3D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/3D.csv"
+#prout = "/home/borrela2/ChemMaps/data_analysis/DSSTox/map_0.9-90/"
 #valcor = 0.9 
 #maxquantile = 90
 
@@ -112,9 +112,10 @@ ld3Dscale = scaling(d3D)
 write.csv(ld1D2Dscale[[2]], file = paste(prout, "1D2Dscaling.csv", sep = ""))
 write.csv(ld3Dscale[[2]], file = paste(prout, "3Dscaling.csv", sep = ""))
 
+dscale1D2D = delSDnull(ld1D2Dscale[[1]])
 
 # generate PCA -1D2D
-lcoord = generatePCAcoords(ld1D2Dscale[[1]])
+lcoord = generatePCAcoords(dscale1D2D)
 # write cp
 write.csv(lcoord[[3]], file=paste(prout, "CP1D2D.csv", sep = ""))
 # write coord
@@ -123,10 +124,10 @@ colnames(dcoord) = paste("DIM", seq(1,dim(dcoord)[2]), sep = "")
 write.csv(dcoord, file=paste(prout, "coord1D2D.csv", sep = ""))
 write.csv(lcoord[[2]], file=paste(prout, "VarPlan1D2D.csv", sep = ""))
 
-
+dscale3D = delSDnull(ld3Dscale[[1]])
 
 # generate PCA -3D
-lcoord = generatePCAcoords(ld3Dscale[[1]])
+lcoord = generatePCAcoords(dscale3D)
 # write cp
 write.csv(lcoord[[3]], file=paste(prout, "CP3D.csv", sep = ""))
 # write coord
