@@ -8,6 +8,7 @@ Scripts used to compute map coordinate and manage database used for ChemMaps
             -Add descriptor py files from server
             -Convert in python3.6 (50%)
 
+- 08-15-2019: finish convertion python
 - 09-04-2019: Update for the new DrugBank and remove descriptors scripts, used the library developed to generalize the descriptor computation
 - 09-05-2019: Clean source for drugbank and dell sources for descriptor computation, part of the generalisation protocol
 - 09-06-2019: Add SQL class to interact with the database
@@ -20,3 +21,4 @@ Scripts used to compute map coordinate and manage database used for ChemMaps
 # Todo list
 - 09-20-2019: finish to upload prop table in the DSSTOX table
 - 09-26-2019: compute the neighbor for DSSTOX
+- 09-26-2019: update png file

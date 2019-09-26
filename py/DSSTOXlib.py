@@ -7,8 +7,8 @@ import parseSDF
 
 #=> to import ToxCast librairy
 import sys
-sys.path.insert(0, "/home/borrela2/development/descriptor/")
-#sys.path.insert(0, "C:\\Users\\borrela2\\development\\molecular-descriptors\\")
+#sys.path.insert(0, "/home/borrela2/development/descriptor/")
+sys.path.insert(0, "C:\\Users\\borrela2\\development\\molecular-descriptors\\")
 import Chemical
 
 
@@ -411,20 +411,10 @@ class DSSTOX:
 
         print("==== Write output ====")
         filout = open(pfilout, "w")
-        filout.write("inchikey\tmap\n")
-        
-        
+        filout.write("inchikey\tmap\n")        
         for d in dmap.keys():
-            #pfilout1D2D = prout + "coord_" + str(d) + ".csv"
-            #filout1D2D = open(pfilout1D2D, "w")
-            #filout1D2D.write("inchikey\tDIM1\tDIM2\tDIM3\n")
-
             for chem in dmap[d]:
                 filout.write("%s\t%s\n"%(chem, d))
-                #filout1D2D.write("%s\t%s\t%s\t%s\n"%(chem[""], chem["DIM1"], chem["DIM2"], d3D[chem[""]]["DIM3"]))
-            #filout1D2D.close()
-            #print (len(dmap[d]), d)
-                
         filout.close()
 
 
@@ -446,28 +436,25 @@ class DSSTOX:
             if path.exists(pfilout):
                 return 
             
-            coord1D2D = self.prmap + "coord1D2D.csv"
-            coord3D = self.prmap + "coord3D.csv"
-
-            if dim == 1 or dim == 2:
-                din = toolbox.loadMatrixCoords(coord1D2D)
-            else:
-                din = toolbox.loadMatrixCoords(coord3D)
-
-
+            coords1D2D = toolbox.loadMatrixCoords(self.pcoords1D2D)
+            coords3D = toolbox.loadMatrixCoords(self.pcoords3D)
             
             dout = {}
             for pmap in lpfmap:
+                
+                print(pmap)
+                print(nameMap)
                 nameMap = pmap.split("/")[-1].split("_")[0]
                 dmap = toolbox.loadMatrixToDict(pmap)
+                
 
                 dout = nameMap
                 i = 1
                 lcoords = []
                 while lcoords:
-                    for chem in coord1D2D:
+                    for chem in coords1D2D:
                         if int(dmap[chem]["map"]) == i :
-                            lcoords.append(coord1D2D[chem][0], coord1D2D[chem][1], coord3D[chem][0])
+                            lcoords.append(coords1D2D[chem][0], coords1D2D[chem][1], coords3D[chem][0])
                     if lcoords == []:
                         break
                     else:
@@ -638,54 +625,98 @@ class DSSTOX:
             print("Compute Coord first")
             return 1
         else:
-            # compute all dimension
-            if lnDim == []:
-                dDim1D2D = toolbox.loadMatrixToDict(self.pcoords1D2D, sep = ",")
-                dDim3D = toolbox.loadMatrixToDict(self.pcoords3D, sep=",")
-                chem1 = list(dDim1D2D.keys())[0]
-                n1D2D = len(list(dDim1D2D[chem1].keys())) - 1
-                n3D = len(list(dDim3D[chem1].keys())) - 1
-                lnDim = [n1D2D, n3D]
-            
-            prNeighbor = pathFolder.createFolder(self.prout + "Neighbors/")
-            pfilout = prNeighbor + "Table_DIM1D2D-" + str(lnDim[0]) + "_" + str(lnDim[1]) + ".csv"
-            if path.exists(pfilout):
-                return
+            if self.nameMap == "dsstox":
+                # no N dimension because to slow
+                prNeighbor = pathFolder.createFolder(self.prout + "Neighbors/")
+                pfilout = prNeighbor + "Table_DIM1D2D-2_1.csv"
+                if path.exists(pfilout):
+                    return
+                else:
+                    # write on the fly
+                    filout = open(pfilout, "w")
+                    filout.write("ID\tNeighbors\n")
+                    
+                    dDim1D2D = toolbox.loadMatrixCoords(self.pcoords1D2D)
+                    dDim3D = toolbox.loadMatrixCoords(self.pcoords3D)
+                    lpfmap = self.psplitMap
+                    dmap = {}
+                    for pmap in lpfmap:
+                        dmap[pmap] = toolbox.loadMatrixToDict(pmap)
+
+                    # from 1D2D coord
+                    for inch in dDim1D2D.keys():
+                        lout = []
+                        linMap = []
+                        # define map where we inspect
+                        lmap = []
+                        for map in dmap.keys():
+                            mapin = int(dmap[map][inch])
+                            for chem in dmap[map].keys():
+                                if int(dmap[map] == mapin) or int(dmap[map] == mapin + 1) or int(dmap[map] == mapin - 1):
+                                    if not chem in lmap:
+                                        lmap.append(chem)
+                        
+
+                        ddist = {}
+                        ddist[inch] = {}
+                        for ID in lmap:
+                            if ID != inch:
+                                ddist[inch][ID] = sqrt(sum([(xi - yi) ** 2 for xi, yi in zip([dDim1D2D[ID][0], dDim1D2D[ID][1], dDim3D[ID][0]], [dDim1D2D[inch][0], dDim1D2D[inch][1], dDim3D[inch][0]],)]))
+
+                        lID = [i[0] for i in sorted(ddist[inch].items(), key=lambda x: x[1])][:nbNeighbor]
+                        
+                        filout.write("%s\t%s\n" % (ID, " ".join(ddist[ID])))
+                
+                    filout.close()
             else:
-                dDim1D2D = toolbox.loadMatrixToDict(self.pcoords1D2D, sep = ",")
-                dDim3D = toolbox.loadMatrixToDict(self.pcoords3D, sep=",")
+                # compute all dimension openning withou restriction
+                if lnDim == []:
+                    dDim1D2D = toolbox.loadMatrixToDict(self.pcoords1D2D, sep = ",")
+                    dDim3D = toolbox.loadMatrixToDict(self.pcoords3D, sep=",")
+                    chem1 = list(dDim1D2D.keys())[0]
+                    n1D2D = len(list(dDim1D2D[chem1].keys())) - 1
+                    n3D = len(list(dDim3D[chem1].keys())) - 1
+                    lnDim = [n1D2D, n3D]
+                
+                prNeighbor = pathFolder.createFolder(self.prout + "Neighbors/")
+                pfilout = prNeighbor + "Table_DIM1D2D-" + str(lnDim[0]) + "_" + str(lnDim[1]) + ".csv"
+                if path.exists(pfilout):
+                    return
+                else:
+                    dDim1D2D = toolbox.loadMatrixToDict(self.pcoords1D2D, sep = ",")
+                    dDim3D = toolbox.loadMatrixToDict(self.pcoords3D, sep=",")
 
-                dcor = {}
-                # from 1D2D coord
-                for inch in dDim1D2D.keys():
-                    dcor[inch] = []
+                    dcor = {}
+                    # from 1D2D coord
+                    for inch in dDim1D2D.keys():
+                        dcor[inch] = []
 
-                    i = 1
-                    while i <= lnDim[0]:
-                        dcor[inch].append(float(dDim1D2D[inch]["DIM" + str(i)]))
-                        i = i + 1
+                        i = 1
+                        while i <= lnDim[0]:
+                            dcor[inch].append(float(dDim1D2D[inch]["DIM" + str(i)]))
+                            i = i + 1
 
-                    i = 1
-                    while i <= lnDim[1]:
-                        dcor[inch].append(float(dDim3D[inch]["DIM3-" + str(i)]))
-                        i = i + 1
+                        i = 1
+                        while i <= lnDim[1]:
+                            dcor[inch].append(float(dDim3D[inch]["DIM3-" + str(i)]))
+                            i = i + 1
 
-                ddist = {}
-                for ID in dcor.keys():
-                    ddist[ID] = {}
-                    for ID2 in dcor.keys():
-                        if ID != ID2:
-                            ddist[ID][ID2] = sqrt(sum([(xi - yi) ** 2 for xi, yi in zip(dcor[ID], dcor[ID2])]))
+                    ddist = {}
+                    for ID in dcor.keys():
+                        ddist[ID] = {}
+                        for ID2 in dcor.keys():
+                            if ID != ID2:
+                                ddist[ID][ID2] = sqrt(sum([(xi - yi) ** 2 for xi, yi in zip(dcor[ID], dcor[ID2])]))
 
-                    lID = [i[0] for i in sorted(ddist[ID].items(), key=lambda x: x[1])][:nbNeighbor]
-                    ddist[ID] = lID
+                        lID = [i[0] for i in sorted(ddist[ID].items(), key=lambda x: x[1])][:nbNeighbor]
+                        ddist[ID] = lID
 
-                # write in table
-                ftable = open(pfilout, "w")
-                ftable.write("ID\tNeighbors\n")
-                for ID in ddist.keys():
-                    ftable.write("%s\t%s\n" % (ID, " ".join(ddist[ID])))
-                ftable.close()
+                    # write in table
+                    ftable = open(pfilout, "w")
+                    ftable.write("ID\tNeighbors\n")
+                    for ID in ddist.keys():
+                        ftable.write("%s\t%s\n" % (ID, " ".join(ddist[ID])))
+                    ftable.close()
 
 
     def pushNeighbors(self):
