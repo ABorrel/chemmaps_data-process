@@ -233,6 +233,15 @@ class DSSTOX:
 
 
 
+    def pushPropInDB():
+        
+        if not dchem in self.__dict__:
+            print(chem)
+
+        return 
+
+
+
 
 
     def computepng(self):
