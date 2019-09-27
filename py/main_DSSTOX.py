@@ -38,8 +38,8 @@ def generateCoordFromEPAlist(plist, prout, nameMap, computeDesc, computePNG, cor
         db.splitMap(splitMap, 1)
         db.splitMap(splitMap, 2)
         db.splitMap(splitMap, 3)
-        db.generateCentroidFile()
-        #db.generateNeighborMatrix(20, [2,1])
+        #db.generateCentroidFile()
+        db.generateNeighborMatrix(20, [2,1])
         print("*")
 
 
@@ -87,10 +87,10 @@ def generateCoordFromEPAlist(plist, prout, nameMap, computeDesc, computePNG, cor
 #################
 # prep DSSTOX   #
 #################
-#pDSSTOX = "/home/borrela2/ChemMaps/data/DSSTox_QSAR-r_1-15.csv"
-#prDSSTOX = "/home/borrela2/ChemMaps/data_analysis/DSSTox/"
-pDSSTOX = "C:/Users/borrela2/development/trash/dsstox/DSSTox_QSAR-r_1-15.csv"
-prDSSTOX = "C:/Users/borrela2/development/trash/dsstox/"
+pDSSTOX = "/home/borrela2/ChemMaps/data/DSSTox_QSAR-r_1-15.csv"
+prDSSTOX = "/home/borrela2/ChemMaps/data_analysis/DSSTox/"
+#pDSSTOX = "C:/Users/borrela2/development/trash/dsstox/DSSTox_QSAR-r_1-15.csv"
+#prDSSTOX = "C:/Users/borrela2/development/trash/dsstox/"
 
 generateCoordFromEPAlist(pDSSTOX, prDSSTOX, "dsstox", computeDesc=0, computePNG=0, corval=0.9, maxquantile=90, splitMap=100, istart=0, iend=0)
 #generateCoordFromEPAlist(pDSSTOX, prDSSTOX, computeDesc=1, computePNG=1, corval=0.9, maxquantile=90, splitMap=1, istart=600000, iend=0)

@@ -11,7 +11,7 @@ def loadMatrixCoords(pccord):
     line = filin.readline()
     while line:
         lelem = line.split(",")
-        dout[lelem[0]] = [float(lelem[1]), float(lelem[2])]
+        dout[lelem[0].replace("\"", "")] = [float(lelem[1]), float(lelem[2])]
         line = filin.readline()
     return dout
 
