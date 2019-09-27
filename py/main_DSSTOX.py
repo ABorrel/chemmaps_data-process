@@ -23,6 +23,8 @@ def generateCoordFromEPAlist(plist, prout, nameMap, computeDesc, computePNG, cor
     #db.generateTablePropAllDSSTOX(prDSSTOXPred, pknownSDF, pLD50, plist, insertDB=0)
     #db.pushTablePropAllInDB()
     #db.computeDesc(insertDB=1, w=0)
+    db.pushPropInDB()
+    ddd
     if project == 1:
         if nameMap != "dsstox":
             db.runRprojection(corval, maxquantile)

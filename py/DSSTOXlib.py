@@ -233,11 +233,20 @@ class DSSTOX:
 
 
 
-    def pushPropInDB():
+    def pushPropInDB(self):
         
-        if not dchem in self.__dict__:
-            print(chem)
+        tableDB = "dsstox_chem"
 
+        if not "dchem" in self.__dict__:
+            self.loadlistChem()
+        cDB = DBrequest.DBrequest()
+        cDB.verbose = 1
+        for chem in self.dchem.keys():
+            cmdSQL = "SELECT count(*) FROM %s WHERE inchikey = '%s';"%(tableDB, self.dchem[chem]["inchikey"])
+            if cDB.execCMD(cmdSQL) > 0:
+                cmdSQL = "UPDATE %s SET %s = 1 WHERE inchikey = '%s'"%(tableDB, self.nameMap, self.dchem[chem]["inchikey"])
+                cDB.execCMD(cmdSQL)
+            dddd
         return 
 
 
