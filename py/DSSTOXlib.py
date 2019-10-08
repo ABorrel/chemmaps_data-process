@@ -236,21 +236,20 @@ class DSSTOX:
     def pushPropInDB(self):
         
         tableDB = "dsstox_chem"
+        print("Push prop in DB: ")
 
         if not "dchem" in self.__dict__:
             self.loadlistChem()
         cDB = DBrequest.DBrequest()
-        cDB.verbose = 1
+        cDB.verbose = 0
         for chem in self.dchem.keys():
             cmdSQL = "SELECT count(*) FROM %s WHERE inchikey = '%s';"%(tableDB, self.dchem[chem]["inchikey"])
-            if cDB.execCMD(cmdSQL) > 0:
-                cmdSQL = "UPDATE %s SET %s = 1 WHERE inchikey = '%s'"%(tableDB, self.nameMap, self.dchem[chem]["inchikey"])
-                cDB.execCMD(cmdSQL)
-            dddd
+            findInch = cDB.execCMD(cmdSQL)[0][0]
+            if findInch != 0:
+                cmdSQL = "UPDATE %s SET %s = TRUE WHERE inchikey = '%s'"%(tableDB, self.nameMap, self.dchem[chem]["inchikey"])
+                cDB.updateTable(cmdSQL)
+        print("Finish push prop in DB <-")
         return 
-
-
-
 
 
     def computepng(self):
@@ -310,21 +309,44 @@ class DSSTOX:
             self.pcoords3D = pcoordDim3D
 
         if insertDB == 1:
-            dcoord1D2D = toolbox.loadMatrixToDict(pcoordDim1Dim2, sep = ",")
-            dcoord3D = toolbox.loadMatrixToDict(pcoordDim3D, sep = ",")
+            if self.nameMap == "dsstox":
+                dcoord1D2D = toolbox.loadMatrixCoords(pcoordDim1Dim2, 10)
+                dcoord3D = toolbox.loadMatrixCoords(pcoordDim3D, 10)
+            else:
+                dcoord1D2D = toolbox.loadMatrixToDict(pcoordDim1Dim2, ",")
+                dcoord3D = toolbox.loadMatrixToDict(pcoordDim3D, ",")
+
             cDB = DBrequest.DBrequest()
             cDB.verbose = 0
-            for chem in dcoord1D2D.keys():
+            lchem = list(dcoord1D2D.keys())
+            i = 0
+            imax = len(lchem)
+            while i < imax: 
                 #out1D2D = cDB.getRow("%s_coords"%(self.nameMap), "inchikey='%s'" % (chem))
                 #if out1D2D == []:
-                    nbdim1d2d = len(dcoord1D2D[chem].keys()) - 1
-                    nbdim3d = len(dcoord3D[chem].keys()) - 1
+                    if self.nameMap == "dsstox":
 
-                    w1D2D = "{" + ",".join(["\"%s\"" % (dcoord1D2D[chem]["DIM" + str(i)]) for i in range(1, nbdim1d2d + 1)]) + "}"
-                    w3D = "{" + ",".join(["\"%s\"" % (dcoord3D[chem]["DIM3-" + str(i)]) for i in range(1, nbdim3d + 1)]) + "}"
-                    print(w1D2D)
-                    ddd
-                    cDB.addElement("%s_coords"%(self.nameMap), ["inchikey", "dim1d2d", "dim3d", "in_db"], [chem, w1D2D, w3D, "1"])
+                        w1D2D = "{" + ",".join(["\"%s\"" % (str(coord)) for coord in dcoord1D2D[lchem[i]]]) + "}"
+                        w3D = "{" + ",".join(["\"%s\"" % (str(coord)) for coord in dcoord3D[lchem[i]]]) + "}"
+                        cDB.addElement("%s_coords"%(self.nameMap), ["inchikey", "dim1d2d", "dim3d", "in_db"], [lchem[i], w1D2D, w3D, "1"])
+                        
+                        del dcoord1D2D[lchem[i]]
+                        del dcoord3D[lchem[i]]
+                        del lchem[i]
+                        imax = imax - 1
+
+                    else: 
+                        nbdim1d2d = len(dcoord1D2D[lchem[i]].keys()) - 1
+                        nbdim3d = len(dcoord3D[lchem[i]].keys()) - 1
+
+                        w1D2D = "{" + ",".join(["\"%s\"" % (dcoord1D2D[lchem[i]]["DIM" + str(i)]) for i in range(1, nbdim1d2d + 1)]) + "}"
+                        w3D = "{" + ",".join(["\"%s\"" % (dcoord3D[lchem[i]]["DIM3-" + str(i)]) for i in range(1, nbdim3d + 1)]) + "}"
+                        cDB.addElement("%s_coords"%(self.nameMap), ["inchikey", "dim1d2d", "dim3d", "in_db"], [lchem[i], w1D2D, w3D, "1"])
+                        
+                        del dcoord1D2D[lchem[i]]
+                        del dcoord3D[lchem[i]]
+                        del lchem[i]
+                        imax = imax - 1
 
 
     def runRprojection(self, corVal, distributionVal):
@@ -339,7 +361,7 @@ class DSSTOX:
 
 
 
-    def splitMap(self, nbsplit, dim):
+    def splitMap(self, nbsplit, dim, insertDB = 0):
 
         if not "prmap" in self.__dict__:
             print ("Generate the map files first")
@@ -363,77 +385,98 @@ class DSSTOX:
                 pfilout = prout + "mapz_split.csv"
 
             self.psplitMap[dim] = pfilout
-            if path.exists(pfilout):
+            if path.exists(pfilout) and insertDB == 0:
                 return
+            elif not path.exists(pfilout):
+                coord1D2D = self.prmap + "coord1D2D.csv"
+                coord3D = self.prmap + "coord3D.csv"
 
-            coord1D2D = self.prmap + "coord1D2D.csv"
-            coord3D = self.prmap + "coord3D.csv"
+                if dim == 1 or dim == 2:
+                    din = toolbox.loadMatrixCoords(coord1D2D, 2)
+                else:
+                    din = toolbox.loadMatrixCoords(coord3D, 2)
 
-            if dim == 1 or dim == 2:
-                din = toolbox.loadMatrixCoords(coord1D2D)
-            else:
-                din = toolbox.loadMatrixCoords(coord3D)
+                # max and min 1D2D
+                maxDim = 0.0
+                minDim = 0.0
 
-            # max and min 1D2D
-            maxDim = 0.0
-            minDim = 0.0
+                nbchem = len(list(din.keys()))
+                nbchembymap = int(nbchem/nbsplit)
 
-            nbchem = len(list(din.keys()))
-            nbchembymap = int(nbchem/nbsplit)
-
-            # calibrate max and min
-            print("== Initiate calibration ==")
-            for chem in din.keys():
-
-                if dim == 1 or dim == 3:
-                    dimVal = din[chem][0]
-                elif dim == 2:
-                    dimVal = din[chem][1]
-
-                if dimVal > maxDim:
-                    maxDim = dimVal
-                if dimVal < minDim:
-                    minDim = dimVal
-            print("== End calibration ==")
-
-            dmap = {}
-            imap = 1
-            dmap[imap] = []
-
-            dimVal = minDim
-            while dimVal < maxDim:
-                dimVal = dimVal + 0.10
-                if len(dmap[imap]) > nbchembymap:
-                    imap = imap + 1
-                    dmap[imap] = []
-                ichem = 0
-                lchem = list(din.keys())
-                nbchem = len(lchem)
-                while ichem < nbchem:
+                # calibrate max and min
+                print("== Initiate calibration ==")
+                for chem in din.keys():
 
                     if dim == 1 or dim == 3:
-                        valtemp = din[lchem[ichem]][0]
+                        dimVal = din[chem][0]
                     elif dim == 2:
-                        valtemp = din[lchem[ichem]][1]
+                        dimVal = din[chem][1]
+
+                    if dimVal > maxDim:
+                        maxDim = dimVal
+                    if dimVal < minDim:
+                        minDim = dimVal
+                print("== End calibration ==")
+
+                dmap = {}
+                imap = 1
+                dmap[imap] = []
+
+                dimVal = minDim
+                while dimVal < maxDim:
+                    dimVal = dimVal + 0.10
+                    if len(dmap[imap]) > nbchembymap:
+                        imap = imap + 1
+                        dmap[imap] = []
+                    ichem = 0
+                    lchem = list(din.keys())
+                    nbchem = len(lchem)
+                    while ichem < nbchem:
+
+                        if dim == 1 or dim == 3:
+                            valtemp = din[lchem[ichem]][0]
+                        elif dim == 2:
+                            valtemp = din[lchem[ichem]][1]
 
 
-                    if valtemp < dimVal:
+                        if valtemp < dimVal:
 
-                        dmap[imap].append(deepcopy(lchem[ichem]))
-                        del din[lchem[ichem]]
-                        del lchem[ichem]
-                        nbchem = nbchem - 1
-                        continue
-                    else:
-                        ichem = ichem + 1
+                            dmap[imap].append(deepcopy(lchem[ichem]))
+                            del din[lchem[ichem]]
+                            del lchem[ichem]
+                            nbchem = nbchem - 1
+                            continue
+                        else:
+                            ichem = ichem + 1
 
-        print("==== Write output ====")
-        filout = open(pfilout, "w")
-        filout.write("inchikey\tmap\n")        
-        for d in dmap.keys():
-            for chem in dmap[d]:
-                filout.write("%s\t%s\n"%(chem, d))
-        filout.close()
+                print("==== Write output ====")
+                filout = open(pfilout, "w")
+                filout.write("inchikey\tmap\n")        
+                for d in dmap.keys():
+                    for chem in dmap[d]:
+                        filout.write("%s\t%s\n"%(chem, d))
+                filout.close()
+
+        if insertDB == 1:
+            cDB = DBrequest.DBrequest()
+            #cDB.verbose = 1
+
+            dmap = toolbox.loadMatrixToDict(pfilout)
+            tableIn = "dsstox_coords"
+            if dim == 1:
+                mapIn = "mapx"
+            elif dim == 2: 
+                mapIn = "mapy"
+            else:
+                mapIn = "mapz"
+
+
+            for chem in dmap.keys():
+                inch = chem.replace("\"", "")
+                
+                cmdSQL = "UPDATE %s SET %s=%s WHERE inchikey='%s';" %(tableIn, mapIn, dmap[chem]["map"], inch)
+                cDB.updateTable(cmdSQL)
+
 
 
     # have to be optimize
@@ -455,8 +498,8 @@ class DSSTOX:
             #if path.exists(pfilout):
             #    return 
             
-            coords1D2D = toolbox.loadMatrixCoords(self.pcoords1D2D)
-            coords3D = toolbox.loadMatrixCoords(self.pcoords3D)
+            coords1D2D = toolbox.loadMatrixCoords(self.pcoords1D2D, 2)
+            coords3D = toolbox.loadMatrixCoords(self.pcoords3D, 2)
             
             dout = {}
             for pmap in lpfmap:
@@ -489,6 +532,18 @@ class DSSTOX:
                 filout.write("%s\t%s\t%s\t%s\n"%(map, dout[map][0], dout[map][1], dout[map][2]))
             filout.close()
 
+    def updateTableProp(self, nameMap):
+
+        cDB = DBrequest.DBrequest()
+        self.verbose = 0
+
+        if not "dchem" in self.__dict__:
+            self.loadlistChem()
+        
+        for chem in self.dchem:
+            dsstox = chem.replace("\"", "")
+            cmdSQL = "UPDATE dsstox_prop SET %s=true WHERE db_id='%s';" %(self.nameMap, dsstox)
+            cDB.updateTable(cmdSQL)
 
 
     def pushDssToxNamePropInDB(self):
@@ -497,7 +552,7 @@ class DSSTOX:
         cDB.verbose = 1
         i = 1
         for PROP in LPROP:
-            cDB.addElement("dsstox_prop_name", ["id", "name"], [i, PROP])
+            cDB.addElement("dsstox_name_prop", ["id", "name"], [i, PROP])
             i = i + 1
 
     def generateTablePropAllDSSTOX(self, prDSSTOXPred, pknownSDF, pLD50, pDSSTOXMapOnCID, insertDB=0):
@@ -654,8 +709,8 @@ class DSSTOX:
                 
 
                     
-                dDim1D2D = toolbox.loadMatrixCoords(self.pcoords1D2D)
-                dDim3D = toolbox.loadMatrixCoords(self.pcoords3D)
+                dDim1D2D = toolbox.loadMatrixCoords(self.pcoords1D2D, 2)
+                dDim3D = toolbox.loadMatrixCoords(self.pcoords3D, 2)
                 lpfmap = self.psplitMap
                 lmap = []
                 for imap in lpfmap.keys():
@@ -746,6 +801,25 @@ class DSSTOX:
                     for ID in ddist.keys():
                         ftable.write("%s\t%s\n" % (ID, " ".join(ddist[ID])))
                     ftable.close()
+
+
+
+
+    def pushDSSTOXNeighbors(self, prin):
+
+        cDB = DBrequest.DBrequest()
+        cDB.verbose = 0
+        lfile = listdir(prin)
+        for fileNeighbor in lfile:
+            try:dneighbor = toolbox.loadMatrixToDict(prin + fileNeighbor)
+            except: 
+                remove(prin + fileNeighbor)
+                continue
+            inchkey = list(dneighbor.keys())[0]
+            dneighbor[inchkey]["Neighbors"] = dneighbor[inchkey]["Neighbors"].split(" ")
+            w3D = "{" + ",".join(["\"%s\"" % (neighbor) for neighbor in dneighbor[inchkey]["Neighbors"]]) + "}"
+            cDB.addElement("dsstox_neighbors", ["inchikey", "neighbors_dim3"], [inchkey, w3D])
+        return 
 
 
     def pushNeighbors(self):

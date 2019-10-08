@@ -9,3 +9,13 @@ DELETE FROM drugbank;
 # change name
 ALTER TABLE drugbank_neighboors
 RENAME TO drugbank_neighbors;
+
+
+UPDATE dsstox_chem SET pfas = TRUE WHERE inchikey = 'VOPWNXZWBYDODV-UHFFFAOYSA-N';
+SELECT * FROM dsstox_chem WHERE inchikey = 'VOPWNXZWBYDODV-UHFFFAOYSA-N';
+
+
+
+select * from dsstox_chem
+where pfas = true
+limit 100

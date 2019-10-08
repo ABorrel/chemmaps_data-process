@@ -96,6 +96,24 @@ class DBrequest:
             print("Open connection first")
 
 
+    def updateTable(self, cmdSQL):
+        if self.verbose == 1: print(cmdSQL)
+        self.connOpen()
+        if self.conn != None:
+            try:
+                cur = self.conn.cursor()
+                cur.execute(cmdSQL)
+                self.conn.commit()
+            except (Exception, psycopg2.DatabaseError) as error:
+                self.connClose()
+                print(error)
+                return "Error"
+        else:
+            print("Open connection first")
+            return None
+        self.connClose()
+        return 1
+
 
     def execCMD(self, cmdSQL):
         if self.verbose == 1: print(cmdSQL)
@@ -106,7 +124,8 @@ class DBrequest:
                 cur.execute(cmdSQL)
                 #self.conn.commit()
                 # print(cur)
-                out = cur.fetchall()
+                try:out = cur.fetchall()
+                except: out = 0
                 if self.verbose == 1: print(out)
             except (Exception, psycopg2.DatabaseError) as error:
                 self.connClose()

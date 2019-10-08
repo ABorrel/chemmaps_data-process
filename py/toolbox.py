@@ -3,7 +3,7 @@ from shutil import copy
 from copy import deepcopy
 
 
-def loadMatrixCoords(pccord):
+def loadMatrixCoords(pccord, nbcoord):
 
     dout = {}
     filin = open(pccord, "r")
@@ -11,7 +11,11 @@ def loadMatrixCoords(pccord):
     line = filin.readline()
     while line:
         lelem = line.split(",")
-        dout[lelem[0].replace("\"", "")] = [float(lelem[1]), float(lelem[2])]
+        i = 1
+        dout[lelem[0].replace("\"", "")] = []
+        while i <= nbcoord:
+            dout[lelem[0].replace("\"", "")].append(float(lelem[i])) 
+            i = i + 1
         line = filin.readline()
     return dout
 

@@ -23,26 +23,27 @@ def generateCoordFromEPAlist(plist, prout, nameMap, computeDesc, computePNG, cor
     #db.generateTablePropAllDSSTOX(prDSSTOXPred, pknownSDF, pLD50, plist, insertDB=0)
     #db.pushTablePropAllInDB()
     #db.computeDesc(insertDB=1, w=0)
-    db.pushPropInDB()
-    ddd
+    #db.pushDssToxNamePropInDB()
     if project == 1:
         if nameMap != "dsstox":
             db.runRprojection(corval, maxquantile)
     if nameMap != "dsstox":
-        db.computeCoords(corval, maxquantile, insertDB=0)
-        #db.generateNeighborMatrix(20, [2,1])
-        #db.generateNeighborMatrix(20, [])
-        #db.pushNeighbors()
-        #db.pushDssToxNamePropInDB()
-        #db.updateTableProp(nameMap)
-    else:
-        db.computeCoords(corval, maxquantile, insertDB=0)
-        db.splitMap(splitMap, 1)
-        db.splitMap(splitMap, 2)
-        db.splitMap(splitMap, 3)
-        #db.generateCentroidFile()
+        db.pushPropInDB()
+        db.computeCoords(corval, maxquantile, insertDB=1)
         db.generateNeighborMatrix(20, [2,1])
-        print("*")
+        db.generateNeighborMatrix(20, [])
+        db.pushNeighbors()
+        db.updateTableProp(nameMap)
+    else:
+        #db.computeCoords(corval, maxquantile, insertDB=0)
+        #db.splitMap(splitMap, 1, insertDB=1)
+        #db.splitMap(splitMap, 2, insertDB=1)
+        #db.splitMap(splitMap, 3, insertDB=1)
+        #db.generateCentroidFile()
+        # add here function to put map in the the DB
+        #db.generateNeighborMatrix(20, [2,1])
+        db.pushDSSTOXNeighbors(prout + "Neighbors/")
+        #print("*")
 
 
 
@@ -71,20 +72,17 @@ def generateCoordFromEPAlist(plist, prout, nameMap, computeDesc, computePNG, cor
 #############
 # prep PFAS #
 #############
-#pPFAS = "/home/borrela2/ChemMaps/data/PFAS/list_chemicals-2019-09-12-10-05-50.csv"
-#prPFAS = "/home/borrela2/ChemMaps/data_analysis/PFAS/"
+pPFAS = "/home/borrela2/ChemMaps/data/PFAS/list_chemicals-2019-09-12-10-05-50.csv"
+prPFAS = "/home/borrela2/ChemMaps/data_analysis/PFAS/"
 #generateCoordFromEPAlist(pPFAS, prPFAS, "pfas", computeDesc=0, computePNG=0, corval=0.9, maxquantile=90, splitMap=1, istart=0, iend=0)
 
 
 ################
 # Prep Tox21   #
 ################
-#pTOX21 = "/home/borrela2/ChemMaps/data/TOX21/list_chemicals-2019-05-13-10-11-38.csv"
-#prTOX21 = "/home/borrela2/ChemMaps/data_analysis/TOX21/"
-
-#generateCoordFromEPAlist(pTOX21, prTOX21, computeDesc=1, computePNG=0, corval=0.9, maxquantile=90, splitMap=1, istart=0, iend=0)
-
-
+pTOX21 = "/home/borrela2/ChemMaps/data/TOX21/list_chemicals-2019-05-13-10-11-38.csv"
+prTOX21 = "/home/borrela2/ChemMaps/data_analysis/TOX21/"
+#generateCoordFromEPAlist(pTOX21, prTOX21, "tox21", computeDesc=0, computePNG=0, corval=0.9, maxquantile=90, splitMap=1, istart=0, iend=0)
 
 #################
 # prep DSSTOX   #
