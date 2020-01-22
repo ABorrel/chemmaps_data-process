@@ -364,4 +364,19 @@ class DrugBank:
                     wND = "{" + ",".join(["\"%s\"" % (neighbor) for neighbor in ddistND[chem]]) + "}"
                     cDB.addElement("drugbank_neighbors", ["inchikey", "neighbors_dim3", "neighbors_dimn"], [chem, w3D, wND])
 
+    def computePNG(self):
+
+        if not "dchem" in self.__dict__:
+            self.parseSDFDB()
+
+        lchemID = list(self.dchem.keys())
+        shuffle(lchemID)
+
+        for chemID in lchemID:
+            SMILESClean = self.dchem[chemID]["smiles_clean"]
+            if SMILESClean == "NA":
+                continue
+            cChem = Chemical.Chemical(SMILESClean, self.prDesc)
+            cChem.prepChem()
+            cChem.computePNG()
 

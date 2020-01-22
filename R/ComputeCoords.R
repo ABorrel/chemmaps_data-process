@@ -5,9 +5,28 @@ source("MDSMultiple.R")
 library(fastICA)
 library (vrmlgen)
 
-generatePCAcoords = function(din){
+
+scaling = function(din){
   
   dinScale = scale(din)
+  
+  lscale = attr(dinScale, "scaled:scale")
+  lcenter = attr(dinScale, "scaled:center")
+  
+  dforscaling = rbind(lscale, lcenter)
+  rownames(dforscaling) = c("scale", "center")
+  dinScale = delSDnull(dinScale)
+
+  return(list(dinScale, dforscaling))
+  
+}
+
+
+generatePCAcoords = function(din){
+  
+  dinScale = scaling(din)[[1]]
+
+
   data.cor=cor(dinScale)
   data.eigen=eigen(data.cor)
   lambda = data.eigen$values
@@ -16,11 +35,37 @@ generatePCAcoords = function(din){
   rownames (cp) = colnames (dinScale)
   colnames (cp) = colnames (dinScale)
   data_plot = as.matrix(dinScale)%*%cp
-
-  return(list(data_plot, var_cap))
+  rownames(data_plot) = rownames(dinScale)
   
+  return(list(data_plot, var_cap, cp))
+}
+
+
+
+prepMatrixDesc = function(pin, valcor, maxquantile, vexclude, homo){
+  
+  #### 1D2D matrix ####
+  #####################
+  din = openData(pin, valcor, "", vexclude)
+  din_data = din[[1]]
+  rownames(din_data) = din_data[,1]
+  din_data = din_data[,-1] # remove name
+  
+  # remove not well distributed descriptors #
+  ###########################################
+  if(homo == 1){
+    din_data = delnohomogeniousdistribution(din_data, maxquantile)
+  }else{
+    din_temp = apply(din_data,2,as.double)
+    rownames(din_temp) = rownames(din_data)
+    din_data = din_temp
+  }
+  din_data = na.omit(din_data)
+  
+  return(din_data)
   
 }
+
 
 
 generateICAcoords = function(din, path_result){
@@ -218,6 +263,7 @@ model3D = function(d1D, d2D, dcol, pfilout){
   
 }
 
+
 ################
 #     MAIN     #
 ################
@@ -229,72 +275,38 @@ prout = args[3]
 valcor = as.double(args[4])
 maxquantile = as.integer(args[5])
 
+# dsstoxmap
 #p1D2D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/1D2D.csv"
 #p3D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/3D.csv"
-#prout = "/home/borrela2/ChemMaps/data_analysis/DSSTox/projection0.9-90/"
-#valcor = 0.9
+#prout = "/home/borrela2/ChemMaps/data_analysis/DSSTox/map_0.9-90/"
+#valcor = 0.9 
 #maxquantile = 90
 
 
-#p1D2D = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/Desc/1D2D.csv"
+# drugmap
 #p3D = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/Desc/3D.csv"
-#prout = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/projection0.9-90/"
+#p1D2D = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/Desc/1D2D.csv"
 #valcor = 0.9
-#maxquantile = 90
+#maxquantile = 95
+#prout = "/home/borrela2/ChemMaps/data_analysis/drugBankAnalysis/Desc/map/"
 
-# manually define
-# outlier = c("DB00793", "DB00516", "DB06690", "DB09157", "DB03627", "DB01751", "DB03853" ,"DB04711")
-
-#### 1D2D matrix ####
-#####################
-d1D2D = openData(p1D2D, valcor, prout, c(1,2))
-d1D2D_data = d1D2D[[1]]
-rownames(d1D2D_data) = d1D2D_data[,1]
-d1D2D_data = d1D2D_data[,-1] # remove name
-
-# remove not well distributed descriptors #
-###########################################
-d1D2D_data = delnohomogeniousdistribution(d1D2D_data, maxquantile)
-
-p1D2Dclean = paste(prout, "1D2D_clean.csv", sep = "")
-write.table(d1D2D_data, file = p1D2Dclean, row.names = TRUE, sep = "\t")
-
-
-##### 3D matrix #####
-#####################
-d3D = openData(p3D, valcor, prout, c(1,2))
-d3D_data = d3D[[1]]
-rownames(d3D_data) = d3D_data[,1]
-d3D_data = d3D_data[,-1] # remove name
-
-# remove not well distributed descriptors #
-###########################################
-
-d3D_temp = apply(d3D_data,2,as.double)
-rownames(d3D_temp) = rownames(d3D_data)
-d3D_data = d3D_temp
-d3D_data = delnohomogeniousdistribution(d3D_data, maxquantile)
-
-
-# write selected descriptors
-p3Dclean = paste(prout, "3D_clean.csv", sep = "")
-write.table(d3D_data, file = p3Dclean, row.names = TRUE, sep = "\t")
-
-
+d1D2D = prepMatrixDesc(p1D2D, valcor, maxquantile, c(1), 1)
+d3D = prepMatrixDesc(p3D, valcor, maxquantile, c(1), 1)
 
 #################
 # merge dataset #
 #################
 
-vcompound = rownames(d1D2D_data)
-vcompound = intersect(vcompound,rownames(d3D_data))
+vcompound = rownames(d1D2D)
+vcompound = intersect(vcompound,rownames(d3D))
 
-## case of outlier ##
-#####################
-#vcompound = vcompound[!vcompound %in% outlier]
+d1D2D = d1D2D[vcompound,]
+d3D = d3D[vcompound,]
 
-dglobal = cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])
+d1D2D = delSDnull(d1D2D)
+d3D = delSDnull(d3D)
 
+dglobal = cbind(d1D2D, d3D)
 
 
 #####################################################
@@ -303,8 +315,10 @@ dglobal = cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])
 #cardMatrixCor(cor(cbind(d1D2D_data[vcompound,], d3D_data[vcompound,])), paste(prout, "cor1D2DVS3D", sep = ""), 6)
 
 #plot histogram #
-histDataOne(data1 = d1D2D_data[vcompound,], paste(prout, "homodishist1D2D.pdf", sep = ""))
-histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf", sep = ""))
+histDataOne(data1 = d1D2D, paste(prout, "homodishist1D2D.pdf", sep = ""))
+histDataOne(data1 = d3D, paste(prout, "homodishist3D.pdf", sep = ""))
+
+
 
 
 #######################
@@ -320,8 +334,8 @@ histDataOne(data1 = d3D_data[vcompound,], paste(prout, "homodishist3D.pdf", sep 
 #PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
 
 # PCA combined
-PCAcombined2plans(d1D2D_data[vcompound,], d3D_data[vcompound,], paste(prout, "combined-1D2D_3D", sep = ""))
-generateCoordCombinedPCA(d1D2D_data[vcompound,], d3D_data[vcompound,], prout)
+PCAcombined2plans(d1D2D, d3D, paste(prout, "combined-1D2D_3D", sep = ""))
+generateCoordCombinedPCA(d1D2D, d3D, prout)
 
 # MDSglobal
 #MDS3DGlobal(dglobal, prout, "corr")
@@ -350,5 +364,9 @@ generateCoordCombinedPCA(d1D2D_data[vcompound,], d3D_data[vcompound,], prout)
 #dcol[which(dcol[,2] == "illicit"),3] = "orange"
 #rownames(dcol) = dcol[,1]
 #dcol = dcol[,-1]
+
+
+
+
 
 

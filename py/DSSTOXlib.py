@@ -254,37 +254,39 @@ class DSSTOX:
 
     def computepng(self):
 
-        # draw from desc descriptors
+        
+        if not "dchem" in self.__dict__:
+            self.loadlistChem()
 
-        prSMI = self.prDSSTox + "SMI/"
-        if not path.exists(prSMI):
-            print ("ERROR: CREATE CLEAN SMI FIRST")
-            return
+        lchemID = list(self.dchem.keys()) # can be shuffle
+        if len(lchemID) < 50000 and self.iend == 0:
+            shuffle(lchemID)
 
-        prPNG = self.prDSSTox + "PNG/"
-        pathFolder.createFolder(prPNG)
+        imax = len(lchemID)
+        if self.iend == 0 or self.iend > imax:
+            iend = imax
+        else:
+            iend = self.iend
 
-        if "ddesc" in self.__dict__:
-            linchikey = list(self.ddesc.keys())
-            shuffle(linchikey)
-            for inchikey in linchikey:
-                ppng = prPNG + inchikey + ".png"
-                if path.exists(ppng):
-                    continue
-                else:
-                    DSSTOXid = self.ddesc[inchikey]["DSSTOXid"][0]
-                    SMIclean = self.ddesc[inchikey]["SMI"][0]
+        lchemID = lchemID[self.istart:iend]
+        shuffle(lchemID)
 
-                    pSMIclean = prPNG + DSSTOXid + ".smi"
-                    fSMIcLean = open(pSMIclean, "w")
-                    fSMIcLean.write(SMIclean)
-                    fSMIcLean.close()
+        i = 0
+        imax = len(lchemID)
+        while i < imax:
+            if i%10000 == 0:
+                print (i)
 
-                    runExternalSoft.molconvert(pSMIclean, ppng)
-                    remove(pSMIclean)
+            SMILESClean = self.dchem[lchemID[i]]["smiles_clean"]
+            if SMILESClean == "NA":
+                i = i + 1
+                continue
+            cChem = Chemical.Chemical(SMILESClean, self.prDesc)
+            cChem.prepChem()
+            cChem.computePNG()
 
-
-
+            i += 1
+    
 
     def computeCoords(self, corVal, distributionVal, insertDB=1):
 
@@ -825,7 +827,7 @@ class DSSTOX:
     def pushNeighbors(self):
         prneighbor = pathFolder.createFolder(self.prout + "Neighbors/")
         ptable3Dim = prneighbor + "Table_DIM1D2D-2_1.csv"
-        ptableNDim = prneighbor + "Table_DIM1D2D-131_254.csv"
+        ptableNDim = prneighbor + "Table_DIM1D2D-170_207.csv"
         if path.exists(ptable3Dim) and path.exists(ptableNDim):
             ddist3D = toolbox.loadMatrixToDict(ptable3Dim)
             for chem in ddist3D.keys():
@@ -838,7 +840,8 @@ class DSSTOX:
             cDB.verbose = 0
             for chem in ddist3D.keys():
                 # print(chem)
-                out1D2D = cDB.getRow("%s_neighbors"%(self.nameMap), "inchikey='%s'" % (chem))
+                #out1D2D = cDB.getRow("%s_neighbors"%(self.nameMap), "inchikey='%s'" % (chem))
+                out1D2D = []
                 if out1D2D == []:
                     w3D = "{" + ",".join(["\"%s\"" % (neighbor) for neighbor in ddist3D[chem]]) + "}"
                     wND = "{" + ",".join(["\"%s\"" % (neighbor) for neighbor in ddistND[chem]]) + "}"

@@ -17,9 +17,10 @@ Scripts used to compute map coordinate and manage database used for ChemMaps
 - 09-24-2019: connect to DB for transfer
 - 09-26-2019: compute the map split ans centroid, optimize fonction split and add function to load only first coords
 - 10-08-2019: Add update map on the dsstox for the split
+- 01-22-2020: Add script to update DB based on OPERA 2.5
 
 
 # Todo list
-- 09-20-2019: finish to upload prop table in the DSSTOX table
-- 09-26-2019: compute the neighbor for DSSTOX -> done for n = 3
-- 09-26-2019: update png file
+- ~~09-20-2019: finish to upload prop table in the DSSTOX table~~
+- ~~09-26-2019: compute the neighbor for DSSTOX -> done for n = 3~~
+- ~~09-26-2019: update png file~~

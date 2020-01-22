@@ -22,6 +22,7 @@ def loadMatrixCoords(pccord, nbcoord):
 def loadMatrixToDict(pmatrixIn, sep ="\t"):
 
     filin = open(pmatrixIn, "r", encoding="utf8", errors="ignore")
+    #filout = open(pmatrixIn[0:-4] + "_corrected.csv", "w")
     llinesMat = filin.readlines()
     filin.close()
 
@@ -30,6 +31,9 @@ def loadMatrixToDict(pmatrixIn, sep ="\t"):
     line1 = formatLine(llinesMat[1])
     lheaders = line0.split(sep)
     lval1 = line1.split(sep)
+
+    #filout.write(llinesMat[0])
+    #filout.write(llinesMat[1])
 
     # case where R written
     if len(lheaders) == (len(lval1)-1):
@@ -44,27 +48,34 @@ def loadMatrixToDict(pmatrixIn, sep ="\t"):
         dout[kin] = {}
         j = 0
         if len(lvalues) != len(lheaders):
-            print (lineMat)
+            #print (lineMat)
             print (llinesMat[i])
             print (lvalues)
             print ("Error => nb element", i)
-            print (len(lvalues))
-            print (len(lheaders))
+            #print (len(lvalues))
+            #print (len(lheaders))
+            i += 1 
             ddd
+            #lw = str(llinesMat[i].strip()) + str(llinesMat[i+1])
+            #filout.write(lw)
+            continue
+        #else:
+        #    filout.write(llinesMat[i])
 
         jmax = len(lheaders)
         while j < jmax:
             dout[kin][lheaders[j]] = lvalues[j]
             j += 1
         i += 1
-
+    #filout.close()
     return dout
 
 
 
 
-def formatLine(linein):
+def formatLine(lineinput):
 
+    linein = deepcopy(lineinput)
     linein = linein.replace("\n", "")
     linenew = ""
 

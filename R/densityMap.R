@@ -16,8 +16,9 @@ prout = args[3]
 
 pcoord1D2D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/map_0.9-90/coord1D2D.csv"
 pcoord3D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/map_0.9-90/coord3D.csv"
-pmaptomap = "/home/borrela2/ChemMaps/data_analysis/PFAS/forDB/db.csv" 
-prout = "/home/borrela2/ChemMaps/data_analysis/DSSTox/"
+#pmaptomap = "/home/borrela2/ChemMaps/data_analysis/TOX21/forDB/db.csv" ==> Tox21
+pmaptomap = "/home/borrela2/ChemMaps/data/NPAHs.csv" #==> NPAHs
+prout = "/home/borrela2/ChemMaps/data_analysis/NPAHs/"
 
 
 dcoord1D2D = read.csv(pcoord1D2D, sep = ",", header = TRUE)
@@ -40,8 +41,8 @@ hexbinplot(DIM2~DIM1,data=dcoord1D2D,xlab="DIM1",
 dev.off()
 
 
-dcoordCut = dcoord1D2D[which(dcoord1D2D[,1] <= 30 & dcoord1D2D[,2] <= 30),]
-png(paste(prout, "cut_xy_DSSTOX.png", sep = ""), res = 300, width = 2000, height = 2000)
+dcoordCut = dcoord1D2D[which(dcoord1D2D[,1] <= 80 & dcoord1D2D[,2] <= 80),]
+png(paste(prout, "DSSTOX_xycut.png", sep = ""), res = 300, width = 2000, height = 2000)
 hexbinplot(DIM2~DIM1,data=dcoordCut,xlab="DIM1",
            ylab="DIM2",colramp=rf, xbins = 500, cex.labels = 0.6, cex.title=0.6)
 dev.off()
@@ -60,6 +61,38 @@ hexbinplot(DIM3~DIM1,data=dcoordcut,xlab="DIM1",
 dev.off()
 
 
+############################
+# PORJECTION ON THE DSSTOX #
+############################
+#pmaptomap = "/home/borrela2/ChemMaps/data/NPAHs.csv" #==> NPAHs
+#pmaptomap = "/home/borrela2/ChemMaps/data/PAH-14Jan2020.csv"
+pmaptomap = "/home/borrela2/ChemMaps/data_analysis/TOX21/forDB/db.csv"# ==> Tox21
+prout = "/home/borrela2/ChemMaps/data_analysis/density_map/"
+name_map = "Tox21"
 
 # map chemical on the map
 dmap = read.csv(pmaptomap, sep = "\t", header = TRUE)
+dmap = na.omit(dmap)
+rownames(dmap) = dmap[,1]
+dmap = dmap[,-1]
+
+
+dmap_plot = dmap
+#dmap_cancer = dmap[dmap$cancer == "y", ]
+#dmap_cancer = dmap[dmap$cancer == "n", ]
+
+
+dcoorMap = dcoordCut[as.vector(dmap_plot$inchikey),]
+dcoorMap = rbind(dcoorMap, c(min(dcoordCut$DIM1), min(dcoordCut$DIM2)))
+dcoorMap = rbind(dcoorMap, c(max(dcoordCut$DIM1), max(dcoordCut$DIM2)))
+
+png(paste(prout, paste(name_map, "VSDSSTOX_D1D2.png"), sep = ""), res = 300, width = 2000, height = 2000)
+hexbinplot(DIM2~DIM1,data=dcoorMap,xlab="DIM1",
+           ylab="DIM2",colramp=rf, xbins = 50, cex.labels = 0.6, cex.title=0.6 ) +
+  geom_segment(data=pts, aes(x, y, xend=xend, yend=yend))
+dev.off()
+
+
+
+
+
