@@ -21,7 +21,7 @@ def loadMatrixCoords(pccord, nbcoord):
 
 def loadMatrixToDict(pmatrixIn, sep ="\t"):
 
-    filin = open(pmatrixIn, "r", encoding="utf8", errors="ignore")
+    filin = open(pmatrixIn, "r", encoding="utf-8", errors="ignore")
     #filout = open(pmatrixIn[0:-4] + "_corrected.csv", "w")
     llinesMat = filin.readlines()
     filin.close()
@@ -34,7 +34,7 @@ def loadMatrixToDict(pmatrixIn, sep ="\t"):
 
     #filout.write(llinesMat[0])
     #filout.write(llinesMat[1])
-
+    llw = []
     # case where R written
     if len(lheaders) == (len(lval1)-1):
         lheaders.append("val")
@@ -50,23 +50,24 @@ def loadMatrixToDict(pmatrixIn, sep ="\t"):
         if len(lvalues) != len(lheaders):
             #print (lineMat)
             print (llinesMat[i])
-            print (lvalues)
-            print ("Error => nb element", i)
+            print ("nano +" + str(i+1) + "  DSSToxMS-Ready_corrected.csv -c")
             #print (len(lvalues))
             #print (len(lheaders))
+            
+            lw = str(llinesMat[i-1].strip()) + str(llinesMat[i])
+            del llw[-1]
+            llw.append(lw)
             i += 1 
-            ddd
-            #lw = str(llinesMat[i].strip()) + str(llinesMat[i+1])
-            #filout.write(lw)
             continue
-        #else:
-        #    filout.write(llinesMat[i])
+        else:
+            llw.append(llinesMat[i])
 
         jmax = len(lheaders)
         while j < jmax:
             dout[kin][lheaders[j]] = lvalues[j]
             j += 1
         i += 1
+    #filout.write("".join(llw))
     #filout.close()
     return dout
 
