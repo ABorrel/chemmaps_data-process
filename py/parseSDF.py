@@ -42,7 +42,6 @@ class parseSDF:
 
 
         self.lc=lout
-        print (len(lout))
 
     def writeTable(self, filname):
 
