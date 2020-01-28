@@ -3,23 +3,27 @@ import toolbox
 import parseSDF
 from random import randint
 from os import listdir
+from copy import deepcopy
 
 
-def UpdateDBVal(prPred, pSMILES, pSDF, prout):
+def UpdateDBChemPropVal(prPred, pInde, psdf, LPROP, prout):
 
-    csdf = parseSDF.parseSDF(pSDF, "InChI Key_QSARr", prout)
-    csdf.parseAll()
+    # load SDF
+    cSDF = parseSDF.parseSDF(psdf, "CASRN", prout)
+    cSDF.parseAll()
 
     dSDF = {}
-    for chem in csdf.lc:
-        SMILES = chem["Original_SMILES"]
-        dSDF[SMILES] = chem
+    for chem in cSDF.lc:
+        if not chem["Original_SMILES"] in list(dSDF.keys()):
+            dSDF[chem["Original_SMILES"]] = deepcopy(chem) 
+     
 
-
-    dSMILES = toolbox.loadMatrixToDict(pSMILES, ",")
+    # pIdentifier
+    dSMILES = toolbox.loadMatrixToDict(pInde, sep = ",")
     dSMILES_out = {}
-    for ID in dSMILES.keys():
-        dSMILES_out[dSMILES[ID]["DTXSID"]] = dSMILES[ID]
+    for chem in dSMILES.keys():
+        try:dSMILES_out[dSMILES[chem]["DTXSID"]] = deepcopy(dSMILES[chem])
+        except: continue
 
     # load chem prediction
     lfilePred = listdir(prPred)
@@ -28,52 +32,52 @@ def UpdateDBVal(prPred, pSMILES, pSDF, prout):
         print(filePred)
         dtemp = toolbox.loadMatrixToDict(prPred + filePred, sep=",")
 
+        # primary key will be DTXSID
         for DTXCID in dtemp.keys():
             DTXSID = dtemp[DTXCID]["dsstox_substance_id"]
             if not DTXSID in list(dpred.keys()):
                 dpred[DTXSID] = dtemp[DTXCID]
 
-    k = list(dpred.keys())[0]
-    print(len(dpred.keys()))
 
+    
+        
     # write for DB Update
-    pfiloutDesc = prout + "DescDescription.csv"
+    pfiloutDesc = prout + "OPERA_desc_" + "update.csv"
     filoutDesc = open(pfiloutDesc, "w")
-    filoutDesc.write("ID\t" + "\t".join(LPROPCHEMAPS) + "\n")
+    filoutDesc.write("DTXSID\t%s\n"%"\t".join(LPROP))
 
-    for DTXSID in dpred:
-        print(DTXSID)
-        try:
-            inch = dSMILES_out[DTXSID]["INCHIKEY"]
-            SMILES = dSMILES_out[DTXSID]["SMILES"]
-            name = dSMILES_out[DTXSID]["name"]
-        except:
-            continue
+    for DTXSID in dpred.keys():
 
-        if SMILES in list(dSDF.keys()):
-            GHS_category = dSDF[SMILES]["GHS_category"]
-            if GHS_category == "":
-                GHS_category = "NA"
-            EPA_category = dSDF[SMILES]["EPA_category"]
-            if EPA_category == "":
-                EPA_category = "NA"
-            consensus_LD50 = dSDF[SMILES]["consensus_LD50"]
-            if consensus_LD50 == "":
-                consensus_LD50 = "NA" 
-            LD50_mgkg = dSDF[SMILES]["LD50_mgkg"]
-            if LD50_mgkg == "":
-                LD50_mgkg = "NA"
-        else:
-            GHS_category = "NA"
-            LD50_mgkg = "NA"
-            consensus_LD50 = "NA"
-            EPA_category = "NA"
-
-        lw = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"%(DTXSID, inch, SMILES, name, GHS_category, EPA_category, consensus_LD50, LD50_mgkg, "\t".join([str(dpred[DTXSID][PROP]) for PROP in LPROPCHEMAPS[7:]]))
-        filoutDesc.write(lw)
-
+        try:SMILES = dSMILES_out[DTXSID]["SMILES"]
+        except: SMILES = "ERROR"
+        iprop = 0
+        imax = len(LPROP)
+        lval = []
+        err = 0
+        while iprop < imax:
+            PROP = LPROP[iprop]
+            #print(PROP)
+            try:
+                val = str(dpred[DTXSID][PROP])
+            except:
+                try:
+                    val = str(dSMILES_out[DTXSID][PROP])
+                except:
+                    try:
+                        val = str(dSDF[SMILES][PROP])
+                    except:
+                        val = "NA"
+                        print(PROP)
+                        #err = 1
+                        #    break
+            
+            if val == "NaN":
+                val = "NA"
+            lval.append(val)
+            iprop = iprop + 1
+        if err == 0:
+            filoutDesc.write("%s\t%s\n"%(DTXSID, "\t".join(lval)))
     filoutDesc.close()
-
 
 
 
@@ -87,7 +91,7 @@ def UpdateDBName():
 ptrainTestOPERA = "/home/borrela2/data/updateDB_01-2020/ToxTrainTest_3D.sdf" #file with endpoint
 #ptrainTestOPERA = "C:\\Users\\borrela2\\development\\trash\\ToxTrainTest_3D.sdf" #file with endpoint
 
-pIdentifier = "/home/borrela2/data/updateDB_01-2020/DSSToxMS-Ready_corrected.csv" #identification with name
+pIdentifier = "/home/borrela2/data/updateDB_01-2020/DSSToxMS-Ready_Rprep_corrected.csv" #identification with name
 #pIdentifier = "/home/borrela2/data/updateDB_01-2020/DSSTox_Identifiers_and_CASRN_04-2019.csv" #identification with name
 #pIdentifier = "C:\\Users\\borrela2\\development\\trash\\DSSTox_Identifiers_and_CASRN_04-2019_corrected.csv"
 
@@ -103,7 +107,8 @@ LPROPCHEMAPS = ["inchikey", "SMILES", "preferred_name", "GHS_category", "EPA_cat
                  "CoMPARA_Bind_pred", "FUB_pred", "LogHL_pred", "LogKM_pred", "LogKOA_pred", "LogKoc_pred", "LogBCF_pred", "LogD55_pred", "LogP_pred", "MP_pred", "pKa_a_pred",
                  "pKa_b_pred", "ReadyBiodeg_pred", "RT_pred", "LogVP_pred", "LogWS_pred", "BioDeg_LogHalfLife_pred", "BP_pred", "nbLipinskiFailures"]
 
-LPROPOPERA = []
+LPROPOPERA = ["MolWeight", "nbAtoms", "nbHeavyAtoms", "nbC", "nbO", "nbN", "nbAromAtom", "nbRing", "nbHeteroRing", "Sp3Sp2HybRatio", "nbRotBd", "nbHBdAcc", "ndHBdDon","nbLipinskiFailures", "TopoPolSurfAir", "MolarRefract", "CombDipolPolariz", "LogP_pred", "AD_LogP", "AD_index_LogP", "Conf_index_LogP", "MP_pred", "AD_MP", "AD_index_MP","Conf_index_MP","BP_pred","AD_BP","AD_index_BP","Conf_index_BP","LogVP_pred","AD_VP","AD_index_VP","Conf_index_VP","LogWS_pred","AD_WS","AD_index_WS","Conf_index_WS","LogHL_pred","AD_HL","AD_index_HL","Conf_index_HL","RT_pred","AD_RT","AD_index_RT","Conf_index_RT","LogKOA_pred","AD_KOA","AD_index_KOA","Conf_index_KOA","ionization","pKa_a_pred","pKa_b_pred","AD_pKa","AD_index_pKa","Conf_index_pKa","LogD55_pred","LogD74_pred","AD_LogD","AD_index_LogD","Conf_index_LogD","LogOH_pred","AD_AOH","AD_index_AOH","Conf_index_AOH","LogBCF_pred","AD_BCF","AD_index_BCF","Conf_index_BCF","BioDeg_LogHalfLife_pred","AD_BioDeg","AD_index_BioDeg","Conf_index_BioDeg","ReadyBiodeg_pred","AD_ReadyBiodeg","AD_index_ReadyBiodeg","Conf_index_ReadyBiodeg","LogKM_pred","AD_KM","AD_index_KM","Conf_index_KM","LogKoc_pred","AD_LogKoc","AD_index_LogKoc","Conf_index_LogKoc"]
 
-UpdateDBVal(prOPERAPred, pIdentifier, ptrainTestOPERA, prout)
+
+UpdateDBChemPropVal(prOPERAPred, pIdentifier, ptrainTestOPERA, LPROPCHEMAPS, prout)
 

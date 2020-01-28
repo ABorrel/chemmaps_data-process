@@ -19,6 +19,24 @@ def loadMatrixCoords(pccord, nbcoord):
         line = filin.readline()
     return dout
 
+
+def loadMatrixTolistFromDB(pfilin, sep):
+    lout = []
+    filin = open(pfilin, "r")
+    llines = filin.readlines()
+    filin.close()
+
+    for l in llines:
+        ltemp = l.split(",")
+        val1 = ltemp[0]
+        val2 = ltemp[1]
+        val3 = l.split(",", 2)[-1].strip()
+        llout = [val1, val2, val3]
+        lout.append(llout)
+    
+    return lout
+
+
 def loadMatrixToDict(pmatrixIn, sep ="\t"):
 
     filin = open(pmatrixIn, "r", encoding="utf-8", errors="ignore")
@@ -74,7 +92,7 @@ def loadMatrixToDict(pmatrixIn, sep ="\t"):
 
 
 
-def formatLine(lineinput):
+def formatLine(lineinput, delimitorStr = "\""):
 
     linein = deepcopy(lineinput)
     linein = linein.replace("\n", "")
@@ -84,9 +102,9 @@ def formatLine(lineinput):
     i = 0
     flagchar = 0
     while i < imax:
-        if linein[i] == '"' and flagchar == 0:
+        if linein[i] == delimitorStr and flagchar == 0:
             flagchar = 1
-        elif linein[i] == '"' and flagchar == 1:
+        elif linein[i] == delimitorStr and flagchar == 1:
             flagchar = 0
 
         if flagchar == 1 and linein[i] == ",":
@@ -95,7 +113,7 @@ def formatLine(lineinput):
             linenew = linenew + linein[i]
         i += 1
 
-    linenew = linenew.replace('\"', "")
+    linenew = linenew.replace(delimitorStr, "")
     return linenew
 
 
