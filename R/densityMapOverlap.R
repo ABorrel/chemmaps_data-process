@@ -18,7 +18,6 @@ prout = args[5]
 
 # linux 
 
-
 # window
 pcoordMain1D2D = "/Users/Aborrel/research/NIEHS/ChemMaps/data_analysis/DSSTox/map_0.9-90/coord1D2D_light.csv"
 pcoordMain3D = "/Users/Aborrel/research/NIEHS/ChemMaps/data_analysis/DSSTox/map_0.9-90/coord3D_light.csv"
