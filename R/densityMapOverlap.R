@@ -86,7 +86,7 @@ dcoorMap = rbind(dcoorMap, c(max(dcoord_xy_cut$DIM1), max(dcoord_xy_cut$DIM2)))
 png(paste(prout, paste(name_map, "-VS-DSSTOX_cutxy.png"), sep = ""), res = 300, width = 2000, height = 2000)
 hexbinplot(DIM2~DIM1,data=dcoorMap,xlab="DIM1",
            ylab="DIM2",colramp=rf, xbins = 50, cex.labels = 0.6, cex.title=0.6 )
-
+dev.off()
 
 
 # plot => DIM1 VS DIM3 #
@@ -115,3 +115,4 @@ png(paste(prout, paste(name_map, "-VS-DSSTOX_cutxz.png"), sep = ""), res = 300, 
 hexbinplot(DIM3~DIM1,data=dcoorMap,xlab="DIM1",
            ylab="DIM3",colramp=rf, xbins = 50, cex.labels = 0.6, cex.title=0.6 )
 dev.off()
+

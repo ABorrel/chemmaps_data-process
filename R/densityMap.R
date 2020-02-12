@@ -20,11 +20,19 @@ pcoord3D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/map_0.9-90/coord3D.csv"
 prout = "/home/borrela2/ChemMaps/data_analysis/NPAHs/"
 
 
-# window +> for test
+### window +> for test
+# DSSTOX
 pcoord1D2D = "/Users/Aborrel/research/NIEHS/ChemMaps/data_analysis/DSSTox/map_0.9-90/coord1D2D_light.csv"
 pcoord3D = "/Users/Aborrel/research/NIEHS/ChemMaps/data_analysis/DSSTox/map_0.9-90/coord3D_light.csv"
 name_map = "DSSTox_test"
 prout = "/Users/Aborrel/research/NIEHS/ChemMaps/data_analysis/DSSTox/density_map/"
+
+# Tox21
+pcoord1D2D = "/Users/Aborrel/research/NIEHS/ChemMaps/data_analysis/TOX21/map_0.9-90/coord1D2D.csv"
+pcoord3D = "/Users/Aborrel/research/NIEHS/ChemMaps/data_analysis/TOX21/map_0.9-90/coord3D.csv"
+name_map = "Tox21"
+prout = "/Users/Aborrel/research/NIEHS/ChemMaps/data_analysis/TOX21/density_map/"
+
 
 
 dcoord1D2D = read.csv(pcoord1D2D, sep = ",", header = TRUE)
@@ -83,3 +91,4 @@ png(paste(prout, name_map, "_xz_cut.png", sep = ""), res = 300, width = 2000, he
 hexbinplot(DIM3~DIM1,data=dcoord_xzD_cut,xlab="DIM1",
            ylab="DIM3",colramp=rf, xbins = 500, cex.labels = 0.6, cex.title=0.6)
 dev.off()
+
