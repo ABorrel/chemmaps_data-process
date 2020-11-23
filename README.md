@@ -18,6 +18,7 @@ Scripts used to compute map coordinate and manage database used for ChemMaps
 - 09-26-2019: compute the map split ans centroid, optimize fonction split and add function to load only first coords
 - 10-08-2019: Add update map on the dsstox for the split
 - 01-22-2020: Add script to update DB based on OPERA 2.5
+- 11-23-2020: Add script to update the local DB
 
 
 # Todo list

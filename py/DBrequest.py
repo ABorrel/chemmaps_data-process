@@ -4,7 +4,7 @@ from configparser import ConfigParser
 from os import path
 
 class DBrequest:
-    def __init__(self, verbose=1):
+    def __init__(self, verbose=0):
         self.dbconfig = "database.ini"
         self.conn = None
         self.verbose = verbose
@@ -54,6 +54,22 @@ class DBrequest:
                 self.connClose()
         else:
             print("Open connection first")
+
+    def addMultipleElem(self, nameTable, lcoloumn, lval):
+        """Same function than add element without open and close DB
+        Have to be open and close before"""
+        sqlCMD = "INSERT INTO %s(%s) VALUES(%s);"%(nameTable, ",".join(lcoloumn), ",".join(["\'%s\'"%(val) for val in lval]))
+        if self.verbose == 1: print(sqlCMD)
+        if self.conn != None:
+            try:
+                cur = self.conn.cursor()
+                cur.execute(sqlCMD)
+                self.conn.commit()
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+        else:
+            print("Open connection first")
+
 
     def extractColoumn(self, nameTable, coloumn):
         sqlCMD = "SELECT %s FROM %s LIMIT(10);" % (coloumn, nameTable)
@@ -113,6 +129,26 @@ class DBrequest:
             return None
         self.connClose()
         return 1
+
+
+    def execCMDrun(self, cmdSQL):
+        if self.verbose == 1: print(cmdSQL)
+        if self.conn != None:
+            try:
+                cur = self.conn.cursor()
+                cur.execute(cmdSQL)
+                #self.conn.commit()
+                # print(cur)
+                try:out = cur.fetchall()
+                except: out = 0
+                if self.verbose == 1: print(out)
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+                return "Error"
+        else:
+            print("Open connection first")
+            return None
+        return out
 
 
     def execCMD(self, cmdSQL):
