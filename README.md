@@ -1,3 +1,6 @@
+# dependancy
+- CompDesc > 0.8.9
+
 # Compute map database
 Scripts used to compute map coordinate and manage database used for ChemMaps
 - 08-08-2019: Create README
@@ -18,6 +21,7 @@ Scripts used to compute map coordinate and manage database used for ChemMaps
 - 09-26-2019: compute the map split ans centroid, optimize fonction split and add function to load only first coords
 - 10-08-2019: Add update map on the dsstox for the split
 - 01-22-2020: Add script to update DB based on OPERA 2.5
+- 10-25-2020: Add script to update the ICE toxCast-Tox21
 - 11-23-2020: Add script to update the local DB
 
 

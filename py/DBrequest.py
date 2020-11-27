@@ -9,7 +9,6 @@ class DBrequest:
         self.conn = None
         self.verbose = verbose
 
-
     def config(self, section='postgresql'):
         parser = ConfigParser()
         parser.read(self.dbconfig)
@@ -22,7 +21,6 @@ class DBrequest:
             raise Exception('Section {0} not found in the {1} file'.format(section, self.dbconfig))
 
         self.params = dparams
-
 
     def connOpen(self):
         try:
@@ -37,7 +35,6 @@ class DBrequest:
         if self.conn is not None:
             self.conn.close()
             if self.verbose == 1: print('Database connection closed.')
-
 
     def addElement(self, nameTable, lcoloumn, lval):
         self.connOpen()
@@ -55,6 +52,21 @@ class DBrequest:
         else:
             print("Open connection first")
 
+    def runCMDaddElement(self, sqlCMD):
+        self.connOpen()
+        if self.verbose == 1: print(sqlCMD)
+        if self.conn != None:
+            try:
+                cur = self.conn.cursor()
+                cur.execute(sqlCMD)
+                self.conn.commit()
+                self.connClose()
+            except (Exception, psycopg2.DatabaseError) as error:
+                print(error)
+                self.connClose()
+        else:
+            print("Open connection first")       
+
     def addMultipleElem(self, nameTable, lcoloumn, lval):
         """Same function than add element without open and close DB
         Have to be open and close before"""
@@ -69,7 +81,6 @@ class DBrequest:
                 print(error)
         else:
             print("Open connection first")
-
 
     def extractColoumn(self, nameTable, coloumn):
         sqlCMD = "SELECT %s FROM %s LIMIT(10);" % (coloumn, nameTable)
@@ -87,8 +98,6 @@ class DBrequest:
         else:
             print("Open connection first")
             return "ERROR: open DB"
-
-
 
     def getRow(self, table, condition):
 
@@ -111,7 +120,6 @@ class DBrequest:
             self.connClose()
             print("Open connection first")
 
-
     def updateTable(self, cmdSQL):
         if self.verbose == 1: print(cmdSQL)
         self.connOpen()
@@ -129,7 +137,6 @@ class DBrequest:
             return None
         self.connClose()
         return 1
-
 
     def execCMDrun(self, cmdSQL):
         if self.verbose == 1: print(cmdSQL)
@@ -149,7 +156,6 @@ class DBrequest:
             print("Open connection first")
             return None
         return out
-
 
     def execCMD(self, cmdSQL):
         if self.verbose == 1: print(cmdSQL)

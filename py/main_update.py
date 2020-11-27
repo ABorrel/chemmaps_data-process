@@ -12,10 +12,27 @@ name_update = "2020-01"
 pr_OPERA_pred = PR_DATA + "dsstox_01-2020/"
 
 cUpdate = updateChemDB.updateChemDB(name_update, pr_OPERA_pred, PR_OUTPUT)
+
+#########
+##  Format for toolchem
+#
 #cUpdate.formatChemForToolChem(50000)
-#cUpdate.updateChemicalsTableFromOPERAFile("chemicals")
+#cUpdate.formatPrepChemForToolChem()
+#cUpdate.formatDesc2DForToolChem()
+#cUpdate.formatDesc3DForToolChem()
+#cUpdate.formatOPERAForToolChem()
 
+#########
+## update OPERA name table
+#
+#cUpdate.pushOPERANameTable("chem_descriptor_opera_name_new")
 
-# update DB
+#############
+## update in the DB
+#
+#cUpdate.updateMissingDTXSID("chemicals")# check missing dtxid with smiles
+#cUpdate.updateSMILES("chemicals")# check different original smiles from previous version
+#cUpdate.updateNameAndCAS("chemicals")# update name and casrn
 #cUpdate.extractOnlyNewChem("chemicals", "dsstox_id")
+#cUpdate.pushNewChemInDB()
 cUpdate.computeDescNewChem()
