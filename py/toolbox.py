@@ -41,7 +41,6 @@ def loadMatrixToList(pmatrixIn, sep = "\t"):
 
     return l_out
 
-
 def loadMatrixCoords(pccord, nbcoord):
 
     dout = {}
@@ -58,7 +57,6 @@ def loadMatrixCoords(pccord, nbcoord):
         line = filin.readline()
     return dout
 
-
 def loadMatrixTolistFromDB(pfilin, sep):
     lout = []
     filin = open(pfilin, "r")
@@ -74,7 +72,6 @@ def loadMatrixTolistFromDB(pfilin, sep):
         lout.append(llout)
     
     return lout
-
 
 def loadMatrixToDict(pmatrixIn, sep ="\t"):
 
@@ -106,9 +103,6 @@ def loadMatrixToDict(pmatrixIn, sep ="\t"):
             j += 1
         i += 1
     return dout
-
-
-
 
 def formatLine(lineinput, delimitorStr = "\""):
 
@@ -157,8 +151,6 @@ def timeFunction(funct, mol):
         #print lout
         return lout[0]
 
-
-
 def selectMinimalEnergyLigPrep(psdfin, psdfout):
 
     # case of only one
@@ -188,8 +180,6 @@ def selectMinimalEnergyLigPrep(psdfin, psdfout):
         filout.close()
 
     return psdfout
-
-
 
 def parsePadelOut(pfiledesc=""):
     """
@@ -327,9 +317,6 @@ def parsePadelOut(pfiledesc=""):
             i += 1
     return dout
 
-
-
-
 def renameHeaderSDF(pfilin):
     """Rename header with name file"""
     namesdf = pfilin.split("/")[-1].split(".")[0]
@@ -351,3 +338,11 @@ def convertSMILEStoINCHIKEY(SMILESin):
 
     return inchikey
 
+# fast search
+from bisect import bisect_left
+
+def binary_search(L, x):
+    i = bisect_left(L, x)
+    if i == len(L) or L[i] != x:
+        return -1
+    return i

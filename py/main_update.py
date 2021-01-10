@@ -28,11 +28,22 @@ cUpdate = updateChemDB.updateChemDB(name_update, pr_OPERA_pred, PR_OUTPUT)
 #cUpdate.pushOPERANameTable("chem_descriptor_opera_name_new")
 
 #############
-## update in the DB
+## update chemicals in the DB
 #
 #cUpdate.updateMissingDTXSID("chemicals")# check missing dtxid with smiles
 #cUpdate.updateSMILES("chemicals")# check different original smiles from previous version
 #cUpdate.updateNameAndCAS("chemicals")# update name and casrn
+#cUpdate.updateDescOPERA()# update name and casrn
+
+
+####
+## update new chemicals to push in the DB
+#
 #cUpdate.extractOnlyNewChem("chemicals", "dsstox_id")
 #cUpdate.pushNewChemInDB()
+cUpdate.extractChemicalWithDescNoComputed()
 cUpdate.computeDescNewChem()
+ddd
+#############
+## update desc in DB
+#

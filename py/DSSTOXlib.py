@@ -40,8 +40,6 @@ class DSSTOX:
         self.prDesc = prDesc
         self.prout = prout
 
-
-
     def loadlistChem(self):
 
         prForDB = pathFolder.createFolder(self.prout + "forDB/")
@@ -102,9 +100,6 @@ class DSSTOX:
             filout.close()
         self.dchem = dchem
 
-
-
-
     def pushChemInDB(self):
 
         if not "dchem" in self.__dict__:
@@ -121,7 +116,6 @@ class DSSTOX:
             cDB = DBrequest.DBrequest()
             ddd
             # have to be wrtie
-
 
     def computeDesc (self, insertDB =0, w=0):
 
@@ -231,8 +225,6 @@ class DSSTOX:
         self.p1D2D = pfilout1D2D
         self.p3D = pfilout3D
 
-
-
     def pushPropInDB(self):
         
         tableDB = "dsstox_chem"
@@ -250,7 +242,6 @@ class DSSTOX:
                 cDB.updateTable(cmdSQL)
         print("Finish push prop in DB <-")
         return 
-
 
     def computepng(self):
 
@@ -287,7 +278,6 @@ class DSSTOX:
 
             i += 1
     
-
     def computeCoords(self, corVal, distributionVal, insertDB=1):
 
 
@@ -350,7 +340,6 @@ class DSSTOX:
                         del lchem[i]
                         imax = imax - 1
 
-
     def runRprojection(self, corVal, distributionVal):
 
         if not "p1D2D" in self.__dict__ and not "p3D" in self.__dict__:
@@ -359,9 +348,6 @@ class DSSTOX:
         # create coords
         prproj = pathFolder.createFolder(self.prout + "proj_" + str(corVal) + "-" + str(distributionVal) + "/")
         runExternalSoft.RComputeCor(self.p1D2D, self.p3D, prproj, corVal, distributionVal)
-
-
-
 
     def splitMap(self, nbsplit, dim, insertDB = 0):
 
@@ -479,8 +465,6 @@ class DSSTOX:
                 cmdSQL = "UPDATE %s SET %s=%s WHERE inchikey='%s';" %(tableIn, mapIn, dmap[chem]["map"], inch)
                 cDB.updateTable(cmdSQL)
 
-
-
     # have to be optimize
     def generateCentroidFile(self):
 
@@ -546,7 +530,6 @@ class DSSTOX:
             dsstox = chem.replace("\"", "")
             cmdSQL = "UPDATE dsstox_prop SET %s=true WHERE db_id='%s';" %(self.nameMap, dsstox)
             cDB.updateTable(cmdSQL)
-
 
     def pushDssToxNamePropInDB(self):
 
@@ -669,7 +652,6 @@ class DSSTOX:
 
         self.pTableInAll = pTableinfo
 
-
     def pushTablePropAllInDB(self):
 
         if not "pTableInAll" in self.__dict__:
@@ -691,10 +673,6 @@ class DSSTOX:
                 cDB.addElement("dsstox_prop", ["db_id", "prop_value"], [chem, wprop])
             i = i + 1
         return 
-
-
-
-
 
     def generateNeighborMatrix(self, nbNeighbor, lnDim):
 
@@ -804,9 +782,6 @@ class DSSTOX:
                         ftable.write("%s\t%s\n" % (ID, " ".join(ddist[ID])))
                     ftable.close()
 
-
-
-
     def pushDSSTOXNeighbors(self, prin):
 
         cDB = DBrequest.DBrequest()
@@ -822,7 +797,6 @@ class DSSTOX:
             w3D = "{" + ",".join(["\"%s\"" % (neighbor) for neighbor in dneighbor[inchkey]["Neighbors"]]) + "}"
             cDB.addElement("dsstox_neighbors", ["inchikey", "neighbors_dim3"], [inchkey, w3D])
         return 
-
 
     def pushNeighbors(self):
         prneighbor = pathFolder.createFolder(self.prout + "Neighbors/")
