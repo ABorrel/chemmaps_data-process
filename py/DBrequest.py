@@ -156,8 +156,6 @@ class DBrequest:
         #self.connClose()
         return 1
 
-
-
     def execCMDrun(self, cmdSQL):
         if self.verbose == 1: print(cmdSQL)
         if self.conn != None:

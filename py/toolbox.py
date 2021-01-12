@@ -340,9 +340,9 @@ def convertSMILEStoINCHIKEY(SMILESin):
 
 # fast search
 from bisect import bisect_left
-
 def binary_search(L, x):
     i = bisect_left(L, x)
     if i == len(L) or L[i] != x:
         return -1
     return i
+

@@ -7,6 +7,9 @@ import pathFolder
 import DBrequest
 import CompDesc
 
+
+
+
 class updateChemDB:
 
     def __init__(self, name_update, pr_OPERA_preproc, pr_out):
@@ -304,7 +307,7 @@ class updateChemDB:
                 cChem.set3DChemical()
                 if cChem.err == 0:
                     cChem.computeAll3D()
-                    if cChem.err == 0:
+                    if cChem.err == 1:
                         print("Error 3D desc: %s -- %s"%(l_chem_add[i], i))
                     else:
                         cChem.writeMatrix("3D")
@@ -535,7 +538,6 @@ class updateChemDB:
         filout.close()
         self.l_chem_toadd = l_out
 
-
     def updateDescOPERA(self):
 
 
@@ -637,4 +639,96 @@ class updateChemDB:
                 print(j)
 
             j = j + 1
+
+    def pushChemDescInDB(self, map_name, table_descriptor):
+
+        self.pr_desc = pathFolder.createFolder(self.pr_out + "DESC/")
+
+        #1. extract list of descriptors
+        #1.1 OPERA
+        # NONE need to run updateDescOPERA after loading
+
+        #1.2 2D descriptors
+        d_namedesc_2D = self.pullDescName("chem_descriptor_1d2d_name")
+
+        #1.3 3D descriptors
+        d_namedesc_3D = self.pullDescName("chem_descriptor_3d_name")
+
+        #2. Extract chemicals to add
+        pr_out = pathFolder.createFolder(self.pr_out + "updateDSSTOX/")
+        p_filout = pr_out + "chem_list_to_update.txt"
+        filout = open(p_filout, "w")
+        # extract list of chemicals in the DB
+        l_chem_chemicalsDB = self.cDB.execCMD("SELECT dsstox_id, inchikey FROM chemicals WHERE inchikey is not null AND dsstox_id is not NULL") # extract dsstoxID when inchikey is not null
+        l_chem_chemicalsDescDB = self.cDB.execCMD("SELECT inchikey FROM %s WHERE inchikey is not null AND map_name='%s'"%(table_descriptor, map_name)) # extract dsstoxID when inchikey is not null
+        d_chem_chemicalsDB = {}
+        for chem_DB in l_chem_chemicalsDB:
+            d_chem_chemicalsDB[chem_DB[1]] = chem_DB[0]
+
+        # l_inchikey computed
+        l_inchikeyInChemDesc = []
+        for inch in l_chem_chemicalsDescDB:
+            l_inchikeyInChemDesc.append(inch[0])
+        l_inchikeyInChemDesc.sort()
+
+        l_inch_out = []
+        for inchInChemicals in d_chem_chemicalsDB.keys():
+            if toolbox.binary_search(l_inchikeyInChemDesc, inchInChemicals) == -1:
+                filout.write( d_chem_chemicalsDB[inchInChemicals] + "\t" + inchInChemicals + "\n")
+                l_inch_out.append(inchInChemicals)
+        filout.close()
+
+        shuffle(l_inch_out)# case of multirun
+        self.l_chem_push_desc = l_inch_out
+
+
+        # 3. push in database and check if descriptor are computed
+        i = 0
+        imax = len(l_inch_out)
+        while i < imax:
+            p_desc1d2 = "%s2D/%s.csv"%(self.pr_desc, l_inch_out[i])
+            p_desc3d = "%s3D/%s.csv"%(self.pr_desc, l_inch_out[i])
+
+            w2D = self.formDescToPushInDB(p_desc1d2, d_namedesc_2D)
+            w3D = self.formDescToPushInDB(p_desc3d, d_namedesc_3D)  
+
+            if w2D != "" and w3D != "":
+                self.cDB.addElement(table_descriptor, ["inchikey", "map_name", "desc_1d2d", "desc_3d"], [l_inch_out[i], map_name, w2D, w3D])
+
+            i = i + 1
+
+
+        return 
+
+
+    # toolbox to extract name of descriptor for description table
+    def pullDescName(self, table):
+
+        cmd_SQL = "SELECT id, name FROM %s"%(table)
+        l_desc = self.cDB.execCMD(cmd_SQL)
+
+        d_desc = {}
+        for desc in l_desc:
+            id_desc = int(desc[0])
+            desc_name = desc[1]
+            d_desc[id_desc] = desc_name
+        
+        return d_desc
+
+    
+    def formDescToPushInDB(self, p_desc, d_desc_name):
+
+        if not path.exists(p_desc) or path.getsize(p_desc) == 0:
+            return ""
+        l_d_desc = toolbox.loadMatrixToList(p_desc)
+        d_desc = l_d_desc[0]
+        for desc in d_desc.keys():
+            if d_desc == "NA":
+                d_desc[desc] = -999
+
+        l_id_desc = list(d_desc_name.keys())
+        min_id = min(l_id_desc)
+        max_id = max(l_id_desc)
+        wSQL = "{" + ",".join(["\"%s\"" % ('-9999' if str(d_desc[d_desc_name[i + min_id]]) == "NA" else str(d_desc[d_desc_name[i + min_id]]) ) for i in range(0,len(list(d_desc_name.keys()))) ]) + "}"
+        return wSQL
 

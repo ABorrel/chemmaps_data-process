@@ -33,17 +33,28 @@ cUpdate = updateChemDB.updateChemDB(name_update, pr_OPERA_pred, PR_OUTPUT)
 #cUpdate.updateMissingDTXSID("chemicals")# check missing dtxid with smiles
 #cUpdate.updateSMILES("chemicals")# check different original smiles from previous version
 #cUpdate.updateNameAndCAS("chemicals")# update name and casrn
-#cUpdate.updateDescOPERA()# update name and casrn
+cUpdate.updateDescOPERA()# update name and casrn
 
 
 ####
 ## update new chemicals to push in the DB
 #
+
+### chemicals Table
+########
 #cUpdate.extractOnlyNewChem("chemicals", "dsstox_id")
-#cUpdate.pushNewChemInDB()
-cUpdate.extractChemicalWithDescNoComputed()
-cUpdate.computeDescNewChem()
-ddd
+#cUpdate.pushNewChemInDB()# complete chemicals database
+
+###chemicals descriptrion -> compute desc
+##########
+#cUpdate.extractChemicalWithDescNoComputed()
+#cUpdate.computeDescNewChem()
+
+
 #############
 ## update desc in DB
 #
+#cUpdate.pushChemDescInDB("dsstox", "chemical_description")
+
+############
+## recompute coordinates
