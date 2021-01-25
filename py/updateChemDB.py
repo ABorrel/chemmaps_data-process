@@ -6,6 +6,7 @@ import toolbox
 import pathFolder
 import DBrequest
 import CompDesc
+import runExternalSoft
 
 
 
@@ -496,9 +497,9 @@ class updateChemDB:
     
     def extractChemicalWithDescNoComputed(self, name_table = "chemical_description", map_name = "dsstox"):
         
-        # selection list inchikey and dsstox from chemicals table 
-        
-        pr_out = pathFolder.createFolder(self.pr_out + "updateDSSTOX/")
+        # selection list inchikey and dsstox from chemicals table   
+        self.map_name = map_name
+        pr_out = pathFolder.createFolder(self.pr_out + "update" + map_name.upper() + "/")
         p_filout = pr_out + "chem_list_desc.txt"
         
         # interesting to speed up test but none in multi run
@@ -700,6 +701,57 @@ class updateChemDB:
 
         return 
 
+    def computeCoords(self, map_name, table_descriptor, corVal, distributionVal):
+
+        # selection list inchikey and dsstox from chemicals table   
+        self.map_name = map_name
+        pr_out = pathFolder.createFolder(self.pr_out + "update" + map_name.upper() + "/")
+        pr_coords =  pathFolder.createFolder(pr_out + "coords/")
+        prproj = pathFolder.createFolder(pr_coords + "proj_" + str(corVal) + "-" + str(distributionVal) + "/")
+
+        # extract descriptor from DB
+        p1D2D = pr_coords + "1D2D.csv"
+        p3D = pr_coords + "3D.csv"
+
+        if not path.exists(p1D2D):
+            self.extractDesc("chemical_description", "chem_descriptor_1d2d_name", "desc_1d2d", p1D2D)
+        
+        if not path.exists(p3D):
+            self.extractDesc("chemical_description", "chem_descriptor_3d_name", "desc_3d", p3D)
+
+        # create coords
+        if not path.exists(prproj + "coord1D2D.csv") or not path.exists(prproj + "coord3D.csv"):
+            runExternalSoft.RComputeMapFiles(p1D2D, p3D, prproj, corVal, distributionVal)
+        self.pr_coords = prproj
+
+
+    def pushCoords(self):
+        self.cDB.connOpen()
+        d_coords_1D2D = toolbox.loadMatrixToDict(self.pr_coords + "coord1D2D.csv", sep = ",")
+        d_coords_3D = toolbox.loadMatrixToDict(self.pr_coords + "coord3D.csv", sep = ",")
+
+        l_inchikey = self.cDB.extractColoumn("chemical_description", "inchikey", "WHERE dim1d2d is null AND map_name = '%s';"%(self.map_name))
+        l_inchikey = [inch[0] for inch in l_inchikey]
+        self.cDB.connClose()
+
+        shuffle(l_inchikey)
+        imax = len(l_inchikey)
+        i_inch = 0
+
+        while i_inch < imax:
+            try:
+                wdim1d2d = "{" + ",".join(["\"%s\"" %( str(d_coords_1D2D[l_inchikey[i_inch]]["DIM%s"%(i)])) for i in range(1,11)]) + "}"
+                wdim3d = "{" + ",".join(["\"%s\"" % (str(d_coords_3D[l_inchikey[i_inch]]["DIM3-%s"%(i)])) for i in range(1,11)]) + "}"
+                wd3_cube = "{\"%s\",\"%s\",\"%s\"}"%(d_coords_1D2D[l_inchikey[i_inch]]["DIM1"], d_coords_1D2D[l_inchikey[i_inch]]["DIM2"], d_coords_3D[l_inchikey[i_inch]]["DIM3-1"])
+            except:
+                i_inch = i_inch + 1 
+                continue
+
+            cmd_sql = "UPDATE chemical_description SET dim1d2d = '%s', dim3d = '%s', d3_cube = '%s' WHERE inchikey='%s' AND map_name = '%s';"%(wdim1d2d, wdim3d, wd3_cube, l_inchikey[i_inch], self.map_name)
+            self.cDB.updateTable(cmd_sql)
+            i_inch = i_inch + 1 
+
+        return 
 
     # toolbox to extract name of descriptor for description table
     def pullDescName(self, table):
@@ -715,16 +767,13 @@ class updateChemDB:
         
         return d_desc
 
-    
+    # format array for command SQL
     def formDescToPushInDB(self, p_desc, d_desc_name):
 
         if not path.exists(p_desc) or path.getsize(p_desc) == 0:
             return ""
         l_d_desc = toolbox.loadMatrixToList(p_desc)
         d_desc = l_d_desc[0]
-        for desc in d_desc.keys():
-            if d_desc == "NA":
-                d_desc[desc] = -999
 
         l_id_desc = list(d_desc_name.keys())
         min_id = min(l_id_desc)
@@ -732,3 +781,37 @@ class updateChemDB:
         wSQL = "{" + ",".join(["\"%s\"" % ('-9999' if str(d_desc[d_desc_name[i + min_id]]) == "NA" else str(d_desc[d_desc_name[i + min_id]]) ) for i in range(0,len(list(d_desc_name.keys()))) ]) + "}"
         return wSQL
 
+    def extractDesc(self, table_desc, table_desc_name, name_desc, pfilout):
+
+        d_2D_name = self.pullDescName(table_desc_name)
+
+        nb_chemicals = self.cDB.execCMD("SELECT count(*) FROM %s WHERE map_name = '%s'"%(table_desc, self.map_name))
+        nb_chemicals = nb_chemicals[0][0]
+
+        l_id_desc = list(d_2D_name.keys())
+        min_id = min(l_id_desc)
+        max_id = max(l_id_desc)
+
+        f_p1D2D = open(pfilout, "w")
+        f_p1D2D.write("\t" + "\t".join(["%s"%(d_2D_name[i + min_id]) for i in range(0,len(list(d_2D_name.keys())))]) + "\n")
+
+        i_extract = 0
+        i_extract_below = 0
+        while i_extract_below <  nb_chemicals:
+
+            i_extract_above = 10000 * i_extract + 1
+            i_extract_below = 10000 * i_extract + 10000
+
+            if i_extract_below > nb_chemicals:
+                i_extract_below = nb_chemicals
+            l_chem_desc2D = self.cDB.execCMD("SELECT inchikey, %s, id FROM %s WHERE id BETWEEN %i AND %i AND map_name = '%s'"%(name_desc, table_desc, i_extract_above, i_extract_below, self.map_name))
+
+            i_chem = 0
+            i_max_chem = len(l_chem_desc2D)
+
+            while i_chem < i_max_chem:
+                d_desc = l_chem_desc2D[i_chem]
+                f_p1D2D.write("%s\t%s\n"%(d_desc[0], "\t".join(['NA' if str(desc_val) == "-9999" else str(desc_val) for desc_val in d_desc[1]])))
+                i_chem = i_chem + 1 
+            i_extract = i_extract + 1
+        f_p1D2D.close()

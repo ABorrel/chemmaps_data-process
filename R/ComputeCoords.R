@@ -9,18 +9,15 @@ library (vrmlgen)
 scaling = function(din){
   
   dinScale = scale(din)
-  
   lscale = attr(dinScale, "scaled:scale")
   lcenter = attr(dinScale, "scaled:center")
   
   dforscaling = rbind(lscale, lcenter)
   rownames(dforscaling) = c("scale", "center")
-  dinScale = delSDnull(dinScale)
-
+  
   return(list(dinScale, dforscaling))
   
 }
-
 
 generatePCAcoords = function(din){
   
@@ -114,7 +111,8 @@ PCAcombined2plans = function(d1D, d2D, pfilout){
 
 PCA3D = function(din, path_result){
   
-  dinScale = scale(din)
+  ldinScale = scaling(din)
+  dinScale = delSDnull(ldinScale[[1]])
   
   data.cor=cor(dinScale)
   data.eigen=eigen(data.cor)
@@ -139,7 +137,8 @@ PCA3D = function(din, path_result){
 
 PCAplot = function (din, path_result){
   
-  dinScale = scale(din)
+  ldinScale = scaling(din)
+  dinScale = delSDnull(ldinScale[[1]])
   
   data.cor=cor(dinScale)
   data.eigen=eigen(data.cor)
@@ -275,12 +274,14 @@ prout = args[3]
 valcor = as.double(args[4])
 maxquantile = as.integer(args[5])
 
+
+
 # dsstoxmap
-#p1D2D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/1D2D.csv"
-#p3D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/3D.csv"
-#prout = "/home/borrela2/ChemMaps/data_analysis/DSSTox/map_0.9-90/"
-#valcor = 0.9 
-#maxquantile = 90
+p1D2D = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/1D2D.csv"
+p3D = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/3D.csv"
+prout = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/proj_0.95-90/"
+valcor = 0.95
+maxquantile = 90
 
 
 # drugmap
@@ -328,14 +329,14 @@ histDataOne(data1 = d3D, paste(prout, "homodishist3D.pdf", sep = ""))
 #generateICAcoords(dglobal, prout)
 
 # PCA 2D
-#PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
+PCAplot(dglobal, paste(prout, "PCA_DescAll2D", sep = ""))
 
 # PCA 3D
-#PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
+PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
 
 # PCA combined
-PCAcombined2plans(d1D2D, d3D, paste(prout, "combined-1D2D_3D", sep = ""))
-generateCoordCombinedPCA(d1D2D, d3D, prout)
+#(d1D2D, d3D, paste(prout, "combined-1D2D_3D", sep = ""))
+#generateCoordCombinedPCA(d1D2D, d3D, prout)
 
 # MDSglobal
 #MDS3DGlobal(dglobal, prout, "corr")

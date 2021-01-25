@@ -72,11 +72,11 @@ valcor = as.double(args[4])
 maxquantile = as.integer(args[5])
 
 # dsstoxmap
-#p1D2D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/1D2D.csv"
-#p3D = "/home/borrela2/ChemMaps/data_analysis/DSSTox/3D.csv"
-#prout = "/home/borrela2/ChemMaps/data_analysis/DSSTox/map_0.9-90/"
-#valcor = 0.9 
-#maxquantile = 90
+p1D2D = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/1D2D.csv"
+p3D = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/3D.csv"
+prout = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/proj_0.9-90/"
+valcor = 0.9
+maxquantile = 90
 
 
 # drugmap
@@ -121,7 +121,7 @@ write.csv(lcoord[[3]], file=paste(prout, "CP1D2D.csv", sep = ""))
 # write coord
 dcoord = lcoord[[1]]
 colnames(dcoord) = paste("DIM", seq(1,dim(dcoord)[2]), sep = "")
-write.csv(dcoord, file=paste(prout, "coord1D2D.csv", sep = ""))
+write.csv(dcoord[,1:10], file=paste(prout, "coord1D2D.csv", sep = ""))#plot only 10 dimensions
 write.csv(lcoord[[2]], file=paste(prout, "VarPlan1D2D.csv", sep = ""))
 
 dscale3D = delSDnull(ld3Dscale[[1]])
@@ -133,5 +133,5 @@ write.csv(lcoord[[3]], file=paste(prout, "CP3D.csv", sep = ""))
 # write coord
 dcoord = lcoord[[1]]
 colnames(dcoord) = paste("DIM3-", seq(1,dim(dcoord)[2]), sep = "")
-write.csv(dcoord, file=paste(prout, "coord3D.csv", sep = ""))
+write.csv(dcoord[,1:10], file=paste(prout, "coord3D.csv", sep = ""))
 write.csv(lcoord[[2]], file=paste(prout, "VarPlan3D.csv", sep = ""))
