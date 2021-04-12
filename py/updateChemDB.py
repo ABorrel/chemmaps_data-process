@@ -724,7 +724,6 @@ class updateChemDB:
             runExternalSoft.RComputeMapFiles(p1D2D, p3D, prproj, corVal, distributionVal)
         self.pr_coords = prproj
 
-
     def pushCoords(self):
         self.cDB.connOpen()
         d_coords_1D2D = toolbox.loadMatrixToDict(self.pr_coords + "coord1D2D.csv", sep = ",")
@@ -741,17 +740,63 @@ class updateChemDB:
         while i_inch < imax:
             try:
                 wdim1d2d = "{" + ",".join(["\"%s\"" %( str(d_coords_1D2D[l_inchikey[i_inch]]["DIM%s"%(i)])) for i in range(1,11)]) + "}"
-                wdim3d = "{" + ",".join(["\"%s\"" % (str(d_coords_3D[l_inchikey[i_inch]]["DIM3-%s"%(i)])) for i in range(1,11)]) + "}"
-                wd3_cube = "{\"%s\",\"%s\",\"%s\"}"%(d_coords_1D2D[l_inchikey[i_inch]]["DIM1"], d_coords_1D2D[l_inchikey[i_inch]]["DIM2"], d_coords_3D[l_inchikey[i_inch]]["DIM3-1"])
             except:
+                wdim1d2d = ""
+            
+            try:
+                wdim3d = "{" + ",".join(["\"%s\"" % (str(d_coords_3D[l_inchikey[i_inch]]["DIM3-%s"%(i)])) for i in range(1,11)]) + "}"
+            except:
+                wdim3d = ""
+            
+            if wdim1d2d != "" and wdim3d != "":
+                wd3_cube = "{\"%s\",\"%s\",\"%s\"}"%(d_coords_1D2D[l_inchikey[i_inch]]["DIM1"], d_coords_1D2D[l_inchikey[i_inch]]["DIM2"], d_coords_3D[l_inchikey[i_inch]]["DIM3-1"])
+                cmd_sql = "UPDATE chemical_description SET dim1d2d = '%s', dim3d = '%s', d3_cube = '%s' WHERE inchikey='%s' AND map_name = '%s';"%(wdim1d2d, wdim3d, wd3_cube, l_inchikey[i_inch], self.map_name)
+                self.cDB.updateTable(cmd_sql)
                 i_inch = i_inch + 1 
-                continue
+            
+            elif wdim1d2d != "" and wdim3d == "":
+                cmd_sql = "UPDATE chemical_description SET dim1d2d = '%s' WHERE inchikey='%s' AND map_name = '%s';"%(wdim1d2d,l_inchikey[i_inch], self.map_name)
+                self.cDB.updateTable(cmd_sql)
+                i_inch = i_inch + 1 
 
-            cmd_sql = "UPDATE chemical_description SET dim1d2d = '%s', dim3d = '%s', d3_cube = '%s' WHERE inchikey='%s' AND map_name = '%s';"%(wdim1d2d, wdim3d, wd3_cube, l_inchikey[i_inch], self.map_name)
-            self.cDB.updateTable(cmd_sql)
-            i_inch = i_inch + 1 
+            elif wdim1d2d == "" and wdim3d != "":
+                cmd_sql = "UPDATE chemical_description SET dim3d = '%s' WHERE inchikey='%s' AND map_name = '%s';"%(wdim3d, l_inchikey[i_inch], self.map_name)
+                self.cDB.updateTable(cmd_sql)
+                i_inch = i_inch + 1 
+            else:
+                i_inch = i_inch + 1 
 
         return 
+
+    def updateNeighbors(self, map_name, nb_chem):
+
+
+        self.cDB.connOpen()
+        l_inchikey = self.cDB.extractColoumn("chemical_description", "inchikey", "WHERE neighbors_dim3 is null AND map_name = '%s' AND d3_cube is not null;"%(map_name))
+        l_inchikey = [inch[0] for inch in l_inchikey]
+        
+
+        shuffle(l_inchikey)
+        imax = len(l_inchikey)
+        print(imax)
+        i_inch = 0
+
+        while i_inch < imax:
+            cmdExtract = "Select inchikey from chemical_description WHERE map_name = '%s' ORDER BY cube(d3_cube) <->  (select cube (d3_cube) from chemical_description where inchikey='%s' AND map_name = '%s' limit (1)) limit (%s);"%(map_name, l_inchikey[i_inch], map_name, nb_chem + 1)
+            lchem_neighbor = self.cDB.execCMDrun(cmdExtract)
+            lchem_w = []
+            for chem in lchem_neighbor:
+                lchem_w.append(chem[0])
+            w_neighbors = "{" + ",".join(["\"%s\"" % (str(chem_w)) for chem_w in lchem_w[1:]]) + "}" # remove the inchikey in the list
+            cmd_update = "UPDATE chemical_description SET neighbors_dim3 = '%s' WHERE inchikey='%s' AND map_name = '%s';" %(w_neighbors, l_inchikey[i_inch], map_name)
+
+            self.cDB.updateTable_run(cmd_update)     
+            i_inch = i_inch + 1     
+
+        self.cDB.connClose()
+
+
+
 
     # toolbox to extract name of descriptor for description table
     def pullDescName(self, table):

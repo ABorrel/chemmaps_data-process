@@ -59,8 +59,10 @@ cUpdate = updateChemDB.updateChemDB(name_update, pr_OPERA_pred, PR_OUTPUT)
 ############
 ## recompute coordinates
 #
-cUpdate.computeCoords("dsstox", "chemical_description", 0.9, 90)
+#cUpdate.computeCoords("dsstox", "chemical_description", 0.9, 90)
 
 ## update coords in DB
-cUpdate.pushCoords()
+#cUpdate.pushCoords()
 
+## update neighbor
+cUpdate.updateNeighbors("dsstox", 20)
