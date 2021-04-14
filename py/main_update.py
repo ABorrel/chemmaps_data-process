@@ -1,9 +1,21 @@
 from os import path
 import updateChemDB
+import formatDatabase
+
 
 # Run functions to update the chemicals database from OPERA files 
 PR_DATA = path.abspath("../../data/") + "/"
 PR_OUTPUT = path.abspath("../../results/") + "/"
+
+
+##########
+## UPDATE CHEMICALS WITH TOX INFORMATION
+#
+#p_tox_exp = PR_DATA + "ToxTrainTest_3D_2019.sdf"
+#p_LD50 = PR_DATA + "LD50_data_2019.csv"
+
+#cToxDB = formatDatabase.toxExp(p_tox_exp, p_LD50, PR_OUTPUT)
+#cToxDB.update()
 
 #################
 # UPDATE DSSTOX
@@ -65,4 +77,9 @@ cUpdate = updateChemDB.updateChemDB(name_update, pr_OPERA_pred, PR_OUTPUT)
 #cUpdate.pushCoords()
 
 ## update neighbor
-cUpdate.updateNeighbors("dsstox", 20)
+#cUpdate.updateNeighbors("dsstox", 20)
+
+##########
+## COMPUTE AND ORGANIZE PNG
+#cUpdate.organizePNG()
+cUpdate.computeMissingPNG()

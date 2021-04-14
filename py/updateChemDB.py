@@ -1,5 +1,5 @@
 from re import search
-from os import listdir, path
+from os import listdir, path, remove
 from copy import deepcopy
 from random import shuffle
 import toolbox
@@ -8,7 +8,7 @@ import DBrequest
 import CompDesc
 import runExternalSoft
 
-
+from shutil import copyfile
 
 
 class updateChemDB:
@@ -20,6 +20,7 @@ class updateChemDB:
 
         self.loadOPERAFileInClass()    
         self.cDB = DBrequest.DBrequest(verbose=0)
+        self.pr_desc = pathFolder.createFolder(self.pr_out + "DESC/")
 
     def loadOPERAFileInClass(self):
 
@@ -795,6 +796,70 @@ class updateChemDB:
 
         self.cDB.connClose()
 
+    def organizePNG(self, cleaning = 0):
+
+        pr_organisedPNG = pathFolder.createFolder(self.pr_out + "PNGorganized/", clean = cleaning)
+        pr_desc_png = self.pr_desc + "PNG/"
+
+        l_png = listdir(pr_desc_png)
+        shuffle(l_png)
+        i = 0
+        imax = len(l_png)
+
+        while i < imax:
+            if i % 100 == 0:
+                print(i) 
+            p_png = l_png[i]
+            
+            # case of file remove before
+            try: 
+                fsize = path.getsize(pr_desc_png + p_png)
+            except:
+                i = i + 1
+                continue
+            
+            if fsize == 0:
+                remove(pr_desc_png + p_png)
+            else:
+                pr_1 = pr_organisedPNG + p_png[:2] + "/"
+                pr_2 = pr_organisedPNG + p_png[:2] + "/" + p_png[2:4] + "/"
+                p_png_out = pr_2 + p_png
+                if not path.exists(p_png_out):
+                    pathFolder.createFolder(pr_1)
+                    pathFolder.createFolder(pr_2)
+                    copyfile(pr_desc_png + p_png, p_png_out)
+            i = i + 1
+
+    def computeMissingPNG(self):
+
+        pr_organisedPNG = pathFolder.createFolder(self.pr_out + "PNGorganized/")
+        pr_temp = pathFolder.createFolder(self.pr_out + "temp_PNG/")
+
+        # load from table
+        l_chem_chemicalsDB = self.cDB.execCMD("SELECT DISTINCT smiles_clean, inchikey FROM chemicals WHERE inchikey is not null AND smiles_clean is not NULL") # extract dsstoxID when inchikey is not null
+        shuffle(l_chem_chemicalsDB)
+        i = 0
+        imax = len(l_chem_chemicalsDB)
+        compute = 0
+        while i < imax:
+            if i % 100 == 0:
+                print(i, compute) 
+            
+            smiles_clean = l_chem_chemicalsDB[i][0]
+            inchikey = l_chem_chemicalsDB[i][1]
+            p_png = pr_organisedPNG + inchikey[:2] + "/" + inchikey[2:4] + "/" + inchikey + ".png"
+            if not path.exists(p_png):
+                cChem = CompDesc.CompDesc(smiles_clean, pr_temp)
+                cChem.inchikey = inchikey
+                cChem.smi = smiles_clean
+                cChem.computePNG(bg="none")
+                p_png_temp = pr_temp + "PNG/" + inchikey + ".png"
+                if path.exists(p_png_temp) and path.getsize(p_png_temp) > 0:
+                    pathFolder.createFolder(pr_organisedPNG + inchikey[:2] + "/" + inchikey[2:4] + "/")
+                    copyfile(p_png_temp, p_png)
+                    compute = compute + 1
+
+            i = i + 1
 
 
 
