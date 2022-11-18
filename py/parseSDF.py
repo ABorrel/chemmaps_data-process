@@ -15,7 +15,8 @@ class parseSDF:
 
     def parseAll (self):
 
-        lout = []
+        l_chem = []
+        l_prop = []
 
         filin = open(self.psdf, "r", encoding="utf8")
         handle_read = filin.read()
@@ -36,12 +37,15 @@ class parseSDF:
                     kin = kin.split(">")[0]
                     valuek = llines[i+1].strip()
                     dcompound[kin] = valuek
+                    l_prop.append(kin)
                 i += 1
             if self.name in list(dcompound.keys()):
-                lout.append(dcompound)
+                l_chem.append(dcompound)
 
-
-        self.lc=lout
+        #output list of chemicals
+        self.lc=l_chem
+        l_prop = list(set(l_prop))# remove dup
+        self.l_prop = l_prop
 
     def writeTable(self, filname):
 
@@ -72,7 +76,6 @@ class parseSDF:
             filout.write("\n")
         filout.close()
 
-
     def renameHeader(self):
         if not "lc" in dir(self):
             self.parseAll()
@@ -81,7 +84,6 @@ class parseSDF:
             sdfin = sdfin.split("\n")
             sdfin[0] = compound[self.name]
             compound["sdf"] = "\n".join(sdfin)
-
 
     def splitSDF(self):
 
@@ -101,7 +103,6 @@ class parseSDF:
                 filout.write(compound["sdf"])
                 filout.close()
 
-
     def drawMolecules(self, prpng):
 
         if not "prsdf" in dir(self):
@@ -117,26 +118,23 @@ class parseSDF:
         for sdf in lfsdf:
             runExternalSoft.molconvert(self.prsdf + sdf, self.prpng + sdf[:-3] + "png")
 
-
-
-    def writeTableSpecific(self, lkin, nametable):
+    def write_table_prop(self, nametable):
 
         if not "lc" in dir(self):
             self.parseAll()
 
         pfilout = self.prout + nametable + ".csv"
-        filout = open(pfilout, "w")
+        filout = open(pfilout, "w", encoding="utf-8")
 
         # header table
-        filout.write("ID" + "\t" + "\t".join(lkin) + "\n")
+        filout.write("ID" + "\t" + "\t".join(self.l_prop) + "\n")
 
         for compound in self.lc:
             try:
                 filout.write(compound[self.name] + "\t")
-                linejs = "\"" + compound[self.name] + "\":"
             except: continue
             lwrite = []
-            for kin in lkin:
+            for kin in self.l_prop:
                 if kin in list(compound.keys()):
                     if kin == "SYNONYMS":
                         lwrite.append(str(compound[kin]).lower())
@@ -144,7 +142,6 @@ class parseSDF:
                         lwrite.append(str(compound[kin]))
                 else:
                     lwrite.append("NA")
-
             filout.write("\t".join(lwrite) + "\n")
         filout.close()
 
