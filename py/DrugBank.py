@@ -95,7 +95,6 @@ class DrugBank:
         # case empty --> build
         if size_table == 0:
             self.prep_chem()
-            self.c_DB.connOpen()
             for d_chem in self.l_chem_sdf:
                 if d_chem["smiles_clean"] == "":
                     self.c_DB.addElement(name_table, ["smiles_origin", "drugbank_id", "name"],
@@ -105,7 +104,6 @@ class DrugBank:
                     self.c_DB.addElement(name_table, ["smiles_origin", "smiles_clean", "inchikey", "drugbank_id", "name"],
                                     [d_chem["SMILES"], d_chem["smiles_clean"],
                                     d_chem["inchikey"], d_chem["DRUGBANK_ID"], d_chem["GENERIC_NAME"].replace("'", "\\'").replace("\u03b1", "alpha").replace("'", "''").replace("\u03b2", "beta").replace("\u03ba", "kappa").replace("\u03bb", "lamda").replace("\u2032", "`"),])
-            self.c_DB.connClose
 
 
         l_chem_out = []
@@ -159,17 +157,18 @@ class DrugBank:
         """
 
         # first extract SMILES clean with ID from the chemicals database
+        # extract all
         cmd_SQL = "SELECT id, smiles_clean, inchikey FROM chemicals WHERE smiles_clean IS NOT NULL AND drugbank_id IS NOT NULL"
-        l_chem = self.c_DB.execCMD(cmd_SQL)
         
-        l_chem_desc = "SELECT inchikey FROM chemical_description WHERE map_name = drugbank"
+        #extract only missing value ++++
+        cmd_SQL = "select c1.id, c1.smiles_clean, c1.inchikey from chemicals c1 where c1.smiles_clean is not null except select c.id, c.smiles_clean, c.inchikey from chemicals c join (select * from chemical_description where chemical_description.map_name = 'drugbank' ) cd on c.inchikey = cd.inchikey"
         l_chem = self.c_DB.execCMD(cmd_SQL)
 
         l_desc_2D = self.c_CompDesc.getLdesc("1D2D")
         l_desc_3D = self.c_CompDesc.getLdesc("3D")
 
         self.c_DB.connOpen()
-        for chem in l_chem[99:]:
+        for chem in l_chem:
             SMILES = chem[1]
             inchikey = chem[2]
 

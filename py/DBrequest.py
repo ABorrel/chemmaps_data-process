@@ -40,7 +40,7 @@ class DBrequest:
             if self.verbose == 1: print('Database connection closed.')
 
     def addElement(self, nameTable, lcoloumn, lval):
-        #self.connOpen()
+        self.connOpen()
         sqlCMD = "INSERT INTO %s(%s) VALUES(%s);"%(nameTable, ",".join(lcoloumn), ",".join(["\'%s\'"%(val) for val in lval]))
         if self.verbose == 1: print(sqlCMD)
         if self.conn != None:
@@ -48,10 +48,10 @@ class DBrequest:
                 cur = self.conn.cursor()
                 cur.execute(sqlCMD)
                 self.conn.commit()
-                #self.connClose()
+                self.connClose()
             except (Exception, psycopg2.DatabaseError) as error:
                 print(error)
-                #self.connClose()
+                self.connClose()
         else:
             print("Open connection first")
 
