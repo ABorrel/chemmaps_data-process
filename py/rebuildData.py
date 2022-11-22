@@ -26,8 +26,8 @@ cDrugBank = DrugBank.DrugBank(p_sdf_all, PR_DESC, p_dir_drugbank)
 cDrugBank.parse_SDF()
 cDrugBank.pushDB_prop_name()
 cDrugBank.pushDB_chem()
-#cDrugBank.pushDescNameInDB("1D2D")
-#cDrugBank.pushDescNameInDB("3D")
+cDrugBank.pushDB_desc_name() # that work be for every maps
+cDrugBank.compute_pushDB_Desc()
 here
 
 

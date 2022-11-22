@@ -1,5 +1,8 @@
 # dependancy
-- CompDesc > 0.8.9
+- CompDesc:  1.0
+- python 3.9.13
+- rdkit: 2022.03.4
+
 
 # Compute map database
 Scripts used to compute map coordinate and manage database used for ChemMaps
@@ -23,9 +26,3 @@ Scripts used to compute map coordinate and manage database used for ChemMaps
 - 01-22-2020: Add script to update DB based on OPERA 2.5
 - 10-25-2020: Add script to update the ICE toxCast-Tox21
 - 11-23-2020: Add script to update the local DB
-
-
-# Todo list
-- ~~09-20-2019: finish to upload prop table in the DSSTOX table~~
-- ~~09-26-2019: compute the neighbor for DSSTOX -> done for n = 3~~
-- ~~09-26-2019: update png file~~

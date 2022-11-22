@@ -13,7 +13,8 @@ import CompDesc
 from os import path, remove
 from random import shuffle
 from math import sqrt
-
+from re import search
+from rdkit import Chem
 
 class DrugBank:
     def __init__(self, pDBsdf, prDesc, prAnalysis):
@@ -22,6 +23,7 @@ class DrugBank:
         self.prDesc = prDesc
         self.prout = prAnalysis
         self.c_DB = DBrequest.DBrequest()
+        self.c_CompDesc = CompDesc.CompDesc("", self.prDesc)
 
     def pushDB_prop_name(self, name_table = "chem_prop_drugbank_name"):
 
@@ -95,7 +97,12 @@ class DrugBank:
             self.prep_chem()
             self.c_DB.connOpen()
             for d_chem in self.l_chem_sdf:
-                self.c_DB.addElement(name_table, ["smiles_origin", "smiles_clean", "inchikey", "drugbank_id", "name"],
+                if d_chem["smiles_clean"] == "":
+                    self.c_DB.addElement(name_table, ["smiles_origin", "drugbank_id", "name"],
+                                    [d_chem["SMILES"], d_chem["DRUGBANK_ID"], d_chem["GENERIC_NAME"].replace("'", "\\'").replace("\u03b1", "alpha").replace("'", "''").replace("\u03b2", "beta").replace("\u03ba", "kappa").replace("\u03bb", "lamda").replace("\u2032", "`"),])
+
+                else:
+                    self.c_DB.addElement(name_table, ["smiles_origin", "smiles_clean", "inchikey", "drugbank_id", "name"],
                                     [d_chem["SMILES"], d_chem["smiles_clean"],
                                     d_chem["inchikey"], d_chem["DRUGBANK_ID"], d_chem["GENERIC_NAME"].replace("'", "\\'").replace("\u03b1", "alpha").replace("'", "''").replace("\u03b2", "beta").replace("\u03ba", "kappa").replace("\u03bb", "lamda").replace("\u2032", "`"),])
             self.c_DB.connClose
@@ -109,7 +116,6 @@ class DrugBank:
         
         self.l_chem_prep = l_chem_out
 
-
     def pushDB_prop(self):
 
         if not "dchem" in self.__dict__:
@@ -121,102 +127,73 @@ class DrugBank:
             wprop = "{" + ",".join(["\"%s\"" % (prop.replace("\'", "").replace("\"", "")) for prop in lprop]) + "}"
             cDB.addElement("drugbank_prop", ["drugbank_id", "prop_value"], [self.dchem[chem]["drugbank_id"], wprop])
 
-        return
+    def pushDB_desc_name(self):
 
-    def pushPropNameInDB(self, typeDesc):
-        ldesc = Chemical.getLdesc(typeDesc)
-        if typeDesc == "1D2D" or typeDesc == "1D" or typeDesc == "2D":
-            DBname = "desc_1d2d_prop"
-        elif typeDesc == "3D":
-            DBname = "desc_3d_prop"
+        # check if not empty
+        DBname = "chem_descriptor_1d2d_name"
+        size_table = self.c_DB.execCMD("select count(*) from %s"%(DBname))
+        size_table = int(size_table[0][0])
+        #1D and 2D descriptor
+        if size_table == 0:
+            self.c_DB.connOpen()
+            l_desc = self.c_CompDesc.getLdesc("2D")
+            for desc in l_desc:
+                self.c_DB.addElement(DBname, ["name"], [desc])
+            self.c_DB.connClose()
 
-        cDB = DBrequest.DBrequest()
-        i = 1
-        for desc in ldesc:
-            cDB.addElement(DBname, ["id", "descriptor"], [i, desc])
-            i = i + 1
+        #for 3D desc
+        DBname = "chem_descriptor_3d_name"
+        size_table = self.c_DB.execCMD("select count(*) from %s"%(DBname))
+        size_table = int(size_table[0][0])
 
-    def computeDesc(self, insertDB=1, update=0):
+        if size_table == 0:
+            self.c_DB.connOpen()
+            l_desc = self.c_CompDesc.getLdesc("3D")
+            for desc in l_desc:
+                self.c_DB.addElement(DBname, ["name"], [desc])
+            self.c_DB.connClose()
 
-        pfilout1D2D = self.prout + "1D2D.csv"
-        pfilout3D = self.prout + "3D.csv"
+    def compute_pushDB_Desc(self, table_chemicals="chemicals"):
+        """
+        !! value NA will be -9999 because of the database format
+        """
 
-        if update == 0 and path.exists(pfilout3D) and path.exists(pfilout1D2D) and insertDB == 0:
-            self.p1D2D = pfilout1D2D
-            self.p3D = pfilout3D
-            return
+        # first extract SMILES clean with ID from the chemicals database
+        cmd_SQL = "SELECT id, smiles_clean, inchikey FROM chemicals WHERE smiles_clean IS NOT NULL AND drugbank_id IS NOT NULL"
+        l_chem = self.c_DB.execCMD(cmd_SQL)
+        
+        l_chem_desc = "SELECT inchikey FROM chemical_description WHERE map_name = drugbank"
+        l_chem = self.c_DB.execCMD(cmd_SQL)
 
+        l_desc_2D = self.c_CompDesc.getLdesc("1D2D")
+        l_desc_3D = self.c_CompDesc.getLdesc("3D")
 
-        if not "dchem" in self.__dict__:
-            self.parseSDFDB()
+        self.c_DB.connOpen()
+        for chem in l_chem[99:]:
+            SMILES = chem[1]
+            inchikey = chem[2]
 
-        lchemID = list(self.dchem.keys())
-        shuffle(lchemID)
+            # the SMILES is already prepared
+            self.c_CompDesc = CompDesc.CompDesc(input=SMILES, prdesc=self.prDesc)
+            self.c_CompDesc.smi = SMILES
+            self.c_CompDesc.inchikey = inchikey
+            self.c_CompDesc.mol = Chem.MolFromSmiles(SMILES)
+            self.c_CompDesc.computeAll2D()
+            l_compute_desc = [self.c_CompDesc.all2D[desc_2D] if self.c_CompDesc.all2D[desc_2D] != "NA" else "-9999" for desc_2D in l_desc_2D]
+            w1D2D = "{" + ",".join(["\"%s\"" % (compute_desc) for compute_desc in l_compute_desc]) + "}"
 
-        ldesc1D2D = Chemical.getLdesc("1D2D")
-        ldesc3D = Chemical.getLdesc("3D")
+            self.c_CompDesc.set3DChemical(psdf3D = "")
+            if self.c_CompDesc.err == 0:
+                self.c_CompDesc.computeAll3D()
+                l_compute_desc = [self.c_CompDesc.all3D[desc_3D] if self.c_CompDesc.all3D[desc_3D] != "NA" else "-9999" for desc_3D in l_desc_3D]
+                w3D = "{" + ",".join(["\"%s\"" % (compute_desc) for compute_desc in l_compute_desc]) + "}"
+                self.c_DB.addElement("chemical_description", ["inchikey", "desc_1d2d", "desc_3D", "map_name"], [inchikey, w1D2D, w3D, "drugbank"])
 
-        filout1D2D = open(pfilout1D2D, "w")
-        filout1D2D.write("inchikey\t" + "\t".join(ldesc1D2D) + "\n")
+            else:
+                self.c_DB.addElement("chemical_description", ["inchikey", "desc_1d2d", "map_name"], [inchikey, w1D2D, "drugbank"])
 
-        filout3D = open(pfilout3D, "w")
-        filout3D.write("inchikey\t" + "\t".join(ldesc3D) + "\n")
-
-        if insertDB == 1:
-            cDB = DBrequest.DBrequest()
-
-        for chemID in lchemID:
-            SMILESClean = self.dchem[chemID]["smiles_clean"]
-            if SMILESClean == "NA":
-                continue
-            cChem = Chemical.Chemical(SMILESClean, self.prDesc)
-            cChem.prepChem()
-
-            #print(SMILESClean)
-            if cChem.err == 0 :
-                # 2D descriptors
-                cChem.computeAll2D(update=0)
-                cChem.writeMatrix("2D")
-                filout1D2D.write(
-                    "%s\t%s\n" % (cChem.inchikey, "\t".join([str(cChem.all2D[desc]) for desc in ldesc1D2D])))
-
-                # insert in DB
-                if insertDB == 1:
-                    cDB.verbose = 0
-                    out1D2D = cDB.getRow("desc_1d2d", "inchikey='%s'" % (cChem.inchikey))
-                    if out1D2D == []:
-                        valDesc = [cChem.all2D[desc1D2D] for desc1D2D in ldesc1D2D]
-                        valDesc = ['-9999' if desc == "NA" else desc for desc in valDesc]
-
-                        w1D2D = "{" + ",".join(["\"%s\"" % (desc) for desc in valDesc]) + "}"
-                        cDB.addElement("desc_1d2d", ["inchikey", "desc_value"], [cChem.inchikey, w1D2D])
-
-
-                # 3D descriptors
-                cChem.set3DChemical()
-                # control if 3D generated
-                if cChem.err == 0:
-                    cChem.computeAll3D(update=0)
-                    cChem.writeMatrix("3D")
-
-                    # write master table
-                    filout3D.write("%s\t%s\n" % (cChem.inchikey, "\t".join([str(cChem.all3D[desc]) for desc in ldesc3D])))
-
-                    # put in table descriptors
-                    if insertDB == 1:
-                        out3D = cDB.getRow("desc_3d", "inchikey='%s'" % (cChem.inchikey))
-                        if out3D == []:
-                            valDesc = [cChem.all3D[desc3D] for desc3D in ldesc3D]
-                            valDesc = ['-9999' if desc == "NA" else desc for desc in valDesc]
-
-                            w3D = "{" + ",".join(["\"%s\"" % (desc) for desc in valDesc]) + "}"
-                            cDB.addElement("desc_3d", ["inchikey", "desc_value"], [cChem.inchikey, w3D])
-
-        filout1D2D.close()
-        filout3D.close()
-
-        self.p1D2D = pfilout1D2D
-        self.p3D = pfilout3D
+        self.c_DB.connClose()
+        
 
     def computeCoords(self, corVal, distributionVal, insertDB=1):
 
