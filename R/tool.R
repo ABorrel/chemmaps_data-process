@@ -1,5 +1,3 @@
-#!/usr/bin/env Rscript
-
 # By Alexandre BORREL
 # 02-2016
 
@@ -194,14 +192,14 @@ CheckColorVector = function (l_descriptor, col.des){
 
 gifGeneration = function(pin, d){
   
-  #png(file=paste(pin, "3DPlot%03d.png", sep = ""), width=800, height=800)
-  #for (i in seq(0, 350 ,10)){
-  #  print(cloud(d[,1]~d[,2]*d[,3], col = "black", xlab="PC1", ylab = "PC2", zlab="PC3", pch = 16, screen = list(z = i, x = -80)))
-  #}
-  #dev.off()
+  png(file=paste(pin, "3DPlot%03d.png", sep = ""), width=800, height=800)
+  for (i in seq(0, 350 ,10)){
+    print(cloud(d[,1]~d[,2]*d[,3], col = "black", xlab="PC1", ylab = "PC2", zlab="PC3", pch = 16, screen = list(z = i, x = -80)))
+  }
+  dev.off()
   
   # convert pngs to one gif using ImageMagick
-  system(paste("convert -delay 50 ", pin, "*.png ", pin, ".gif", sep = ""))
+  #system(paste("convert -delay 50 ", pin, "*.png ", pin, ".gif", sep = ""))
   #system(paste("rm ", pin, "*png", sep = ""))
   
 }

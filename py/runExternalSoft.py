@@ -1,45 +1,32 @@
-from os import system, path, remove, chdir
+from os import system, path, remove, chdir, getcwd, name
 from re import search
 from time import sleep
+import subprocess 
 
-LIGPREP = "/opt/schrodinger2017-3/ligprep"
 PADEL = "/home/aborrel/softwares/padel/PaDEL-Descriptor.jar"
 
 
-def runRCMD(cmd):
-
-    chdir("./../R/")
-    print(cmd)
-    system(cmd)
-    chdir("./../py/")
+P_RSCRIPTS = "../R/"
+R_BIN = "C://Program Files/R/R-4.2.1/bin/Rscript.exe"
 
 
-def runLigprep(psmilin, forcefield="OPLS3", stereoisoster=1):
+def runRCMD(cmd, out = 0):
 
-    """Maybe fix more option"""
-
-    if forcefield == "OPLS3":
-        bff = "16"
+    workdir = getcwd()
+    chdir(P_RSCRIPTS)
+    if name == "nt":
+        l_elem = cmd.split(" ")
+        cmd_line = [R_BIN] + l_elem
+        print(cmd_line)
+        p = subprocess.Popen(cmd_line)
+        (output, err) = p.communicate() 
+        p.wait()
+        print(err)
     else:
-        bff = "14"
+        print(cmd)
+        system(cmd)
+    chdir(workdir)
 
-    cmd = LIGPREP + " -ismi " + psmilin + " -osd " + psmilin[0:-4] + ".sdf" + " -bff " + str(bff) + " -epik -s " + str(stereoisoster) + " -WAIT -NJOBS 3"
-
-    print (cmd)
-    system(cmd)
-
-    # control if file exist
-    if not path.exists(psmilin[0:-4] + ".sdf"):
-        return "Ligprep ERROR"
-    else:
-        try:remove("tem.log")
-        except:pass
-        try:remove("tem-dropped.smi")
-        except: pass
-        try:remove("tem-dropped-indices.txt")
-        except: pass
-
-    return psmilin[0:-4] + ".sdf"
 
 def runPadel(prin=""):
     """Input include a folder of sdf file"""

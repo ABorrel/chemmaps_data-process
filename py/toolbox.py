@@ -329,6 +329,37 @@ def renameHeaderSDF(pfilin):
     filout.write("".join(llines))
     filout.close()
 
+def update_str4DB(str_in):
+
+    return str_in.replace("\u03b1", "alpha")\
+        .replace("'", "''")\
+        .replace("\u03b2", "beta")\
+        .replace("\u03ba", "kappa")\
+        .replace("\u03bb", "lamda")\
+        .replace("\u2032", "`")\
+        .replace("\u2070", "^0")\
+        .replace("\u2071", "^1")\
+        .replace("\u2072", "^2")\
+        .replace("\u2073", "^3")\
+        .replace("\u2074", "^4")\
+        .replace("\u2075", "^5")\
+        .replace("\u2076", "^6")\
+        .replace("\u2077", "^7")\
+        .replace("\u2078", "^8")\
+        .replace("\u2079", "^9")\
+        .replace("\u2083", "^3")\
+        .replace("\u2212", "-")\
+        .replace("\u03b3", "gamma")\
+        .replace("\u03b5", "epsilon")\
+        .replace("\u03b4", "delta")\
+        .replace("\u0394", "DELTA")\
+        .replace("\u03be", "xi")\
+        .replace("\u03bc", "mu")\
+        .replace("\u03C8", "psi")\
+        .replace("\u03C9", "omega")\
+        .replace("\u2192", "arrow")\
+        .replace("\u03c4", "tau")
+
 
 from rdkit import Chem
 def convertSMILEStoINCHIKEY(SMILESin):

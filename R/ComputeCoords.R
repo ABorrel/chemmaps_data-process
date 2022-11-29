@@ -1,9 +1,8 @@
-#!/usr/bin/env Rscript
-source ("tool.R")
+source("tool.R")
 source("cardMatrix.R")
 source("MDSMultiple.R")
 library(fastICA)
-library (vrmlgen)
+#library (vrmlgen) no available with new R version
 
 
 scaling = function(din){
@@ -22,7 +21,7 @@ scaling = function(din){
 generatePCAcoords = function(din){
   
   dinScale = scaling(din)[[1]]
-
+  dinScale = delSDnull(dinScale) # need to remove corr a second time
 
   data.cor=cor(dinScale)
   data.eigen=eigen(data.cor)
@@ -129,7 +128,8 @@ PCA3D = function(din, path_result){
 
   col.desc = "black"
   
-  gifGeneration(paste(path_result, "PCA3D", sep = ""), data_plot)
+  dir.create(path_result)
+  gifGeneration(paste(path_result, "\\PCA3D", sep = ""), data_plot)
   
 }
 
@@ -218,6 +218,10 @@ generateCoordCombinedPCA = function(d1D2D, d3D, prout){
   names(variancePlane) = c("1D", "2D", "3D")
   write.csv(variancePlane, file = paste(prout, "variancePlanPCAcombined.csv", sep = ""), row.names = TRUE, col.names = "TRUE")
   
+  p_dir = paste(prout, "\\combinePlan\\", sep = "")
+  dir.create(p_dir)
+  gifGeneration(p_dir, data_plot)
+
   #vrml.open(file = "SpacePCAcombined.wrl", scale = 1,5)
   #points3d(coordSpace, col = "white", scale = 1, transparency = 0.5,  pointstyle = "b")
   #lines3d(x = c(0,10), y = c(0,0), z = c(0,0), lwd = 3, col = "blue")
@@ -275,13 +279,12 @@ valcor = as.double(args[4])
 maxquantile = as.integer(args[5])
 
 
-
 # dsstoxmap
-p1D2D = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/1D2D.csv"
-p3D = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/3D.csv"
-prout = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/proj_0.95-90/"
-valcor = 0.95
-maxquantile = 90
+#p1D2D = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/1D2D.csv"
+#p3D = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/3D.csv"
+#prout = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/proj_0.95-90/"
+#valcor = 0.95
+#maxquantile = 90
 
 
 # drugmap
@@ -336,7 +339,7 @@ PCA3D(dglobal, paste(prout, "PCA_DescAll3D", sep = ""))
 
 # PCA combined
 #(d1D2D, d3D, paste(prout, "combined-1D2D_3D", sep = ""))
-#generateCoordCombinedPCA(d1D2D, d3D, prout)
+generateCoordCombinedPCA(d1D2D, d3D, prout)
 
 # MDSglobal
 #MDS3DGlobal(dglobal, prout, "corr")

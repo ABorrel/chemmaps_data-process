@@ -1,4 +1,3 @@
-#!/usr/bin/env Rscript
 source("tool.R")
 
 
@@ -72,11 +71,11 @@ valcor = as.double(args[4])
 maxquantile = as.integer(args[5])
 
 # dsstoxmap
-p1D2D = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/1D2D.csv"
-p3D = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/3D.csv"
-prout = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/proj_0.9-90/"
-valcor = 0.9
-maxquantile = 90
+#p1D2D = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/1D2D.csv"
+#p3D = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/3D.csv"
+#prout = "c://Users/aborr/research/sandbox/chemmaps_data-process/results/updateDSSTOX/coords/proj_0.9-90/"
+#valcor = 0.9
+#maxquantile = 90
 
 
 # drugmap
