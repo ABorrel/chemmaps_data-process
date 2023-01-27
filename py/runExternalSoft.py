@@ -82,7 +82,7 @@ def babelConvertMoltoSDF(pmolin, psdfout):
 
 
 def RDrawProjection(pfilin1D2D, pfilin3D, prout, valcor = 0.9, maxquantile=80):
-    cmdplotPCA = "./draw_several_projection.R " + str(pfilin1D2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(valcor) + " " + str(maxquantile)
+    cmdplotPCA = "./draw_several_projections.R " + str(pfilin1D2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(valcor) + " " + str(maxquantile)
     runRCMD(cmdplotPCA)
 
 

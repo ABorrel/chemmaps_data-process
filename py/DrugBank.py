@@ -294,7 +294,7 @@ class DrugBank:
 
             # create coords
             p_dir_proj = pathFolder.createFolder(p_dir_coords + "proj_" + str(corVal) + "-" + str(distributionVal) + "/")
-            runExternalSoft.RComputeCor(p_desc1D2D, p_desc3D, p_dir_proj, corVal, distributionVal)
+            runExternalSoft.RDrawProjection(p_desc1D2D, p_desc3D, p_dir_proj, corVal, distributionVal)
         else:
             print("ERROR - no descriptors files")
 

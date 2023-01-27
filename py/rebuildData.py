@@ -36,6 +36,7 @@ p_dir_dsstox = pathFolder.createFolder(PDIR_OUTPUT + "DSSTOX/")
 cDsstox = DSSTOX.DSSTOX(p_smiles_dsstox, p_mapping, "dsstox", 0, 0, PR_DESC, p_dir_dsstox)
 cDsstox.pushDB_chem()
 # cDsstox.compute_pushDB_Desc()
-cDsstox.compute_pushDB_Coords(0.9, 90) # coord are compute in R
+cDsstox.compute_coords(0.9, 90) # coord are compute in R
+
 
 
