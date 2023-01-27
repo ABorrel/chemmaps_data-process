@@ -9,7 +9,7 @@ import parseSDF
 import sys
 sys.path.insert(0, "/home/borrela2/development/descriptor/")
 #sys.path.insert(0, "C:\\Users\\borrela2\\development\\molecular-descriptors\\")
-import Chemical
+import CompDesc
 
 
 
@@ -19,6 +19,7 @@ from math import sqrt
 from rdkit import Chem
 from re import search
 from random import shuffle
+import time
 
 
 LPROP = ["inchikey", "SMILES", "preferred_name", "GHS_category", "EPA_category", "consensus_LD50", "LD50_mgkg", "MolWeight", "LogOH_pred", "CATMoS_VT_pred", "CATMoS_NT_pred", "CATMoS_EPA_pred",
@@ -30,92 +31,324 @@ LPROP = ["inchikey", "SMILES", "preferred_name", "GHS_category", "EPA_category",
 
 class DSSTOX:
 
-    def __init__(self, plistChem, nameMap,  istart, iend, prDesc, prout):
+    def __init__(self, p_listChem, p_mapping, name_map, istart, iend, p_dir_Desc, p_dir_out):
 
-        self.plistChem = plistChem
-        self.nameMap = nameMap
+        self.p_listChem = p_listChem
+        self.p_mapping = p_mapping
+        self.name_map = name_map
         self.istart = istart
-        self.iend = iend
-        self.plog = prout + "log.txt"
-        self.prDesc = prDesc
-        self.prout = prout
-
-    def loadlistChem(self):
-
-        prForDB = pathFolder.createFolder(self.prout + "forDB/")
-        pfilout = prForDB + "db.csv"
-        #try:remove(pfilout)
-        #except:pass
-        #print(pfilout)
-        if path.exists(pfilout):
-            dchem = toolbox.loadMatrixToDict(pfilout, sep="\t")
+        if iend == 0:
+            self.iend = -1
         else:
-            dchem = {}
-            if self.nameMap == "dsstox":
-                dchemIn = toolbox.loadMatrixToDict(self.plistChem, sep=",") #rewrite pfas and tox21 with comma
+            self.iend = iend
+        self.plog = p_dir_out + "log.txt"
+        self.p_dir_Desc = p_dir_Desc
+        self.p_dir_out = p_dir_out
+        self.c_DB = DBrequest.DBrequest()
+        self.c_CompDesc = CompDesc.CompDesc("", self.p_dir_Desc)
+
+    def load_annotation(self):
+
+        #load 
+        l_d_chemID = toolbox.loadMatrixToList(self.p_mapping, sep = ",")
+        d_structure = toolbox.loadMatrixToDict(self.p_listChem, sep = ",")
+
+        # load ID
+        for d_chemID in l_d_chemID:
+            dtxcid = d_chemID["DSSTOX_COMPOUND_ID"]
+            d_chemID["SMILES"] = d_structure[dtxcid]["Original_SMILES"]
+        self.l_chem = l_d_chemID[self.istart:self.iend]
+        
+    def prep_chem(self):
+        
+        if not "l_chem" in self.__dict__:
+            self.load_annotation()
+        
+        p_filout = self.p_dir_out + "chemical_table.csv"
+
+        for d_chem in self.l_chem:
+            if not "SMILES" in list(d_chem.keys()):
+                continue
             else:
-                dchemIn = toolbox.loadMatrixToDict(self.plistChem, sep="\t")
+                SMILES_origin = d_chem["SMILES"]
 
-            for chemIn in dchemIn.keys():
-                if "SMILES" in list(dchemIn[chemIn].keys()):
-                    SMILES_origin = dchemIn[chemIn]["SMILES"]
-                    DTXSID = dchemIn[chemIn]["DTXSID"]
-                elif "Original_SMILES" in list(dchemIn[chemIn].keys()):
-                    SMILES_origin = dchemIn[chemIn]["Original_SMILES"]
-                    DTXSID = dchemIn[chemIn]["dsstox_substance_id"]
-                else:
-                    print("ERROR")
-                    return
-
-
-                dchem[DTXSID] = {}
-                dchem[DTXSID]["db_id"] = DTXSID
-                dchem[DTXSID]["smiles_origin"] = SMILES_origin
-
-                # prepare ligand
-                cchem = Chemical.Chemical(SMILES_origin, self.prDesc)
+                cchem = CompDesc.CompDesc(SMILES_origin, self.p_dir_Desc)
                 cchem.prepChem()
                 if cchem.err == 1:
-                    qsar_ready = 0
-                    cleanSMILES = "NA"
-                    inchikey = "NA"
+                    cleanSMILES = ""
+                    inchikey = ""
                 else:
-                    qsar_ready = 1
                     cleanSMILES = cchem.smi
-                    inchikey = cchem.generateInchiKey()
-                    cchem.writeSMIClean()
+                    cchem.generateInchiKey()
+                    if cchem.err == 0:
+                        inchikey = cchem.inchikey
 
-                dchem[DTXSID]["smiles_clean"] = cleanSMILES
-                dchem[DTXSID]["inchikey"] = inchikey
-                dchem[DTXSID]["qsar_ready"] = qsar_ready
+                d_chem["smiles_clean"] = cleanSMILES
+                d_chem["inchikey"] = inchikey          
+            
+
+        # write table for control -> after open and put in the DB
+        filout = open(p_filout, "w", encoding="utf8")
+        filout.write("dsstox_id\tsmiles_origin\tsmiles_clean\tinchikey\tname\n")
+        for d_chem in self.l_chem:
+            filout.write("%s\t%s\t%s\t%s\t%s\n" % (d_chem["DSSTOX_SUBSTANCE_ID"], d_chem["SMILES"], d_chem["smiles_clean"], d_chem["inchikey"], d_chem["PREFERRED_NAME"]))
+        filout.close() 
+
+    def pushDB_chem(self, name_table="chemicals"):
+
+        # check if not empty
+        size_table = self.c_DB.execCMD("SELECT count(*) FROM %s WHERE dsstox_id IS NOT NULL"%(name_table))
+        print(size_table)
+        size_table = int(size_table[0][0])
+        print(size_table)
+        if size_table == 0:
+            # load all chemicals already in the database -> just case where not dsstox included
+            l_smiles = self.c_DB.execCMD("SELECT smiles_origin FROM %s WHERE dsstox_id IS NULL"%(name_table))
+            l_smiles = [smiles[0] for smiles in l_smiles]
+            l_smiles = list(set(l_smiles))
+            l_smiles.sort()
+
+            l_dsstox = self.c_DB.execCMD("SELECT dsstox_id FROM %s WHERE dsstox_id IS NOT NULL"%(name_table))
+            l_dsstox = [dsstox[0] for dsstox in l_dsstox]
+            l_dsstox = list(set(l_dsstox))
+            l_dsstox.sort()
+
+            # case empty --> build all
+            self.prep_chem()
+            i = self.istart
+            for d_chem in self.l_chem:
+                i = i + 1
+                if i%10000 == 0:
+                    print(i)
+                # need to check is the chem is not already in the DB
+                if toolbox.binary_search(l_smiles, d_chem["SMILES"]) != -1:
+                    # need to update database
+                    cmd_update = "UPDATE %s SET dsstox_id='%s' where smiles_origin='%s'"%(name_table, d_chem["DSSTOX_SUBSTANCE_ID"], d_chem["SMILES"])
+                    self.c_DB.execCMD(cmd_update)
+                    continue
+
+                # case id already in
+                if toolbox.binary_search(l_dsstox, d_chem["DSSTOX_SUBSTANCE_ID"]) != -1:
+                    continue
+
+                if d_chem["smiles_clean"] == "":
+                    self.c_DB.addElement(name_table, ["smiles_origin", "dsstox_id", "name"],
+                                    [d_chem["SMILES"], d_chem["DSSTOX_SUBSTANCE_ID"], toolbox.update_str4DB(d_chem["PREFERRED_NAME"])])
+
+                else:
+                    self.c_DB.addElement(name_table, ["smiles_origin", "smiles_clean", "inchikey", "dsstox_id", "name"],
+                                    [d_chem["SMILES"], d_chem["smiles_clean"],
+                                    d_chem["inchikey"], d_chem["DSSTOX_SUBSTANCE_ID"], toolbox.update_str4DB(d_chem["PREFERRED_NAME"])])
 
 
-            # write table for control -> after open and put in the DB
-            filout = open(pfilout, "w", encoding="utf8")
-            filout.write("db_id\tsmiles_origin\tsmiles_clean\tinchikey\tqsar_ready\t%s\n"%(self.nameMap))
-            for chem in dchem.keys():
-                filout.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (
-                chem, dchem[chem]["smiles_origin"], dchem[chem]["smiles_clean"], dchem[chem]["inchikey"],
-                dchem[chem]["qsar_ready"], 1))
-            filout.close()
-        self.dchem = dchem
+        # load chemical in the database
+        l_chem_out = []
+        l_chem = self.c_DB.execCMD("select * from %s WHERE dsstox_id IS NOT NULL"%(name_table))
+        for tup_chem in l_chem:
+            d_chem = {"id":tup_chem[0], "smiles_clean": tup_chem[2]}
+            l_chem_out.append(d_chem)
+        
+        self.l_chem_prep = l_chem_out
 
-    def pushChemInDB(self):
+    def compute_pushDB_Desc(self):
+        """
+        !! value NA will be -9999 because of the database format
+        """
 
-        if not "dchem" in self.__dict__:
-            self.loadlistChem()
+        # first extract SMILES clean with ID from the chemicals database
+        # extract all
+        #cmd_SQL = "SELECT id, smiles_clean, inchikey FROM chemicals WHERE smiles_clean IS NOT NULL AND drugbank_id IS NOT NULL"
+        
+        #extract only missing value ++++
+        # extract with exclusion duplicate
+        # cmd = "select distinct c1.smiles_clean, c1.inchikey from chemicals c1 where c1.smiles_clean is not null except (select c.smiles_clean, cd.inchikey from chemical_description cd inner join chemicals c on c.inchikey = cd.inchikey where cd.map_name='dsstox')"
+        cmd_SQL = "select smiles_clean, inchikey from chemicals where dsstox_id is not null and smiles_clean is not null and inchikey is not null"
+        l_chem = self.c_DB.execCMD(cmd_SQL)
 
-        if self.nameMap == "dsstox":
+        # sample list
+        l_chem = l_chem[self.istart:self.iend]
+        shuffle(l_chem)
+        
+        # need to check if inchkey is already in database
+        cmd_inch = "select inchikey from chemical_description where map_name = 'dsstox'"
+        l_inch = self.c_DB.execCMD(cmd_inch)
+
+        l_inch = [inch[0] for inch in l_inch]
+        l_inch = list(set(l_inch))
+        l_inch.sort()
+
+        if len(l_chem) == 0:
+            return
+
+        l_desc_2D = self.c_CompDesc.getLdesc("1D2D")
+        l_desc_3D = self.c_CompDesc.getLdesc("3D")
+
+        l_chem_to_compute = [chem for chem in l_chem if toolbox.binary_search(l_inch, chem[1]) == -1]
+        print("To compute:", len(l_chem_to_compute))
+
+        i = 0
+        for chem in l_chem_to_compute:
+            i = i + 1 
+            SMILES = chem[0]
+            inchikey = chem[1]
+
+            if i%1000 == 0:
+                print(i, len(l_chem_to_compute))
+
+            # check in bfore - only 23s for 1M chemicals
+            # check is in db already -- save time
+            # print(toolbox.binary_search(l_inch, inchikey))
+            # if toolbox.binary_search(l_inch, inchikey) != -1:
+            #     continue
+            
+
+            # the SMILES is already prepared
+            self.c_CompDesc = CompDesc.CompDesc(input=SMILES, prdesc=self.p_dir_Desc)
+            self.c_CompDesc.smi = SMILES
+            self.c_CompDesc.inchikey = inchikey
+            self.c_CompDesc.mol = Chem.MolFromSmiles(SMILES)
+            try: self.c_CompDesc.computeAll2D() # case of the name has a *
+            except: continue
+            l_compute_desc = [self.c_CompDesc.all2D[desc_2D] if self.c_CompDesc.all2D[desc_2D] != "NA" else "-9999" for desc_2D in l_desc_2D]
+            w1D2D = "{" + ",".join(["\"%s\"" % (compute_desc) for compute_desc in l_compute_desc]) + "}"
+
+            self.c_CompDesc.set3DChemical(psdf3D = "")
+            if self.c_CompDesc.err == 0:
+                self.c_CompDesc.computeAll3D()
+                l_compute_desc = [self.c_CompDesc.all3D[desc_3D] if self.c_CompDesc.all3D[desc_3D] != "NA" else "-9999" for desc_3D in l_desc_3D]
+                w3D = "{" + ",".join(["\"%s\"" % (compute_desc) for compute_desc in l_compute_desc]) + "}"
+                self.c_DB.addElement("chemical_description", ["inchikey", "desc_1d2d", "desc_3D", "map_name"], [inchikey, w1D2D, w3D, "dsstox"])
+
+            else:
+                self.c_DB.addElement("chemical_description", ["inchikey", "desc_1d2d", "map_name"], [inchikey, w1D2D, "dsstox"])
+            
+    def compute_coords(self, corVal, distributionVal, nb_load = 20000):
+        """
+        Function to compute coordinates in R --> do only the coordinates
+        """
+        p_desc_1D2D = self.p_dir_out + "1D2D.csv"
+        if not path.exists(p_desc_1D2D):
+            l_desc_1D2D = self.c_DB.execCMD("SELECT * FROM chem_descriptor_1d2d_name")
+            l_desc_1D2D = [desc1D2D[1] for desc1D2D in l_desc_1D2D]
+
+            nb_row = self.c_DB.execCMD("SELECT count(*)FROM chemical_description cd WHERE map_name ='dsstox'" )[0][0]
+            
+            # open file
+            f_1D2D = open(p_desc_1D2D, "w")
+            f_1D2D.write("inchikey\t%s\n"%("\t".join(l_desc_1D2D)))
+            
+            i = 1
+            imax = nb_row
+            while i < imax:
+                l_chem = self.c_DB.execCMD("SELECT inchikey, desc_1d2d FROM chemical_description cd where map_name = 'dsstox' ORDER BY inchikey OFFSET %s ROWS FETCH NEXT %s ROWS ONLY"%(i, nb_load))
+                i = i + nb_load
+                
+                for chem in l_chem:
+                    f_1D2D.write("%s\t%s\n"%(chem[0], "\t".join(str(desc) for desc in chem[1])))
+            f_1D2D.close()
+
+        
+            
+        p_desc_3D = self.p_dir_out + "3D.csv"
+        if not path.exists(p_desc_3D):
+            l_desc_3D = self.c_DB.execCMD("SELECT * FROM chem_descriptor_3d_name")
+            l_desc_3D = [desc3D[1] for desc3D in l_desc_3D]
+
+            nb_row = self.c_DB.execCMD("SELECT count(*)FROM chemical_description cd WHERE map_name ='dsstox'" )[0][0]
+            
+            # open 3D
+            f_3D = open(p_desc_3D, "w")
+            f_3D.write("inchikey\t%s\n"%("\t".join(l_desc_3D)))
+
+            i = 1
+            imax = nb_row
+            while i < imax:
+                l_chem = self.c_DB.execCMD("SELECT inchikey, desc_3d FROM chemical_description cd where map_name = 'dsstox' AND desc_3d is not null ORDER BY inchikey OFFSET %s ROWS FETCH NEXT %s ROWS ONLY"%(i, nb_load))
+                i = i + nb_load
+                
+                for chem in l_chem:
+                    f_3D.write("%s\t%s\n"%(chem[0], "\t".join(str(desc) for desc in chem[1])))
+            f_3D.close()            
+        
+        
+
+        # create coords
+        prmap = pathFolder.createFolder(self.p_dir_out + "map_" + str(corVal) + "-" + str(distributionVal) + "/")
+        self.prmap = prmap
+
+        pcoordDim1Dim2 = prmap + "coord1D2D.csv"
+        pcoordDim3D = prmap + "coord3D.csv"
+        if not path.exists(pcoordDim1Dim2):
+            runExternalSoft.RComputeMapFiles(p_desc_1D2D, "1D2D", prmap, corVal, distributionVal)
+
+        self.p_desc_1D2D = p_desc_1D2D
+
+
+        if not path.exists(pcoordDim3D):
+            runExternalSoft.RComputeMapFiles(p_desc_3D, "3D", prmap, corVal, distributionVal)
+       
+        self.p_desc_3D = p_desc_3D
+
+    def draw_map()
+
+
+
+
+
+    def pushDB_coords(self):
+        """
+        To update !!!!
+        """
+        if not path.exists(pcoordDim1Dim2) or not path.exists(pcoordDim3D):
+            print("ERROR file map")
+            return
+        else:
+            self.pcoords1D2D = pcoordDim1Dim2
+            self.pcoords3D = pcoordDim3D
+
+        if insertDB == 1:
+            if self.nameMap == "dsstox":
+                dcoord1D2D = toolbox.loadMatrixCoords(pcoordDim1Dim2, 10)
+                dcoord3D = toolbox.loadMatrixCoords(pcoordDim3D, 10)
+            else:
+                dcoord1D2D = toolbox.loadMatrixToDict(pcoordDim1Dim2, ",")
+                dcoord3D = toolbox.loadMatrixToDict(pcoordDim3D, ",")
+
             cDB = DBrequest.DBrequest()
             cDB.verbose = 0
-            for chem in self.dchem.keys():
-                cDB.addElement("dsstox_chem", ["db_id", "smiles_origin", "smiles_clean", "inchikey", "qsar_ready"],
-                                    [chem, self.dchem[chem]["smiles_origin"], self.dchem[chem]["smiles_clean"],
-                                    self.dchem[chem]["inchikey"], self.dchem[chem]["qsar_ready"]])
-        else:
-            cDB = DBrequest.DBrequest()
-            ddd
-            # have to be wrtie
+            lchem = list(dcoord1D2D.keys())
+            i = 0
+            imax = len(lchem)
+            while i < imax: 
+                #out1D2D = cDB.getRow("%s_coords"%(self.nameMap), "inchikey='%s'" % (chem))
+                #if out1D2D == []:
+                    if self.nameMap == "dsstox":
+
+                        w1D2D = "{" + ",".join(["\"%s\"" % (str(coord)) for coord in dcoord1D2D[lchem[i]]]) + "}"
+                        w3D = "{" + ",".join(["\"%s\"" % (str(coord)) for coord in dcoord3D[lchem[i]]]) + "}"
+                        cDB.addElement("%s_coords"%(self.nameMap), ["inchikey", "dim1d2d", "dim3d", "in_db"], [lchem[i], w1D2D, w3D, "1"])
+                        
+                        del dcoord1D2D[lchem[i]]
+                        del dcoord3D[lchem[i]]
+                        del lchem[i]
+                        imax = imax - 1
+
+                    else: 
+                        nbdim1d2d = len(dcoord1D2D[lchem[i]].keys()) - 1
+                        nbdim3d = len(dcoord3D[lchem[i]].keys()) - 1
+
+                        w1D2D = "{" + ",".join(["\"%s\"" % (dcoord1D2D[lchem[i]]["DIM" + str(i)]) for i in range(1, nbdim1d2d + 1)]) + "}"
+                        w3D = "{" + ",".join(["\"%s\"" % (dcoord3D[lchem[i]]["DIM3-" + str(i)]) for i in range(1, nbdim3d + 1)]) + "}"
+                        cDB.addElement("%s_coords"%(self.nameMap), ["inchikey", "dim1d2d", "dim3d", "in_db"], [lchem[i], w1D2D, w3D, "1"])
+                        
+                        del dcoord1D2D[lchem[i]]
+                        del dcoord3D[lchem[i]]
+                        del lchem[i]
+                        imax = imax - 1
+
+
+
+#### propbably to remove
 
     def computeDesc (self, insertDB =0, w=0):
 
@@ -243,41 +476,6 @@ class DSSTOX:
         print("Finish push prop in DB <-")
         return 
 
-    def computepng(self):
-
-        
-        if not "dchem" in self.__dict__:
-            self.loadlistChem()
-
-        lchemID = list(self.dchem.keys()) # can be shuffle
-        if len(lchemID) < 50000 and self.iend == 0:
-            shuffle(lchemID)
-
-        imax = len(lchemID)
-        if self.iend == 0 or self.iend > imax:
-            iend = imax
-        else:
-            iend = self.iend
-
-        lchemID = lchemID[self.istart:iend]
-        shuffle(lchemID)
-
-        i = 0
-        imax = len(lchemID)
-        while i < imax:
-            if i%10000 == 0:
-                print (i)
-
-            SMILESClean = self.dchem[lchemID[i]]["smiles_clean"]
-            if SMILESClean == "NA":
-                i = i + 1
-                continue
-            cChem = Chemical.Chemical(SMILESClean, self.prDesc)
-            cChem.prepChem()
-            cChem.computePNG()
-
-            i += 1
-    
     def computeCoords(self, corVal, distributionVal, insertDB=1):
 
 
@@ -347,7 +545,7 @@ class DSSTOX:
 
         # create coords
         prproj = pathFolder.createFolder(self.prout + "proj_" + str(corVal) + "-" + str(distributionVal) + "/")
-        runExternalSoft.RComputeCor(self.p1D2D, self.p3D, prproj, corVal, distributionVal)
+        runExternalSoft.RDrawProjection(self.p1D2D, self.p3D, prproj, corVal, distributionVal)
 
     def splitMap(self, nbsplit, dim, insertDB = 0):
 

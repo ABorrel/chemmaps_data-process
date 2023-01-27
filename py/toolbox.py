@@ -3,43 +3,6 @@ from shutil import copy
 from copy import deepcopy
 
 
-def loadMatrixToList(pmatrixIn, sep = "\t"):
-
-    filin = open(pmatrixIn, "r", encoding="utf8", errors='ignore')
-    llinesMat = filin.readlines()
-    filin.close()
-
-    l_out = []
-    line0 = formatLine(llinesMat[0])
-    line1 = formatLine(llinesMat[1])
-    lheaders = line0.split(sep)
-    lval1 = line1.split(sep)
-
-    # case where R written
-    if len(lheaders) == (len(lval1)-1) and lval1[-1] != "":
-        lheaders.append("ID")
-
-
-    i = 1
-    imax = len(llinesMat)
-    while i < imax:
-        lineMat = formatLine(llinesMat[i])
-        lvalues = lineMat.split(sep)
-        j = 0
-        if len(lvalues) != len(lheaders):
-            print("Check different size - line: ", i)
-            #print(lvalues)
-            #print(lheaders)
-        jmax = len(lheaders)
-        dtemp = {}
-        while j < jmax:
-            try:dtemp[lheaders[j]] = lvalues[j]
-            except:pass
-            j += 1
-        l_out.append(dtemp)
-        i += 1
-
-    return l_out
 
 def loadMatrixCoords(pccord, nbcoord):
 
@@ -73,61 +36,135 @@ def loadMatrixTolistFromDB(pfilin, sep):
     
     return lout
 
-def loadMatrixToDict(pmatrixIn, sep ="\t"):
+def loadMatrixToList(pmatrixIn, sep = "\t"):
 
-    filin = open(pmatrixIn, "r", encoding="utf-8", errors="ignore")
+    filin = open(pmatrixIn, "r", encoding="utf8", errors='ignore')
     llinesMat = filin.readlines()
     filin.close()
 
-    dout = {}
-    line0 = formatLine(llinesMat[0])
-    line1 = formatLine(llinesMat[1])
-    lheaders = line0.split(sep)
-    lval1 = line1.split(sep)
+    l_out = []
+    line0 = formatLine(llinesMat[0], sep)
+    line1 = formatLine(llinesMat[1], sep)
+    lheaders = line0.split("\t\t")
+    lval1 = line1.split("\t\t")
 
     # case where R written
-    if len(lheaders) == (len(lval1)-1) and lval1[-1] != "":
-        lheaders.append("val")
+    if len(lheaders) == (len(lval1) -1):
+        lheaders = ["ID"] + lheaders
+
+
+    i = 0
+    while i < len(lheaders):
+        if lheaders[i] == "":
+            lheaders[i] = "ID"
+        i += 1
 
     i = 1
     imax = len(llinesMat)
     while i < imax:
-        lineMat = formatLine(llinesMat[i])
-        lvalues = lineMat.split(sep)
+        lineMat = formatLine(llinesMat[i], sep)
+        lvalues = lineMat.split("\t\t")
+        j = 0
+        if len(lvalues) != len(lheaders):
+            print("ERROR - line: ", i)
+            print(lvalues)
+            print(lheaders)
+        jmax = len(lheaders)
+        dtemp = {}
+        while j < jmax:
+            try:dtemp[lheaders[j]] = lvalues[j]
+            except:pass
+            j += 1
+        l_out.append(dtemp)
+        i += 1
+
+    return l_out
+
+def loadMatrixToDict(pmatrixIn, sep = "\t", control_dup = 1):
+
+    filin = open(pmatrixIn, "r", encoding="utf-8-sig", errors='ignore')
+    llinesMat = filin.readlines()
+    filin.close()
+
+    dout = {}
+    line0 = formatLine(llinesMat[0], sep)
+    line1 = formatLine(llinesMat[1], sep)
+    lheaders = line0.split("\t\t")
+    lval1 = line1.split("\t\t")
+
+    if control_dup == 1:
+        l_kin = []
+
+    # case where R written
+    if len(lheaders) == (len(lval1)-1):
+        lheaders = ["ID"] + lheaders
+
+
+    i = 0
+    while i < len(lheaders):
+        if lheaders[i] == "":
+            lheaders[i] = "ID"
+        i += 1
+
+    i = 1
+    imax = len(llinesMat)
+    #imax = 10000####### here short cut
+    while i < imax:
+        lineMat = formatLine(llinesMat[i], sep)
+        lvalues = lineMat.split("\t\t")
         kin = lvalues[0]
+        if control_dup == 1:
+            l_kin.append(kin)
         dout[kin] = {}
         j = 0
+        if len(lvalues) != len(lheaders):
+            print("ERROR - line: ", i)
+            print(lvalues)
+            print(lheaders)
         jmax = len(lheaders)
         while j < jmax:
-            dout[kin][lheaders[j]] = lvalues[j]
+            try:dout[kin][lheaders[j]] = lvalues[j]
+            except:pass
             j += 1
         i += 1
+
+    if control_dup == 1:
+        if len(l_kin) == len(list(dout.keys())):
+            print("There is no duplicate in the dataset n= %s"%(len(l_kin)))
+        else:
+            print("PB here - end file?")
+            #l_dup = list(set([x for x in l_kin if l_kin.count(x) > 1]))
+            #print("Duplicate values: ", l_dup)
     return dout
 
-def formatLine(lineinput, delimitorStr = "\""):
+def formatLine(linein, sep):
 
-    linein = deepcopy(lineinput)
     linein = linein.replace("\n", "")
-
     linenew = ""
 
     imax = len(linein)
     i = 0
     flagchar = 0
     while i < imax:
-        if linein[i] == delimitorStr and flagchar == 0:
+        if linein[i] == '"' and flagchar == 0:
             flagchar = 1
-        elif linein[i] == delimitorStr and flagchar == 1:
+        elif linein[i] == '"' and flagchar == 1:
             flagchar = 0
 
-        if flagchar == 1 and linein[i] == ",":
-            linenew = linenew + " "
+        if flagchar == 1:
+            linenew = linenew + linein[i]
+        elif flagchar == 0 and linein[i] == sep:
+            linenew = linenew + "\t\t"
         else:
             linenew = linenew + linein[i]
         i += 1
 
-    linenew = linenew.replace(delimitorStr, "")
+    linenew = linenew.replace('\"', "")
     return linenew
+
+
+
+
 
 
 import multiprocessing

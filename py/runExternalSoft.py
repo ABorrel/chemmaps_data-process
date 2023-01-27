@@ -81,14 +81,14 @@ def babelConvertMoltoSDF(pmolin, psdfout):
 
 
 
-def RComputeCor(pfilin1D2D, pfilin3D, prout, valcor = 0.9, maxquantile=80):
-    cmdplotPCA = "./ComputeCoords.R " + str(pfilin1D2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(valcor) + " " + str(maxquantile)
+def RDrawProjection(pfilin1D2D, pfilin3D, prout, valcor = 0.9, maxquantile=80):
+    cmdplotPCA = "./draw_several_projection.R " + str(pfilin1D2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(valcor) + " " + str(maxquantile)
     runRCMD(cmdplotPCA)
 
 
 
-def RComputeMapFiles(pfilin1D2D, pfilin3D, prout, corval, maxquantile):
-    cmdMAP = "./generateMapFile.R " + str(pfilin1D2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(corval) + " " + str(maxquantile)
+def RComputeMapFiles(p_desc, type_desc, prout, corval, maxquantile):
+    cmdMAP = "./compute_coords.R %s %s %s %s %s"%(p_desc, type_desc, prout, corval, maxquantile) 
     runRCMD(cmdMAP)
 
 
