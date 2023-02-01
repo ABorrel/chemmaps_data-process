@@ -270,11 +270,9 @@ class DSSTOX:
                     f_3D.write("%s\t%s\n"%(chem[0], "\t".join(str(desc) for desc in chem[1])))
             f_3D.close()            
         
-        
-
         # create coords
         prmap = pathFolder.createFolder(self.p_dir_out + "map_" + str(corVal) + "-" + str(distributionVal) + "/")
-        self.prmap = prmap
+        self.p_dir_map = prmap
 
         pcoordDim1Dim2 = prmap + "coord1D2D.csv"
         pcoordDim3D = prmap + "coord3D.csv"
@@ -282,69 +280,87 @@ class DSSTOX:
             runExternalSoft.RComputeMapFiles(p_desc_1D2D, "1D2D", prmap, corVal, distributionVal)
 
         self.p_desc_1D2D = p_desc_1D2D
+        self.p_coords_1D2D = pcoordDim1Dim2
 
 
         if not path.exists(pcoordDim3D):
             runExternalSoft.RComputeMapFiles(p_desc_3D, "3D", prmap, corVal, distributionVal)
        
         self.p_desc_3D = p_desc_3D
+        self.p_coords_3D = pcoordDim3D
 
-    def draw_map()
-
-
-
-
+    def draw_map(self):
+        if not "p_desc_1D2D" in self.__dict__ or not "p_desc_3D" in self.__dict__:
+            print("Compute coords first")
+            return 
+        
+        runExternalSoft.RDrawHexaView(self.p_coords_1D2D, self.p_coords_3D, "DsstoxMap", "50", self.p_dir_map)
 
     def pushDB_coords(self):
         """
-        To update !!!!
+        will push in DB the coordinates
+        - push 10 coords for 1D2D and 10 coords for 3D
         """
-        if not path.exists(pcoordDim1Dim2) or not path.exists(pcoordDim3D):
-            print("ERROR file map")
-            return
-        else:
-            self.pcoords1D2D = pcoordDim1Dim2
-            self.pcoords3D = pcoordDim3D
+        if not path.exists(self.p_coords_1D2D) or not path.exists(self.p_coords_3D):
+            print("ERROR: compute coords first")
+            return 
 
-        if insertDB == 1:
-            if self.nameMap == "dsstox":
-                dcoord1D2D = toolbox.loadMatrixCoords(pcoordDim1Dim2, 10)
-                dcoord3D = toolbox.loadMatrixCoords(pcoordDim3D, 10)
-            else:
-                dcoord1D2D = toolbox.loadMatrixToDict(pcoordDim1Dim2, ",")
-                dcoord3D = toolbox.loadMatrixToDict(pcoordDim3D, ",")
+        name_map = "dsstox"
+        # load coords
+        d_coords_1D2D = toolbox.loadMatrixToDict(self.p_coords_1D2D, sep = ",")
+        d_coord_3D = toolbox.loadMatrixToDict(self.p_coords_3D, sep = ",")
 
-            cDB = DBrequest.DBrequest()
-            cDB.verbose = 0
-            lchem = list(dcoord1D2D.keys())
-            i = 0
-            imax = len(lchem)
-            while i < imax: 
-                #out1D2D = cDB.getRow("%s_coords"%(self.nameMap), "inchikey='%s'" % (chem))
-                #if out1D2D == []:
-                    if self.nameMap == "dsstox":
+        # only load l_chem with coord are not included
+        cmd_extract = "SELECT inchikey from chemical_description cd  WHERE map_name='%s' AND d3_cube is NULL"%(name_map)
+        l_inchikey = self.c_DB.execCMD(cmd_extract)
+        self.c_DB.connOpen()
+        
+        i = 0
+        imax = len(l_inchikey)
+        while i < imax: 
 
-                        w1D2D = "{" + ",".join(["\"%s\"" % (str(coord)) for coord in dcoord1D2D[lchem[i]]]) + "}"
-                        w3D = "{" + ",".join(["\"%s\"" % (str(coord)) for coord in dcoord3D[lchem[i]]]) + "}"
-                        cDB.addElement("%s_coords"%(self.nameMap), ["inchikey", "dim1d2d", "dim3d", "in_db"], [lchem[i], w1D2D, w3D, "1"])
-                        
-                        del dcoord1D2D[lchem[i]]
-                        del dcoord3D[lchem[i]]
-                        del lchem[i]
-                        imax = imax - 1
+            try:
+                w_1D2D = "{" + ",".join(["\"%s\"" % (d_coords_1D2D[l_inchikey[i][0]]["DIM%s"%(k)]) for k in range(1, 11)]) + "}"
+            except:
+                w_1D2D = ""
 
-                    else: 
-                        nbdim1d2d = len(dcoord1D2D[lchem[i]].keys()) - 1
-                        nbdim3d = len(dcoord3D[lchem[i]].keys()) - 1
+            try:
+                w_3D = "{" + ",".join(["\"%s\"" % (d_coord_3D[l_inchikey[i][0]]["DIM%s"%(k)]) for k in range(1, 11)]) + "}"
+            except:
+                w_3D = ""
+            
+            if w_3D != "" and w_1D2D != "":
+                w_cube = "{\"%s\", \"%s\", \"%s\"}"%(d_coords_1D2D[l_inchikey[i][0]]["DIM1"], d_coords_1D2D[l_inchikey[i][0]]["DIM2"], d_coord_3D[l_inchikey[i][0]]["DIM1"])
+                cmd_sql = "UPDATE chemical_description SET dim1d2d='%s', dim3d='%s', d3_cube='%s' WHERE inchikey='%s' AND map_name='%s'"%(w_1D2D, w_3D, w_cube, l_inchikey[i][0], name_map)
+                self.c_DB.updateTable_run(cmd_sql)
+            i = i + 1
+        self.c_DB.connClose()
 
-                        w1D2D = "{" + ",".join(["\"%s\"" % (dcoord1D2D[lchem[i]]["DIM" + str(i)]) for i in range(1, nbdim1d2d + 1)]) + "}"
-                        w3D = "{" + ",".join(["\"%s\"" % (dcoord3D[lchem[i]]["DIM3-" + str(i)]) for i in range(1, nbdim3d + 1)]) + "}"
-                        cDB.addElement("%s_coords"%(self.nameMap), ["inchikey", "dim1d2d", "dim3d", "in_db"], [lchem[i], w1D2D, w3D, "1"])
-                        
-                        del dcoord1D2D[lchem[i]]
-                        del dcoord3D[lchem[i]]
-                        del lchem[i]
-                        imax = imax - 1
+
+    def compute_onDB_neighbors(self):
+
+        # select inchikey where neighbor is empty
+        cmd_extract = "select inchikey from chemical_description where d3_cube is not null and map_name = 'dsstox' and neighbors_dim3 is null"
+        l_inch = self.c_DB.execCMD(cmd_extract)
+
+        for inch in l_inch:
+            inchikey = inch[0]
+            cmd_extract_neighbor = "SELECT inchikey FROM chemical_description "\
+                "WHERE map_name = 'dsstox' ORDER BY cube(d3_cube) <->  (select cube (d3_cube) "\
+                "FROM chemical_description where inchikey='%s' AND map_name = 'dsstox' limit (1))  limit (21)" %(inchikey)
+            l_neighbor = self.c_DB.execCMD(cmd_extract_neighbor)
+            l_neighbor = [neighbor[0] for neighbor in l_neighbor[1:]]
+            
+
+            # update database
+            w_neighbors = "{" + ",".join(["\"%s\"" % (str(neighbor)) for neighbor in l_neighbor]) + "}" # remove the inchikey in the list
+            cmd_update = "UPDATE chemical_description SET neighbors_dim3 = '%s' WHERE inchikey='%s' AND map_name='dsstox';" %(w_neighbors, inchikey)
+            # print(cmd_update)
+            self.c_DB.updateTable(cmd_update)  
+
+        return 
+
+
 
 
 

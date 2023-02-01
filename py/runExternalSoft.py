@@ -27,7 +27,6 @@ def runRCMD(cmd, out = 0):
         system(cmd)
     chdir(workdir)
 
-
 def runPadel(prin=""):
     """Input include a folder of sdf file"""
     if prin == "":
@@ -38,7 +37,6 @@ def runPadel(prin=""):
         system(cmd)
 
     return prin + "tem.desc"
-
 
 def babelConvertSDFtoSMILE(sdfread, clean_smi=0, rm_smi=1):
 
@@ -70,27 +68,19 @@ def babelConvertSDFtoSMILE(sdfread, clean_smi=0, rm_smi=1):
 
     return smile
 
-
-
 def babelConvertMoltoSDF(pmolin, psdfout):
 
     if not path.exists(psdfout):
         cmd_convert = "babel " + pmolin + " " + psdfout + " 2>/dev/null"
         system(cmd_convert)
 
-
-
-
 def RDrawProjection(pfilin1D2D, pfilin3D, prout, valcor = 0.9, maxquantile=80):
     cmdplotPCA = "./draw_several_projections.R " + str(pfilin1D2D) + " " + str(pfilin3D) + " " + str(prout) + " " + str(valcor) + " " + str(maxquantile)
     runRCMD(cmdplotPCA)
 
-
-
 def RComputeMapFiles(p_desc, type_desc, prout, corval, maxquantile):
     cmdMAP = "./compute_coords.R %s %s %s %s %s"%(p_desc, type_desc, prout, corval, maxquantile) 
     runRCMD(cmdMAP)
-
 
 def molconvert(pfilin, pfilout= ""):
     """Convert with black background"""
@@ -104,8 +94,7 @@ def molconvert(pfilin, pfilout= ""):
     system(cmdconvert)
     return pfilout
 
-
-
-
-
-
+def RDrawHexaView(p_coords1D2D, p_coords3D, name_map, bin_size, p_dir_out):
+    
+    cmdMAP = "./draw_hexa_view.R %s %s %s %s %s"%(p_coords1D2D, p_coords3D, name_map, bin_size, p_dir_out) 
+    runRCMD(cmdMAP)

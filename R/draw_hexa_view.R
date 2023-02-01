@@ -11,7 +11,7 @@ args <- commandArgs(TRUE)
 pcoord1D2D = args[1]
 pcoord3D = args[2]
 name_map = args[3]
-bin_size = args[4]
+bin_size = as.integer(args[4])
 prout = args[5]
 
 
@@ -70,7 +70,7 @@ dcoord1D2D_cut =  dcoord1D2D[which(dcoord1D2D[,1] <= 80 & dcoord1D2D[,2] <= 80),
 
 # plot 3D +> html
 #plot_ly(x=temp, y=pressure, z=dtime, type="scatter3d", mode="markers", color=temp)
-plot3d(x=dcoord1D2D$DIM1, y=dcoord1D2D$DIM2, z=dcoord3D$DIM3.1)
+plot3d(x=dcoord1D2D$DIM1, y=dcoord1D2D$DIM2, z=dcoord3D$DIM1)
 writeWebGL(filename=paste(prout, name_map, "_3Dplot.html") ,width=2000, height=2000)
 
 
@@ -94,7 +94,7 @@ dev.off()
 
 
 # for all data => x, z
-dcoord_xzD = data.frame(DIM1 = dcoord1D2D$DIM1, DIM3 = dcoord3D$DIM3.1)
+dcoord_xzD = data.frame(DIM1 = dcoord1D2D$DIM1, DIM3 = dcoord3D$DIM1)
 png(paste(prout, name_map, "_xz_all.png", sep = ""), res = 300, width = 2000, height = 2000)
 hexbinplot(DIM3~DIM1,data=dcoord_xzD,xlab="DIM1",
            ylab="DIM3",colramp=rf, xbins = bin_size, cex.labels = 0.6, cex.title=0.6, aspect = 2)

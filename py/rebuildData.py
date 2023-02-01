@@ -28,6 +28,7 @@ p_dir_drugbank = pathFolder.createFolder(PDIR_OUTPUT + "DRUGBANK/")
 # cDrugBank.pushDB_all()
 
 
+
 # DSSTOX #
 ##########
 p_smiles_dsstox = PDIR_INPUT + "dsstox/DSSTox_082021_Structures.csv"
@@ -37,6 +38,10 @@ cDsstox = DSSTOX.DSSTOX(p_smiles_dsstox, p_mapping, "dsstox", 0, 0, PR_DESC, p_d
 cDsstox.pushDB_chem()
 # cDsstox.compute_pushDB_Desc()
 cDsstox.compute_coords(0.9, 90) # coord are compute in R
+cDsstox.pushDB_coords()
+#cDsstox.draw_map()
+cDsstox.compute_onDB_neighbors()()
+
 
 
 
