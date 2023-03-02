@@ -38,7 +38,7 @@ def loadMatrixTolistFromDB(pfilin, sep):
 
 def loadMatrixToList(pmatrixIn, sep = "\t"):
 
-    filin = open(pmatrixIn, "r", encoding="utf8", errors='ignore')
+    filin = open(pmatrixIn, "r", encoding="utf-8-sig", errors='ignore')
     llinesMat = filin.readlines()
     filin.close()
 
