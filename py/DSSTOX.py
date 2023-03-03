@@ -356,6 +356,40 @@ class DSSTOX:
 
         return 
 
+    def pushDB_casn(self):
+        
+        l_chem = toolbox.loadMatrixToList(self.p_mapping, sep = ",")
+
+        # make a dict with anotation
+        d_dtxsid_casn = {}
+        for d_chem in l_chem:
+            d_dtxsid_casn[d_chem["DSSTOX_SUBSTANCE_ID"]] = d_chem["CASRN"]
+        
+        print(len(list(d_dtxsid_casn.keys())))
+        
+        # load all dsstox - mapping with dsstox
+        cmd_dsstox = "SELECT dsstox_id FROM chemicals WHERE casn IS NULL AND dsstox_id IS NOT NULL"
+        l_dsstox = self.c_DB.execCMD(cmd_dsstox)
+
+        nb_to_update = len(l_dsstox)
+        shuffle(l_dsstox)
+        print("NB row to update:", nb_to_update)
+
+        i = 0
+        self.c_DB.connOpen()
+        for dsstox in l_dsstox:
+            i = i + 1
+            if i % 1000 == 0:
+                self.c_DB.connClose()
+                self.c_DB.connOpen()
+                print(i)
+             
+            try:
+                cmd_update = "UPDATE chemicals SET casn='%s' WHERE dsstox_id='%s'"%(d_dtxsid_casn[dsstox[0]], dsstox[0])
+                self.c_DB.updateTable_run(cmd_update)
+            except:pass
+        self.c_DB.connClose()
+
     def pushDB_all(self):
         self.pushDB_chem()
         self.compute_pushDB_Desc()

@@ -146,3 +146,139 @@ class PFAS:
 
             else:
                 self.c_DB.addElement("chemical_description", ["inchikey", "desc_1d2d", "map_name"], [inchikey, w1D2D, "pfas"])
+
+    def compute_coords(self, corVal, distributionVal, nb_load = 20000):
+        """
+        Function to compute coordinates in R --> do only the coordinates
+        """
+        p_desc_1D2D = self.p_dir_out + "1D2D.csv"
+        if not path.exists(p_desc_1D2D):
+            l_desc_1D2D = self.c_DB.execCMD("SELECT * FROM chem_descriptor_1d2d_name")
+            l_desc_1D2D = [desc1D2D[1] for desc1D2D in l_desc_1D2D]
+
+            nb_row = self.c_DB.execCMD("SELECT count(*)FROM chemical_description cd WHERE map_name ='pfas'" )[0][0]
+            
+            # open file
+            f_1D2D = open(p_desc_1D2D, "w")
+            f_1D2D.write("inchikey\t%s\n"%("\t".join(l_desc_1D2D)))
+            
+            i = 1
+            imax = nb_row
+            while i < imax:
+                l_chem = self.c_DB.execCMD("SELECT inchikey, desc_1d2d FROM chemical_description cd where map_name = 'pfas' ORDER BY inchikey OFFSET %s ROWS FETCH NEXT %s ROWS ONLY"%(i, nb_load))
+                i = i + nb_load
+                
+                for chem in l_chem:
+                    f_1D2D.write("%s\t%s\n"%(chem[0], "\t".join(str(desc) for desc in chem[1])))
+            f_1D2D.close()
+
+        p_desc_3D = self.p_dir_out + "3D.csv"
+        if not path.exists(p_desc_3D):
+            l_desc_3D = self.c_DB.execCMD("SELECT * FROM chem_descriptor_3d_name")
+            l_desc_3D = [desc3D[1] for desc3D in l_desc_3D]
+
+            nb_row = self.c_DB.execCMD("SELECT count(*)FROM chemical_description cd WHERE map_name ='pfas'" )[0][0]
+            
+            # open 3D
+            f_3D = open(p_desc_3D, "w")
+            f_3D.write("inchikey\t%s\n"%("\t".join(l_desc_3D)))
+
+            i = 1
+            imax = nb_row
+            while i < imax:
+                l_chem = self.c_DB.execCMD("SELECT inchikey, desc_3d FROM chemical_description cd where map_name = 'pfas' AND desc_3d is not null ORDER BY inchikey OFFSET %s ROWS FETCH NEXT %s ROWS ONLY"%(i, nb_load))
+                i = i + nb_load
+                
+                for chem in l_chem:
+                    f_3D.write("%s\t%s\n"%(chem[0], "\t".join(str(desc) for desc in chem[1])))
+            f_3D.close()            
+        
+        # create coords
+        prmap = pathFolder.createFolder(self.p_dir_out + "map_" + str(corVal) + "-" + str(distributionVal) + "/")
+        self.p_dir_map = prmap
+
+        pcoordDim1Dim2 = prmap + "coord1D2D.csv"
+        pcoordDim3D = prmap + "coord3D.csv"
+        if not path.exists(pcoordDim1Dim2):
+            runExternalSoft.RComputeMapFiles(p_desc_1D2D, "1D2D", prmap, corVal, distributionVal)
+
+        self.p_desc_1D2D = p_desc_1D2D
+        self.p_coords_1D2D = pcoordDim1Dim2
+
+
+        if not path.exists(pcoordDim3D):
+            runExternalSoft.RComputeMapFiles(p_desc_3D, "3D", prmap, corVal, distributionVal)
+       
+        self.p_desc_3D = p_desc_3D
+        self.p_coords_3D = pcoordDim3D
+
+    def draw_map(self):
+        if not "p_desc_1D2D" in self.__dict__ or not "p_desc_3D" in self.__dict__:
+            print("Compute coords first")
+            return 
+        
+        runExternalSoft.RDrawHexaView(self.p_coords_1D2D, self.p_coords_3D, "PFASMap", "50", self.p_dir_map)
+
+    
+    def pushDB_coords(self):
+        """
+        will push in DB the coordinates
+        - push 10 coords for 1D2D and 10 coords for 3D
+        """
+        if not path.exists(self.p_coords_1D2D) or not path.exists(self.p_coords_3D):
+            print("ERROR: compute coords first")
+            return 
+
+        name_map = "pfas"
+        # load coords
+        d_coords_1D2D = toolbox.loadMatrixToDict(self.p_coords_1D2D, sep = ",")
+        d_coord_3D = toolbox.loadMatrixToDict(self.p_coords_3D, sep = ",")
+
+        # only load l_chem with coord are not included
+        cmd_extract = "SELECT inchikey from chemical_description cd  WHERE map_name='%s' AND d3_cube is NULL"%(name_map)
+        l_inchikey = self.c_DB.execCMD(cmd_extract)
+        self.c_DB.connOpen()
+        
+        i = 0
+        imax = len(l_inchikey)
+        while i < imax: 
+
+            try:
+                w_1D2D = "{" + ",".join(["\"%s\"" % (d_coords_1D2D[l_inchikey[i][0]]["DIM%s"%(k)]) for k in range(1, 11)]) + "}"
+            except:
+                w_1D2D = ""
+
+            try:
+                w_3D = "{" + ",".join(["\"%s\"" % (d_coord_3D[l_inchikey[i][0]]["DIM%s"%(k)]) for k in range(1, 11)]) + "}"
+            except:
+                w_3D = ""
+            
+            if w_3D != "" and w_1D2D != "":
+                w_cube = "{\"%s\", \"%s\", \"%s\"}"%(d_coords_1D2D[l_inchikey[i][0]]["DIM1"], d_coords_1D2D[l_inchikey[i][0]]["DIM2"], d_coord_3D[l_inchikey[i][0]]["DIM1"])
+                cmd_sql = "UPDATE chemical_description SET dim1d2d='%s', dim3d='%s', d3_cube='%s' WHERE inchikey='%s' AND map_name='%s'"%(w_1D2D, w_3D, w_cube, l_inchikey[i][0], name_map)
+                self.c_DB.updateTable_run(cmd_sql)
+            i = i + 1
+        self.c_DB.connClose()
+
+
+    def compute_onDB_neighbors(self):
+
+        # select inchikey where neighbor is empty
+        cmd_extract = "select inchikey from chemical_description where d3_cube is not null and map_name = 'pfas' and neighbors_dim3 is null"
+        l_inch = self.c_DB.execCMD(cmd_extract)
+        random.shuffle(l_inch)
+
+        for inch in l_inch:
+            inchikey = inch[0]
+            cmd_extract_neighbor = "SELECT inchikey FROM chemical_description "\
+                "WHERE map_name = 'pfas' ORDER BY cube(d3_cube) <->  (select cube (d3_cube) "\
+                "FROM chemical_description where inchikey='%s' AND map_name = 'pfas' limit (1))  limit (21)" %(inchikey)
+            l_neighbor = self.c_DB.execCMD(cmd_extract_neighbor)
+            l_neighbor = [neighbor[0] for neighbor in l_neighbor[1:]]
+            
+
+            # update database
+            w_neighbors = "{" + ",".join(["\"%s\"" % (str(neighbor)) for neighbor in l_neighbor]) + "}" # remove the inchikey in the list
+            cmd_update = "UPDATE chemical_description SET neighbors_dim3 = '%s' WHERE inchikey='%s' AND map_name='pfas';" %(w_neighbors, inchikey)
+            # print(cmd_update)
+            self.c_DB.updateTable(cmd_update)  
