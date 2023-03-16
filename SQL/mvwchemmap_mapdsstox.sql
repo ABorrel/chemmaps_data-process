@@ -2,7 +2,7 @@
 
 -- DROP MATERIALIZED VIEW public.mvwchemmap_mapdsstox;
 
-CREATE MATERIALIZED VIEW public.mvwchemmap_mapdsstox
+CREATE MATERIALIZED VIEW mvwchemmap_mapdsstox
 TABLESPACE pg_default
 AS
  SELECT chem.dsstox_id,
@@ -22,5 +22,5 @@ AS
   GROUP BY chem.dsstox_id, chem.smiles_clean, chem.inchikey, coo.dim1d2d, coo.dim3d, coo.neighbors_dim3, coo.neighbors_dimn, coo.desc_opera, coo.d3_cube, toxp.prop_value
 WITH DATA;
 
-ALTER TABLE public.mvwchemmap_mapdsstox
+ALTER TABLE mvwchemmap_mapdsstox
     OWNER TO postgres;

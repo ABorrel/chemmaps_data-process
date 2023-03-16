@@ -1,8 +1,8 @@
 -- Table: public.ice_tox21
 
--- DROP TABLE public.ice_tox21;
+-- DROP TABLE ice_tox21;
 
-CREATE TABLE public.ice_tox21
+CREATE TABLE ice_tox212
 (
     dtxsid text COLLATE pg_catalog."default",
     data_sources text COLLATE pg_catalog."default",
@@ -43,5 +43,5 @@ WITH (
 )
 TABLESPACE pg_default;
 
-ALTER TABLE public.ice_tox21
+ALTER TABLE ice_tox212
     OWNER to postgres;

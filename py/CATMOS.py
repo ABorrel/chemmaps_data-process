@@ -51,6 +51,7 @@ class CATMOS:
                     l_w.append("0")
                 else:
                     l_w.append(val)
+            # format the category specifically + LD50
             if l_w[2] != "NA":
                 l_w[2] = str(l_w[2])
             if l_w[3] != "NA":

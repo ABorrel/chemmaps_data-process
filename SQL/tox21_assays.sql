@@ -2,7 +2,7 @@
 
 -- DROP TABLE public.tox21_assays;
 
-CREATE TABLE public.tox21_assays
+CREATE TABLE tox21_assays
 (
     protocol_name text COLLATE pg_catalog."default" NOT NULL,
     assay_target text COLLATE pg_catalog."default",
@@ -17,5 +17,5 @@ WITH (
 )
 TABLESPACE pg_default;
 
-ALTER TABLE public.tox21_assays
+ALTER TABLE tox21_assays
     OWNER to postgres;
